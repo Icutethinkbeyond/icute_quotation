@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { revalidatePath } from "next/cache";
-
-const prisma = new PrismaClient();
+import prisma from '@/../lib/prisma';
 
 // Define input types based on what we see in the contexts
 interface QuotationInput {

@@ -109,6 +109,12 @@ export function formatThaiDate(
     date: Date | string,
     options?: Intl.DateTimeFormatOptions
 ): string {
+
+    // console.log("Formatting date:", date);
+
+    if (date === null || date === undefined || date === "") {
+        return "ไม่ได้กำหนดวันที่​";
+    }
     const d = typeof date === "string" ? new Date(date) : date
 
     return new Intl.DateTimeFormat("th-TH", {

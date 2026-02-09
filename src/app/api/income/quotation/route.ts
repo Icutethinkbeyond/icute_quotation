@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/../lib/prisma';
 import ExcelJS from 'exceljs';
 import fs from 'fs';
 import path from 'path';
@@ -11,7 +11,6 @@ import { calculateQuotationTotals } from '@/utils/quotationCalculations';
 // แปลง exec ให้รองรับ Promises
 const exec = promisify(execCallback);
 
-const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);

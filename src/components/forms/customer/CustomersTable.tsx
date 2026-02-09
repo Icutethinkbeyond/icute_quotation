@@ -59,10 +59,10 @@ const CustomersTable: React.FC = () => {
     };
 
     const columns: GridColDef[] = [
-        { field: "contactorName", headerName: "ชื่อผู้ติดต่อ", flex: 1, minWidth: 180 },
-        { field: "contactorTel", headerName: "เบอร์โทร", width: 130 },
-        { field: "contactorEmail", headerName: "อีเมล์", width: 180 },
-        { field: "contactorAddress", headerName: "ที่อยู่", flex: 1, minWidth: 200 },
+        { field: "contactorName", headerName: "ชื่อผู้ติดต่อ", flex: 3, },
+        { field: "contactorTel", headerName: "เบอร์โทร", flex: 3, },
+        { field: "contactorEmail", headerName: "อีเมล์", flex: 3, },
+        { field: "contactorAddress", headerName: "ที่อยู่", flex: 3, },
         {
             field: "Actions",
             headerName: "การจัดการ",

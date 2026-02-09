@@ -62,10 +62,10 @@ const CompanyTable = () => {
     };
 
     const columns: GridColDef[] = [
-        { field: "companyName", headerName: "ชื่อบริษัท", flex: 1, minWidth: 200 },
-        { field: "companyTaxId", headerName: "เลขผู้เสียภาษี", width: 150 },
-        { field: "companyPhoneNumber", headerName: "เบอร์โทรศัพท์", width: 150 },
-        { field: "companyEmail", headerName: "อีเมล", width: 200 },
+        { field: "companyName", headerName: "ชื่อบริษัท", flex: 3 },
+        { field: "companyTaxId", headerName: "เลขผู้เสียภาษี", flex: 3 },
+        { field: "companyPhoneNumber", headerName: "เบอร์โทรศัพท์", flex: 3 },
+        { field: "companyEmail", headerName: "อีเมล", flex: 3 },
         {
             field: "actions",
             headerName: "การจัดการ",

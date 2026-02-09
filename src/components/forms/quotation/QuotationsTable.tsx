@@ -16,6 +16,7 @@ import {
   grandTotalColumn,
 } from "@/components/quotation/TableColumns";
 import { IQuotation, IQuotationTableRow, QuotationsTableProps } from "@/contexts/QuotationContext";
+import { min } from "lodash";
 
 const QuotationsTable: React.FC<QuotationsTableProps> = () => {
   const router = useRouter();

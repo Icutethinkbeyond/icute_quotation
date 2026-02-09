@@ -100,6 +100,7 @@ export function GenericDataTable<T>({
                         toolbar: CustomToolbar,
                     }}
                     sx={{
+                        minHeight: '70vh',
                         border: 'none',
                         '& .MuiDataGrid-columnHeaders': {
                             backgroundColor: '#e5fafb',

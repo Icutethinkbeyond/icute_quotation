@@ -155,6 +155,7 @@
 
 .print-page {
   page-break-after: always;
+  border: 1px solid #eee; /* ใส่กรอบจางๆ เพื่อดูขอบเขต A4 ที่แท้จริง */
 }
 
 table {

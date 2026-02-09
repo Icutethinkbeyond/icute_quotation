@@ -3,16 +3,16 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 // --------------------------------------
-// User & Auth
+// User & Auth (คงเดิม)
 // --------------------------------------
 
 model User {
-  userId       String     @id @default(uuid())
+  userId       String     @id @default(auto()) @map("_id") @db.ObjectId
   username     String?
   userEmail    String     @unique
   userPassword String
@@ -23,12 +23,12 @@ model User {
   // Relations
   account Account?
   role    Role?    @relation(fields: [roleId], references: [roleId])
-  roleId  String?
+  roleId  String?  @db.ObjectId
 
-  profile         Profile?
+  profile        Profile?
   companyProfiles CompanyProfile[]
-  address         String?
-  resetTokens     ResetToken[]
+  address        String?
+  resetTokens    ResetToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -37,28 +37,28 @@ model User {
 }
 
 model Profile {
-  profileId      String  @id @default(uuid())
+  profileId      String  @id @default(auto()) @map("_id") @db.ObjectId
   profileName    String?
   profileSurname String?
   profileimage   String?
   profilePhone   String?
 
   user   User?   @relation(fields: [userId], references: [userId])
-  userId String? @unique
+  userId String? @unique @db.ObjectId
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Account {
-  id                String         @id @default(uuid())
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
   provider          String
   providerAccountId String?
   accessToken       String?
   refreshToken      String?
   expiresAt         Int?
   user              User           @relation(fields: [userId], references: [userId])
-  userId            String         @unique
+  userId            String         @unique @db.ObjectId
   verified          VerifiedStatus @default(UnVerified)
 
   createdAt DateTime @default(now())
@@ -68,16 +68,16 @@ model Account {
 }
 
 model ResetToken {
-  id        String   @id @default(uuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   token     String   @unique
   expires   DateTime
-  userId    String
+  userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [userId])
   createdAt DateTime @default(now())
 }
 
 model Role {
-  roleId      String   @id @default(uuid())
+  roleId      String   @id @default(auto()) @map("_id") @db.ObjectId
   name        RoleName
   description String?
   users       User[]
@@ -89,11 +89,11 @@ model Role {
 }
 
 // --------------------------------------
-// Company & Business
+// Company & Business (คงเดิม)
 // --------------------------------------
 
 model CompanyProfile {
-  companyId               String    @id @default(uuid())
+  companyId               String    @id @default(auto()) @map("_id") @db.ObjectId
   companyName             String
   companyAddress          String?
   companyTaxId            String?
@@ -103,7 +103,7 @@ model CompanyProfile {
   companyRegistrationDate DateTime?
   companyBusinessType     String?
   user                    User      @relation(fields: [userId], references: [userId])
-  userId                  String
+  userId                  String    @db.ObjectId
 
   customerCompanies CustomerCompany[]
 
@@ -112,7 +112,7 @@ model CompanyProfile {
 }
 
 model CustomerCompany {
-  customerCompanyId    String  @id @default(uuid())
+  customerCompanyId    String  @id @default(auto()) @map("_id") @db.ObjectId
   companyName          String
   companyTel           String?
   customerCompanyEmail String?
@@ -121,7 +121,7 @@ model CustomerCompany {
   companyAddress       String?
 
   companyProfile CompanyProfile? @relation(fields: [companyId], references: [companyId])
-  companyId      String?
+  companyId      String?         @db.ObjectId
 
   documentPapers DocumentPaper[]
   contactors     Contactor[]
@@ -131,14 +131,14 @@ model CustomerCompany {
 }
 
 model Contactor {
-  contactorId      String  @id @default(uuid())
+  contactorId      String  @id @default(auto()) @map("_id") @db.ObjectId
   contactorName    String
   contactorEmail   String?
   contactorTel     String?
   contactorAddress String?
 
   customerCompany   CustomerCompany? @relation(fields: [customerCompanyId], references: [customerCompanyId])
-  customerCompanyId String?
+  customerCompanyId String?          @db.ObjectId
 
   documentPapers DocumentPaper[]
 
@@ -150,11 +150,12 @@ model Contactor {
 }
 
 // --------------------------------------
-// Products Inventory
+// Products Inventory (คงเดิม)
+// Note: Category ตรงนี้คือหมวดหมู่สินค้าในคลัง ไม่ใช่หมวดหมู่ในใบเสนอราคา
 // --------------------------------------
 
 model Category {
-  categoryId   String    @id @default(uuid())
+  categoryId   String    @id @default(auto()) @map("_id") @db.ObjectId
   categoryName String
   categoryDesc String?
   products     Product[]
@@ -164,7 +165,7 @@ model Category {
 }
 
 model Product {
-  productId          String  @id @default(uuid())
+  productId          String  @id @default(auto()) @map("_id") @db.ObjectId
   productName        String
   productSKU         String?
   productDescription String?
@@ -172,17 +173,17 @@ model Product {
 
   aboutProduct AboutProduct?
   category     Category?     @relation(fields: [categoryId], references: [categoryId])
-  categoryId   String?
+  categoryId   String?       @db.ObjectId
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model AboutProduct {
-  aboutProductId String @id @default(uuid())
+  aboutProductId String @id @default(auto()) @map("_id") @db.ObjectId
 
   product   Product @relation(fields: [productId], references: [productId], onDelete: Cascade)
-  productId String  @unique
+  productId String  @unique @db.ObjectId
 
   productPrice         Float?  @default(0)
   productDiscountPrice Float?  @default(0)
@@ -195,25 +196,25 @@ model AboutProduct {
 }
 
 // --------------------------------------
-// Documents (Quotation/Invoice)
+// Documents (Quotation/Invoice) - Redesigned for PricingContext
 // --------------------------------------
 
 model DocumentPaper {
-  documentId   String @id @default(uuid())
+  documentId   String @id @default(auto()) @map("_id") @db.ObjectId
   documentIdNo String @unique
 
   // Details
-  docType         String
+  docType         String // เช่น "Quotation"
   docMonth        String?
   docYear         String?
-  documentDetials String? // Keeping typo as requested
+  documentDetials String? // (Typo เดิมจาก schema คุณ หากแก้ในโค้ดแล้วให้แก้ตรงนี้เป็น documentDetails)
 
   // Relations
   customerCompany   CustomerCompany? @relation(fields: [customerCompanyId], references: [customerCompanyId])
-  customerCompanyId String?
+  customerCompanyId String?          @db.ObjectId
 
   contactor   Contactor? @relation(fields: [contactorId], references: [contactorId])
-  contactorId String?
+  contactorId String?    @db.ObjectId
 
   // Status & Dates
   documentType   eDocumentType  @default(Quotation)
@@ -222,18 +223,23 @@ model DocumentPaper {
   documentCreateDate DateTime? @default(now())
   documentExpire     DateTime?
 
-  // PricingContext Global State
-  includeVat     Boolean @default(false)
-  taxRate        Float   @default(7)
-  globalDiscount Float   @default(0)
+  // ------------------------------------------------------------------
+  // ✅ Fields for PricingContext Global State
+  // ------------------------------------------------------------------
+  includeVat     Boolean @default(false) // ตรงกับ state: vatIncluded
+  taxRate        Float   @default(7) // ตรงกับ state: taxRate
+  globalDiscount Float   @default(0) // ตรงกับ state: discount (ส่วนลดท้ายบิล)
 
-  // Summary Fields
-  withholdingTax Float @default(0)
+  // ✅ Summary Fields (Calculated values)
+  withholdingTax Float @default(0) // หัก ณ ที่จ่าย
 
-  // Notes field
-  note String?
+  // ✅ Notes field
+  note String? // หมายเหตุ
 
-  // Relation to Categories
+  // ------------------------------------------------------------------
+  // ✅ Relation to Categories (Structure from Context)
+  // ------------------------------------------------------------------
+  // เปลี่ยนจาก items เดิมที่เป็น DocumentProduct มาเป็น structure ใหม่
   categories DocumentCategory[]
 
   isDeleted Boolean   @default(false)
@@ -243,40 +249,42 @@ model DocumentPaper {
   updatedAt DateTime @updatedAt
 }
 
+// ✅ Model นี้เปรียบเสมือน interface Category ใน PricingContext
 model DocumentCategory {
-  categoryId String @id @default(uuid())
-  name       String
+  categoryId String @id @default(auto()) @map("_id") @db.ObjectId
+  name       String // ชื่อหมวดหมู่ (เช่น "งานโครงสร้าง")
 
   // Relation back to Paper
   documentPaper   DocumentPaper @relation(fields: [documentPaperId], references: [documentId], onDelete: Cascade)
-  documentPaperId String
+  documentPaperId String        @db.ObjectId
 
   // Relation to SubItems
   items DocumentItem[]
 
-  // Ordering
+  // Ordering: เพื่อให้เรียงลำดับหมวดหมู่ได้ถูกต้อง
   orderIndex Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+// ✅ Model นี้เปรียบเสมือน interface SubItem ใน PricingContext
 model DocumentItem {
-  itemId String @id @default(uuid())
+  itemId String @id @default(auto()) @map("_id") @db.ObjectId
 
-  name         String?
-  description  String
-  unit         String
+  name         String? // ชื่อสินค้า
+  description  String // รายละเอียด
+  unit         String // หน่วย
   qty          Float   @default(1)
   pricePerUnit Float   @default(0)
-  remark       String?
+  remark       String? // หมายเหตุ
 
-  // Calculation helper
+  // Calculation helper (Optional: เก็บผลคูณ qty * price เพื่อ query ง่ายขึ้น)
   totalPrice Float @default(0)
 
   // Relation back to Category
   category   DocumentCategory @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade)
-  categoryId String
+  categoryId String           @db.ObjectId
 
   // Ordering
   orderIndex Int @default(0)
@@ -286,7 +294,7 @@ model DocumentItem {
 }
 
 // --------------------------------------
-// Enums
+// Enums (คงเดิม)
 // --------------------------------------
 
 enum eDocumentType {
@@ -322,4 +330,3 @@ enum ProviderAccount {
   Facebook
   Email
 }
-

@@ -1,0 +1,325 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------
+// User & Auth
+// --------------------------------------
+
+model User {
+  userId       String     @id @default(uuid())
+  username     String?
+  userEmail    String     @unique
+  userPassword String
+  userStatus   UserStatus @default(Active)
+  name         String?
+  phone        String?
+
+  // Relations
+  account Account?
+  role    Role?    @relation(fields: [roleId], references: [roleId])
+  roleId  String?
+
+  profile         Profile?
+  companyProfiles CompanyProfile[]
+  address         String?
+  resetTokens     ResetToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userEmail, username])
+}
+
+model Profile {
+  profileId      String  @id @default(uuid())
+  profileName    String?
+  profileSurname String?
+  profileimage   String?
+  profilePhone   String?
+
+  user   User?   @relation(fields: [userId], references: [userId])
+  userId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String         @id @default(uuid())
+  provider          String
+  providerAccountId String?
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         Int?
+  user              User           @relation(fields: [userId], references: [userId])
+  userId            String         @unique
+  verified          VerifiedStatus @default(UnVerified)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+}
+
+model ResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expires   DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [userId])
+  createdAt DateTime @default(now())
+}
+
+model Role {
+  roleId      String   @id @default(uuid())
+  name        RoleName
+  description String?
+  users       User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name])
+}
+
+// --------------------------------------
+// Company & Business
+// --------------------------------------
+
+model CompanyProfile {
+  companyId               String    @id @default(uuid())
+  companyName             String
+  companyAddress          String?
+  companyTaxId            String?
+  companyPhoneNumber      String?
+  companyEmail            String?
+  companyWebsite          String?
+  companyRegistrationDate DateTime?
+  companyBusinessType     String?
+  user                    User      @relation(fields: [userId], references: [userId])
+  userId                  String
+
+  customerCompanies CustomerCompany[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomerCompany {
+  customerCompanyId    String  @id @default(uuid())
+  companyName          String
+  companyTel           String?
+  customerCompanyEmail String?
+  taxId                String?
+  branch               String?
+  companyAddress       String?
+
+  companyProfile CompanyProfile? @relation(fields: [companyId], references: [companyId])
+  companyId      String?
+
+  documentPapers DocumentPaper[]
+  contactors     Contactor[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contactor {
+  contactorId      String  @id @default(uuid())
+  contactorName    String
+  contactorEmail   String?
+  contactorTel     String?
+  contactorAddress String?
+
+  customerCompany   CustomerCompany? @relation(fields: [customerCompanyId], references: [customerCompanyId])
+  customerCompanyId String?
+
+  documentPapers DocumentPaper[]
+
+  // true = สร้างจากหน้า customer management, false = สร้างจาก quotation
+  isStandalone Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --------------------------------------
+// Products Inventory
+// --------------------------------------
+
+model Category {
+  categoryId   String    @id @default(uuid())
+  categoryName String
+  categoryDesc String?
+  products     Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  productId          String  @id @default(uuid())
+  productName        String
+  productSKU         String?
+  productDescription String?
+  productImage       String?
+
+  aboutProduct AboutProduct?
+  category     Category?     @relation(fields: [categoryId], references: [categoryId])
+  categoryId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AboutProduct {
+  aboutProductId String @id @default(uuid())
+
+  product   Product @relation(fields: [productId], references: [productId], onDelete: Cascade)
+  productId String  @unique
+
+  productPrice         Float?  @default(0)
+  productDiscountPrice Float?  @default(0)
+  productStock         Int?    @default(0)
+  productBrand         String?
+  unitName             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --------------------------------------
+// Documents (Quotation/Invoice)
+// --------------------------------------
+
+model DocumentPaper {
+  documentId   String @id @default(uuid())
+  documentIdNo String @unique
+
+  // Details
+  docType         String
+  docMonth        String?
+  docYear         String?
+  documentDetials String? // Keeping typo as requested
+
+  // Relations
+  customerCompany   CustomerCompany? @relation(fields: [customerCompanyId], references: [customerCompanyId])
+  customerCompanyId String?
+
+  contactor   Contactor? @relation(fields: [contactorId], references: [contactorId])
+  contactorId String?
+
+  // Status & Dates
+  documentType   eDocumentType  @default(Quotation)
+  documentStatus DocumentStatus @default(Draft)
+
+  documentCreateDate DateTime? @default(now())
+  documentExpire     DateTime?
+
+  // PricingContext Global State
+  includeVat     Boolean @default(false)
+  taxRate        Float   @default(7)
+  globalDiscount Float   @default(0)
+
+  // Summary Fields
+  withholdingTax Float @default(0)
+
+  // Notes field
+  note String?
+
+  // Relation to Categories
+  categories DocumentCategory[]
+
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentCategory {
+  categoryId String @id @default(uuid())
+  name       String
+
+  // Relation back to Paper
+  documentPaper   DocumentPaper @relation(fields: [documentPaperId], references: [documentId], onDelete: Cascade)
+  documentPaperId String
+
+  // Relation to SubItems
+  items DocumentItem[]
+
+  // Ordering
+  orderIndex Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentItem {
+  itemId String @id @default(uuid())
+
+  name         String?
+  description  String
+  unit         String
+  qty          Float   @default(1)
+  pricePerUnit Float   @default(0)
+  remark       String?
+
+  // Calculation helper
+  totalPrice Float @default(0)
+
+  // Relation back to Category
+  category   DocumentCategory @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade)
+  categoryId String
+
+  // Ordering
+  orderIndex Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --------------------------------------
+// Enums
+// --------------------------------------
+
+enum eDocumentType {
+  Quotation
+}
+
+enum DocumentStatus {
+  Draft
+  Waiting
+  Approve
+  Cancel
+}
+
+enum VerifiedStatus {
+  Verified
+  UnVerified
+}
+
+enum UserStatus {
+  Active
+  InActice
+}
+
+enum RoleName {
+  Developer
+  Administrator
+  User
+  Customer
+}
+
+enum ProviderAccount {
+  Google
+  Facebook
+  Email
+}
+

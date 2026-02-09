@@ -6,10 +6,16 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const search = searchParams.get('search') || '';
+        const showDeleted = searchParams.get('trash') === 'true';
 
         const customers = await prisma.contactor.findMany({
             where: {
                 isStandalone: true, // ดึงเฉพาะที่สร้างจากหน้า customer
+                // กรองตาม isDeleted - รองรับข้อมูลเก่าที่ isDeleted เป็น null/undefined
+                ...(showDeleted
+                    ? { isDeleted: true }
+                    : { NOT: { isDeleted: true } } // แสดงทุกอย่างยกเว้นที่ isDeleted = true
+                ),
                 ...(search ? {
                     OR: [
                         { contactorName: { contains: search, mode: 'insensitive' } },

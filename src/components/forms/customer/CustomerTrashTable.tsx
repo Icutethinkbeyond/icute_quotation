@@ -2,19 +2,20 @@
 
 import React, { useCallback } from "react";
 import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { Box, Button, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { Add, EditCalendar, Delete, Visibility, DeleteSweep } from "@mui/icons-material";
+import { ArrowBack } from "@mui/icons-material";
 import { GenericDataTable } from "@/components/shared/GenericDataTable";
 import { useDataTable } from "@/hooks/useDataTable";
 import { useDebounceSearch } from "@/hooks/useDebounceSearch";
+import { TrashActionButtons } from "@/components/shared/TrashActionButtons";
 import { Customer } from "@/interfaces/Customer";
 
 interface CustomerTableRow extends Customer {
     id: string;
 }
 
-const CustomersTable: React.FC = () => {
+const CustomerTrashTable: React.FC = () => {
     const router = useRouter();
 
     // Data mapping function
@@ -31,7 +32,7 @@ const CustomersTable: React.FC = () => {
         setPaginationModel,
         refresh,
     } = useDataTable<Customer, CustomerTableRow>({
-        apiUrl: "/api/customer",
+        apiUrl: "/api/customer?trash=true",
         mapData: mapCustomerData,
     });
 
@@ -42,19 +43,35 @@ const CustomersTable: React.FC = () => {
         debounceMs: 500,
     });
 
-    const handleDelete = async (contactorId: string) => {
+    const handleRestore = async (contactorId: string) => {
         try {
             const response = await fetch(`/api/customer/${contactorId}`, {
+                method: "PUT",
+            });
+
+            if (response.ok) {
+                refresh();
+            } else {
+                console.error("Failed to restore customer");
+            }
+        } catch (error) {
+            console.error("Error restoring customer:", error);
+        }
+    };
+
+    const handlePermanentDelete = async (contactorId: string) => {
+        try {
+            const response = await fetch(`/api/customer/${contactorId}?permanent=true`, {
                 method: "DELETE",
             });
 
             if (response.ok) {
                 refresh();
             } else {
-                console.error("Failed to delete customer");
+                console.error("Failed to permanently delete customer");
             }
         } catch (error) {
-            console.error("Error deleting customer:", error);
+            console.error("Error permanently deleting customer:", error);
         }
     };
 
@@ -80,73 +97,30 @@ const CustomersTable: React.FC = () => {
                         gap: 0.5,
                     }}
                 >
-                    <Tooltip title="แก้ไข">
-                        <IconButton
-                            size="small"
-                            color="secondary"
-                            onClick={() => router.push(`/customer/edit-customer/${params.row.contactorId}`)}
-                        >
-                            <EditCalendar />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="ดูข้อมูล">
-                        <IconButton
-                            color="primary"
-                            onClick={() => router.push(`/customer/view-customer/${params.row.contactorId}`)}
-                            size="small"
-                        >
-                            <Visibility />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="ลบ">
-                        <IconButton
-                            size="small"
-                            sx={{ color: "#d33" }}
-                            onClick={() => handleDelete(params.row.contactorId)}
-                        >
-                            <Delete />
-                        </IconButton>
-                    </Tooltip>
+                    <TrashActionButtons
+                        itemId={params.row.contactorId}
+                        onRestore={handleRestore}
+                        onPermanentDelete={handlePermanentDelete}
+                    />
                 </Box>
             ),
         },
     ];
 
-    const headerActions = (
-        <>
-            <Button
-                startIcon={<DeleteSweep />}
-                onClick={() => router.push("/customer/trash")}
-                sx={{
-                    backgroundColor: "#ffe2e6",
-                    color: "#d32f2f",
-                    "&:hover": { backgroundColor: "#f9c2c8" },
-                    textTransform: "none",
-                    px: 2,
-                    mr: 1,
-                }}
-            >
-                ถังขยะ
-            </Button>
-            <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => router.push("/customer/new-customer")}
-                sx={{
-                    backgroundColor: "#03c9d7",
-                    color: "#fff",
-                    "&:hover": { backgroundColor: "#05b2bd" },
-                    textTransform: "none",
-                }}
-            >
-                เพิ่มลูกค้าใหม่
-            </Button>
-        </>
+    const customHeader = (
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+            <Box display="flex" alignItems="center" gap={2}>
+                <IconButton onClick={() => router.back()}>
+                    <ArrowBack />
+                </IconButton>
+                <Typography variant="h3">ถังขยะ (ลูกค้า)</Typography>
+            </Box>
+        </Box>
     );
 
     return (
         <GenericDataTable
-            title="ข้อมูลลูกค้าทั้งหมด"
+            title=""
             rows={filteredRows}
             columns={columns}
             loading={loading}
@@ -155,9 +129,9 @@ const CustomersTable: React.FC = () => {
             paginationModel={paginationModel}
             onPaginationChange={setPaginationModel}
             getRowId={(row) => row.id}
-            headerActions={headerActions}
+            customHeader={customHeader}
         />
     );
 };
 
-export default CustomersTable;
+export default CustomerTrashTable;

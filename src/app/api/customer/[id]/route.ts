@@ -62,19 +62,58 @@ export async function PATCH(
     }
 }
 
-// DELETE - ลบลูกค้า
-export async function DELETE(
+// PUT - กู้คืนลูกค้าจากถังขยะ (Restore)
+export async function PUT(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
         const contactorId = params.id;
 
-        await prisma.contactor.delete({
-            where: { contactorId }
+        const restoredCustomer = await prisma.contactor.update({
+            where: { contactorId },
+            data: {
+                isDeleted: false,
+                deletedAt: null,
+            }
         });
 
-        return NextResponse.json({ success: true, message: 'Customer deleted' });
+        return NextResponse.json({ success: true, customer: restoredCustomer });
+    } catch (error) {
+        console.error("Error restoring customer:", error);
+        return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+
+// DELETE - ลบลูกค้า (Soft delete หรือ Permanent delete)
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const contactorId = params.id;
+        const { searchParams } = new URL(req.url);
+        const permanent = searchParams.get('permanent') === 'true';
+
+        if (permanent) {
+            // Permanent delete - ลบออกจาก database จริงๆ
+            await prisma.contactor.delete({
+                where: { contactorId }
+            });
+            return NextResponse.json({ success: true, message: 'Customer permanently deleted' });
+        } else {
+            // Soft delete - ย้ายไปถังขยะ
+            await prisma.contactor.update({
+                where: { contactorId },
+                data: {
+                    isDeleted: true,
+                    deletedAt: new Date(),
+                }
+            });
+            return NextResponse.json({ success: true, message: 'Customer moved to trash' });
+        }
     } catch (error) {
         console.error("Error deleting customer:", error);
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

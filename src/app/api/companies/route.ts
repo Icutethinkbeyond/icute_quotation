@@ -7,8 +7,18 @@ import prisma from '@/../lib/prisma';
 // Retrieves all company profiles.
 export async function GET(req: NextRequest) {
     try {
+        const { searchParams } = new URL(req.url);
+        const showDeleted = searchParams.get('trash') === 'true';
+
         // Fallback Strategy: Get ALL CompanyProfiles
         const companyProfiles = await prisma.companyProfile.findMany({
+            where: {
+                // กรองตาม isDeleted - รองรับข้อมูลเก่าที่ isDeleted เป็น null/undefined
+                ...(showDeleted
+                    ? { isDeleted: true }
+                    : { NOT: { isDeleted: true } } // แสดงทุกอย่างยกเว้นที่ isDeleted = true
+                ),
+            },
             include: {
                 user: {
                     select: {

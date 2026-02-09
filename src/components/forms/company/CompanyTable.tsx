@@ -4,7 +4,7 @@ import React, { useCallback } from "react";
 import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { Box, Button, IconButton, Tooltip } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { Add, EditCalendar, Delete, Visibility } from "@mui/icons-material";
+import { Add, EditCalendar, Delete, Visibility, DeleteSweep } from "@mui/icons-material";
 import { GenericDataTable } from "@/components/shared/GenericDataTable";
 import { useDataTable } from "@/hooks/useDataTable";
 import { useDebounceSearch } from "@/hooks/useDebounceSearch";
@@ -43,21 +43,15 @@ const CompanyTable = () => {
     });
 
     const handleDelete = async (id: string) => {
-        if (!confirm("คุณต้องการลบข้อมูลบริษัทนี้ใช่หรือไม่?")) {
-            return;
-        }
-
         try {
             const res = await fetch(`/api/companies/${id}`, { method: "DELETE" });
             if (res.ok) {
-                alert("ลบข้อมูลสำเร็จ");
                 refresh();
             } else {
-                alert("ลบข้อมูลไม่สำเร็จ");
+                console.error("Failed to delete company");
             }
         } catch (error) {
             console.error("Error deleting company:", error);
-            alert("เกิดข้อผิดพลาดในการลบข้อมูล");
         }
     };
 
@@ -116,19 +110,35 @@ const CompanyTable = () => {
     ];
 
     const headerActions = (
-        <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => router.push("/company/new-company")}
-            sx={{
-                backgroundColor: "#03c9d7",
-                color: "#fff",
-                "&:hover": { backgroundColor: "#05b2bd" },
-                textTransform: "none",
-            }}
-        >
-            เพิ่มบริษัท
-        </Button>
+        <>
+            <Button
+                startIcon={<DeleteSweep />}
+                onClick={() => router.push("/company/trash")}
+                sx={{
+                    backgroundColor: "#ffe2e6",
+                    color: "#d32f2f",
+                    "&:hover": { backgroundColor: "#f9c2c8" },
+                    textTransform: "none",
+                    px: 2,
+                    mr: 1,
+                }}
+            >
+                ถังขยะ
+            </Button>
+            <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => router.push("/company/new-company")}
+                sx={{
+                    backgroundColor: "#03c9d7",
+                    color: "#fff",
+                    "&:hover": { backgroundColor: "#05b2bd" },
+                    textTransform: "none",
+                }}
+            >
+                เพิ่มบริษัท
+            </Button>
+        </>
     );
 
     return (

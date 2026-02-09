@@ -62,16 +62,59 @@ export async function PATCH(
     }
 }
 
+// PUT - กู้คืนสินค้าจากถังขยะ (Restore)
+export async function PUT(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const restoredProduct = await prisma.product.update({
+            where: { productId: params.id },
+            data: {
+                isDeleted: false,
+                deletedAt: null,
+            },
+            include: {
+                category: true,
+                aboutProduct: true,
+            }
+        });
+
+        return NextResponse.json({ success: true, product: restoredProduct });
+    } catch (error) {
+        console.error("Error restoring product:", error);
+        return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+
+// DELETE - ลบสินค้า (Soft delete หรือ Permanent delete)
 export async function DELETE(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        await prisma.product.delete({
-            where: { productId: params.id }
-        });
+        const { searchParams } = new URL(req.url);
+        const permanent = searchParams.get('permanent') === 'true';
 
-        return NextResponse.json({ success: true });
+        if (permanent) {
+            // Permanent delete - ลบออกจาก database จริงๆ
+            await prisma.product.delete({
+                where: { productId: params.id }
+            });
+            return NextResponse.json({ success: true, message: 'Product permanently deleted' });
+        } else {
+            // Soft delete - ย้ายไปถังขยะ
+            await prisma.product.update({
+                where: { productId: params.id },
+                data: {
+                    isDeleted: true,
+                    deletedAt: new Date(),
+                }
+            });
+            return NextResponse.json({ success: true, message: 'Product moved to trash' });
+        }
     } catch (error) {
         console.error("Error deleting product:", error);
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

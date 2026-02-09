@@ -3,7 +3,17 @@ import prisma from '@/../lib/prisma';
 
 export async function GET(req: NextRequest) {
     try {
+        const { searchParams } = new URL(req.url);
+        const showDeleted = searchParams.get('trash') === 'true';
+
         const products = await prisma.product.findMany({
+            where: {
+                // กรองตาม isDeleted - รองรับข้อมูลเก่าที่ isDeleted เป็น null/undefined
+                ...(showDeleted
+                    ? { isDeleted: true }
+                    : { NOT: { isDeleted: true } } // แสดงทุกอย่างยกเว้นที่ isDeleted = true
+                ),
+            },
             include: {
                 category: true,
                 aboutProduct: true,
@@ -13,7 +23,7 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        console.log(`Fetched ${products.length} products`);
+        console.log(`Fetched ${products.length} products (trash=${showDeleted})`);
         return NextResponse.json(products);
     } catch (error) {
         console.error("Error fetching products:", error);

@@ -44,7 +44,7 @@ export async function GET(
 }
 
 // ============================================================================
-// PUT: Update Single Company by ID
+// PUT: Update Company OR Restore from Trash
 // ============================================================================
 export async function PUT(
     req: NextRequest,
@@ -53,6 +53,24 @@ export async function PUT(
     try {
         const { id } = params;
         const body = await req.json();
+
+        if (!id) {
+            return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
+        }
+
+        // ถ้าไม่มี body หรือ body ว่างเปล่า = Restore from trash
+        if (!body || Object.keys(body).length === 0) {
+            const restoredCompany = await prisma.companyProfile.update({
+                where: { companyId: id },
+                data: {
+                    isDeleted: false,
+                    deletedAt: null,
+                },
+            });
+            return NextResponse.json(restoredCompany);
+        }
+
+        // มี body = Update company data
         const {
             companyName,
             companyAddress,
@@ -63,10 +81,6 @@ export async function PUT(
             companyBusinessType,
             companyRegistrationDate,
         } = body;
-
-        if (!id) {
-            return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
-        }
 
         const updatedProfile = await prisma.companyProfile.update({
             where: { companyId: id },
@@ -95,7 +109,7 @@ export async function PUT(
 }
 
 // ============================================================================
-// DELETE: Remove Single Company by ID
+// DELETE: Soft Delete OR Permanent Delete Company
 // ============================================================================
 export async function DELETE(
     req: NextRequest,
@@ -103,16 +117,30 @@ export async function DELETE(
 ) {
     try {
         const { id } = params;
+        const { searchParams } = new URL(req.url);
+        const permanent = searchParams.get('permanent') === 'true';
 
         if (!id) {
             return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
         }
 
-        await prisma.companyProfile.delete({
-            where: { companyId: id },
-        });
-
-        return NextResponse.json({ message: 'Company deleted successfully' });
+        if (permanent) {
+            // Permanent delete - ลบออกจาก database จริงๆ
+            await prisma.companyProfile.delete({
+                where: { companyId: id },
+            });
+            return NextResponse.json({ message: 'Company permanently deleted' });
+        } else {
+            // Soft delete - ย้ายไปถังขยะ
+            await prisma.companyProfile.update({
+                where: { companyId: id },
+                data: {
+                    isDeleted: true,
+                    deletedAt: new Date(),
+                },
+            });
+            return NextResponse.json({ message: 'Company moved to trash' });
+        }
     } catch (error) {
         console.error("Error deleting company profile:", error);
         return NextResponse.json(

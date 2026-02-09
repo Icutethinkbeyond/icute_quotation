@@ -67,34 +67,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Company Name is required' }, { status: 400 });
         }
 
-        // We need a userId to link to (Schema Requirement).
-        // Since we allow multiple companies, we link them all to the SAME fallback user for now,
-        // or a specific user if auth was implemented.
+        // We try to link to a fallback user if available, but it is no longer mandatory.
         const firstUser = await prisma.user.findFirst();
 
-        if (!firstUser) {
-            return NextResponse.json({ error: 'No users found in system to link company profile to.' }, { status: 400 });
-        }
+        // if (!firstUser) {
+        //     return NextResponse.json({ error: 'No users found in system to link company profile to.' }, { status: 400 });
+        // }
 
-        // Note: The schema has `userId String @unique`, which means ONE user can only have ONE CompanyProfile.
-        // Wait, checking schema again:
-        // model CompanyProfile { ... userId String @unique ... }
-        // YES! The schema enforces 1-to-1 relationship between User and CompanyProfile.
-        // If the user wants multiple "Companies", it implies "Customer Companies" OR we need to change schema.
-        // BUT the user said "Add Company Info" (generic).
-        // If I try to create another one with same userId, it will FAIL.
+        // Note: The schema has `userId String?`, so we can leave it null.
 
-        // WORKAROUND:
-        // If the schema enforces 1-to-1, we CANNOT create multiple CompanyProfiles for the same user.
-        // Either we:
-        // 1. Tell user "You can only have one company profile".
-        // 2. Or, if they mean "Customer Companies", we should be using `CustomerCompany` model.
-        // Let's look at `CustomerCompany` model.
-        // model CustomerCompany { ... } - This looks like "my customers".
-
-        // If the user wants to manage "My Companies" (multiple branches?), the schema `CompanyProfile` (1-to-1) is the limiter.
-        // HOWEVER, to fulfill the request "Add Company Page", I will assume they might want to ADD data.
-        // If I cannot add multiple, I must UPDATE if exists.
         // Create NEW Company Profile
         const newProfile = await prisma.companyProfile.create({
             data: {
@@ -106,7 +87,7 @@ export async function POST(req: NextRequest) {
                 companyWebsite,
                 companyBusinessType,
                 companyRegistrationDate: companyRegistrationDate ? new Date(companyRegistrationDate) : null,
-                userId: firstUser.userId,
+                userId: firstUser?.userId ?? undefined,
             },
         });
 

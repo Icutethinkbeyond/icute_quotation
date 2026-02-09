@@ -103,8 +103,8 @@ model CompanyProfile {
   companyWebsite          String?
   companyRegistrationDate DateTime?
   companyBusinessType     String?
-  user                    User      @relation(fields: [userId], references: [userId])
-  userId                  String    @db.ObjectId
+  user                    User?     @relation(fields: [userId], references: [userId])
+  userId                  String?   @db.ObjectId
 
   customerCompanies CustomerCompany[]
 

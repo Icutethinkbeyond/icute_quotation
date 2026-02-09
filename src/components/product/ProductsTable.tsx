@@ -47,12 +47,10 @@ const ProductsTable: React.FC = () => {
     const { searchQuery, setSearchQuery, filteredRows } = useDebounceSearch({
         rows,
         searchFields: ["productName", "description"],
-        debounceMs: 1000,
+        debounceMs: 500,
     });
 
     const handleDelete = async (productId: string) => {
-        if (!confirm("ต้องการลบสินค้านี้ใช่หรือไม่?")) return;
-
         try {
             const response = await fetch(`/api/inventory/product/${productId}`, {
                 method: "DELETE",
@@ -69,22 +67,17 @@ const ProductsTable: React.FC = () => {
     };
 
     const columns: GridColDef[] = [
-        { field: "productName", headerName: "ชื่อสินค้า", flex: 1, minWidth: 200 },
-        { field: "description", headerName: "รายละเอียด", flex: 1, minWidth: 200 },
+        { field: "productName", headerName: "ชื่อสินค้า", flex: 3, type: "string", },
+        { field: "description", headerName: "รายละเอียด", flex: 3, type: "string", },
+        { field: "price", headerName: "ราคา", flex: 3, type: "number", },
+        { field: "unit", headerName: "หน่วย", flex: 3, type: "string", },
         {
-            field: "price",
-            headerName: "ราคา",
-            width: 150,
-            valueFormatter: (value) => `${Number(value).toLocaleString("th-TH")} บาท`,
-        },
-        { field: "unit", headerName: "หน่วย", width: 120 },
-        {
-            field: "actions",
+            field: "Actions",
             headerName: "การจัดการ",
             headerAlign: "center",
             align: "center",
             disableColumnMenu: true,
-            width: 160,
+            width: 150,
             sortable: false,
             renderCell: (params: GridRenderCellParams) => (
                 <Box
@@ -101,16 +94,16 @@ const ProductsTable: React.FC = () => {
                             color="secondary"
                             onClick={() => router.push(`/product/edit/${params.row.id}`)}
                         >
-                            <EditCalendar fontSize="small" />
+                            <EditCalendar />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="ดูข้อมูล">
                         <IconButton
-                            size="small"
                             color="primary"
                             onClick={() => router.push(`/product/view-product/${params.row.id}`)}
+                            size="small"
                         >
-                            <Visibility fontSize="small" />
+                            <Visibility />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="ลบ">
@@ -119,7 +112,7 @@ const ProductsTable: React.FC = () => {
                             sx={{ color: "#d33" }}
                             onClick={() => handleDelete(params.row.id)}
                         >
-                            <Delete fontSize="small" />
+                            <Delete />
                         </IconButton>
                     </Tooltip>
                 </Box>

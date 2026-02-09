@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -25,10 +26,10 @@ model User {
   role    Role?    @relation(fields: [roleId], references: [roleId])
   roleId  String?  @db.ObjectId
 
-  profile        Profile?
+  profile         Profile?
   companyProfiles CompanyProfile[]
-  address        String?
-  resetTokens    ResetToken[]
+  address         String?
+  resetTokens     ResetToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

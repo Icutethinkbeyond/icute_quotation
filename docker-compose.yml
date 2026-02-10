@@ -1,0 +1,24 @@
+services:
+  icute-booking:
+    # build:
+    #   context: .  # กำหนดว่า context คือโฟลเดอร์ปัจจุบัน (รวม Dockerfile)
+    image: thanapongc/project:icute-quotation
+    env_file:
+      - .env.production
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    container_name: icute-quotation
+    ports:
+      - "3002:3000"  # เชื่อมต่อพอร์ต 3001 ของเครื่องโฮสต์กับพอร์ต 3000 ในคอนเทนเนอร์
+    networks:
+      - icute-quotation
+    # depends_on:
+    #   - nginx
+
+
+networks:
+  icute-quotation:
+    driver: bridge

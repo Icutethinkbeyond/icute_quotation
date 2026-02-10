@@ -1,0 +1,183 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # Trigger เมื่อ push ไปยัง branch main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # ขั้นตอนที่ 1: ตรวจสอบ Secrets
+    - name: Validate Secrets
+      run: |
+        REQUIRED_SECRETS=("SSH_PRIVATE_KEY" "DATABASE_URL" "NEXTAUTH_SECRET" "NEXTAUTH_URL")
+        for SECRET in "${REQUIRED_SECRETS[@]}"; do
+          # ใช้การเข้าถึง secrets อย่างเฉพาะเจาะจง
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ] && [ "$SECRET" == "SSH_PRIVATE_KEY" ]; then
+            echo "❌ Missing SSH_PRIVATE_KEY in Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DATABASE_URL }}" ] && [ "$SECRET" == "DATABASE_URL" ]; then
+            echo "❌ Missing DATABASE_URL in Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.NEXTAUTH_SECRET }}" ] && [ "$SECRET" == "NEXTAUTH_SECRET" ]; then
+            echo "❌ Missing NEXTAUTH_SECRET in Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.NEXTAUTH_URL }}" ] && [ "$SECRET" == "NEXTAUTH_URL" ]; then
+            echo "❌ Missing NEXTAUTH_URL in Secrets"
+            exit 1
+          fi
+        done
+        echo "✅ All required Secrets are present."
+
+    # ขั้นตอนที่ 2: Checkout โค้ดจาก GitHub
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # ขั้นตอนที่ 3: ตั้งค่า SSH
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan -H ${{ secrets.HOST_NAME }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+    # ขั้นตอนที่ 4: ทดสอบการเชื่อมต่อ SSH
+    - name: Test SSH Connection
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} "echo 'SSH connection successful'"
+
+    # ขั้นตอนที่ 5: Deploy โค้ดไปยังเซิร์ฟเวอร์
+    - name: Deploy Code to VPS Server
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} << 'EOF'
+
+          set -e  # หยุดการทำงานทันทีถ้าเจอ error
+
+          # ตั้งค่าโฟลเดอร์โปรเจกต์และ repository URL
+          REPO_DIR="/home/icute-quotation"
+          REPO_URL="https://${{ secrets.PERSONAL_TOKEN }}@github.com/thanapongC/icute_quotation.git"
+
+          # ตรวจสอบว่าโฟลเดอร์ repository มีอยู่หรือไม่
+          if [ -d "$REPO_DIR" ]; then
+              echo "✅ Directory exists. Checking for updates..."
+              cd $REPO_DIR
+
+              # ดึง commit hash ล่าสุดจาก remote
+              REMOTE_COMMIT=$(git ls-remote $REPO_URL refs/heads/main | awk '{print $1}')
+              LOCAL_COMMIT=$(git rev-parse HEAD)
+              git config --global --add safe.directory $REPO_DIR
+
+              # เปรียบเทียบ commit hash
+              if [ "$REMOTE_COMMIT" != "$LOCAL_COMMIT" ]; then
+                  echo "✅ Local repository is out of sync. Pulling latest changes..."
+                  sudo git fetch --all
+                  sudo git reset --hard origin/main
+              else
+                  echo "✅ Repository is already up to date."
+              fi
+          else
+              echo "❌ Directory does not exist. Cloning repository..."
+              cd /home
+              sudo git clone $REPO_URL
+              cd $REPO_DIR
+          fi
+        EOF
+
+    # ขั้นตอนที่ 6: Deploy โค้ดไปยังเซิร์ฟเวอร์
+    - name: Nginx Settings
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} << 'EOF'
+
+          set -e  # หยุดการทำงานทันทีถ้าเจอ error
+          # ตั้งค่าโฟลเดอร์โปรเจกต์และ repository URL
+
+          DOMAIN="quotation.icute.site"
+          REPO_DIR="/home/icute-quotation/nginx"
+          ADMIN_EMAIL="thanapognchunchombun@gmail.com"
+
+          # ใช้ find เพื่อหาชื่อไฟล์เดียวในโฟลเดอร์
+          # CONF_FILE=$(find /home/repair-request-system -name "*.conf" | head -n 1)
+
+          cd $REPO_DIR
+
+          # ใช้ find เพื่อหาชื่อไฟล์
+          if [ ! -f "$DOMAIN" ]; then
+            echo "❌ Configuration file $DOMAIN not found in $REPO_DIR"
+            exit 1
+          else
+            echo "✅ Found $DOMAIN in $REPO_DIR"
+          fi
+          
+          echo "✅ Moving Nginx File..."
+          sudo cp $DOMAIN -f /etc/nginx/sites-available/
+          
+          # สร้าง symbolic link ไปที่ /etc/nginx/sites-enabled/
+          # ln -sf /etc/nginx/sites-available/$(basename $CONF_FILE) /etc/nginx/sites-enabled/
+          echo "✅ Linking Nginx File..."
+          sudo ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
+
+          # ตรวจสอบ syntax ของ Nginx
+          echo "🔍 Checking Nginx configuration syntax..."
+          sudo nginx -t
+          if [ $? -ne 0 ]; then
+              echo "❌ Nginx configuration syntax error"
+              exit 1
+          fi
+
+          # รีสตาร์ท nginx
+          echo "✅ Restarting Nginx..."
+          sudo systemctl restart nginx
+
+          # ติดตั้ง SSL
+           echo "✅ Installing SSL..."
+          # sudo certbot --nginx -d $DOMAIN -d $DOMAIN --non-interactive --agree-tos --redirect --email $ADMIN_EMAIL
+
+          # ตรวจสอบ SSL สำหรับโดเมน
+          # if ! certbot certificates | grep -q "$DOMAIN"; then
+            # echo "❌ SSL not found. Installing SSL..."
+            # certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email $ADMIN_EMAIL
+            # sudo certbot --nginx -d $DOMAIN -d $DOMAIN --non-interactive --agree-tos --redirect --email $ADMIN_EMAIL
+
+          # else
+            # echo "✅ SSL is already installed."
+          # fi
+        EOF
+
+    # ขั้นตอนที่ 7: Run Docker Image
+    - name: Run Docker Image And Cleaning
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} << 'EOF'
+
+          set -e  # หยุดการทำงานทันทีถ้าเจอ error
+          REPO_DIR="/home/icute-quotation"
+
+          cd $REPO_DIR
+
+          # สร้างไฟล์ .env ชั่วคราว
+          echo 'NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}' | sudo tee .env.production > /dev/null
+          echo 'NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}'     | sudo tee -a .env.production > /dev/null
+          echo 'DATABASE_URL=${{ secrets.DATABASE_URL }}'     | sudo tee -a .env.production > /dev/null
+
+
+          # Run Docker Container
+          sudo docker stop icute-booking || true
+          sudo docker rm icute-booking || true
+          # docker-compose up -d
+          sudo docker-compose rm -f
+          sudo docker-compose pull
+          sudo docker-compose up --build -d
+          sudo docker system prune -a -f
+
+          # ลบ Environment Variables และไฟล์ .env
+          # sudo unset NEXTAUTH_SECRET NEXTAUTH_URL DATABASE_URL
+          sudo rm -f .env.production
+
+          echo "✅ Deployment completed and cleaned up."
+        EOF

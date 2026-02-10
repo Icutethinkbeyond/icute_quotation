@@ -137,7 +137,7 @@ jobs:
 
           # ติดตั้ง SSL
            echo "✅ Installing SSL..."
-          # sudo certbot --nginx -d $DOMAIN -d $DOMAIN --non-interactive --agree-tos --redirect --email $ADMIN_EMAIL
+          sudo certbot --nginx -d $DOMAIN -d $DOMAIN --non-interactive --agree-tos --redirect --email $ADMIN_EMAIL
 
           # ตรวจสอบ SSL สำหรับโดเมน
           # if ! certbot certificates | grep -q "$DOMAIN"; then

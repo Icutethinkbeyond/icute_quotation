@@ -13,7 +13,7 @@ jobs:
     # ขั้นตอนที่ 1: ตรวจสอบ Secrets
     - name: Validate Secrets
       run: |
-        REQUIRED_SECRETS=("SSH_PRIVATE_KEY" "DATABASE_URL" "NEXTAUTH_SECRET" "NEXTAUTH_URL")
+        REQUIRED_SECRETS=("SSH_PRIVATE_KEY" "DATABASE_URL" "NEXTAUTH_SECRET" "NEXTAUTH_URL" "PERSONAL_TOKEN")
         for SECRET in "${REQUIRED_SECRETS[@]}"; do
           # ใช้การเข้าถึง secrets อย่างเฉพาะเจาะจง
           if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ] && [ "$SECRET" == "SSH_PRIVATE_KEY" ]; then
@@ -30,6 +30,10 @@ jobs:
           fi
           if [ -z "${{ secrets.NEXTAUTH_URL }}" ] && [ "$SECRET" == "NEXTAUTH_URL" ]; then
             echo "❌ Missing NEXTAUTH_URL in Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.PERSONAL_TOKEN }}" ] && [ "$SECRET" == "PERSONAL_TOKEN" ]; then
+            echo "❌ Missing PERSONAL_TOKEN in Secrets"
             exit 1
           fi
         done
@@ -78,7 +82,7 @@ jobs:
           set -e  # หยุดการทำงานทันทีถ้าเจอ error
 
           # ตั้งค่าโฟลเดอร์โปรเจกต์และ repository URL
-          REPO_DIR="/home/icute-quotation"
+          REPO_DIR="/home/icute_quotation"
           REPO_URL="https://${{ secrets.PERSONAL_TOKEN }}@github.com/thanapongC/icute_quotation.git"
 
           # ตรวจสอบว่าโฟลเดอร์ repository มีอยู่หรือไม่
@@ -116,7 +120,7 @@ jobs:
           # ตั้งค่าโฟลเดอร์โปรเจกต์และ repository URL
 
           DOMAIN="quotation.icute.site"
-          REPO_DIR="/home/icute-quotation/nginx"
+          REPO_DIR="/home/icute_quotation/nginx"
           ADMIN_EMAIL="thanapognchunchombun@gmail.com"
 
           # ใช้ find เพื่อหาชื่อไฟล์เดียวในโฟลเดอร์
@@ -173,7 +177,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} << 'EOF'
 
           set -e  # หยุดการทำงานทันทีถ้าเจอ error
-          REPO_DIR="/home/icute-quotation"
+          REPO_DIR="/home/icute_quotation"
 
           cd $REPO_DIR
 

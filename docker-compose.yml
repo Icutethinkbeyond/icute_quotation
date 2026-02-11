@@ -1,5 +1,5 @@
 services:
-  icute-booking:
+  icute-quotation:
     # build:
     #   context: .  # กำหนดว่า context คือโฟลเดอร์ปัจจุบัน (รวม Dockerfile)
     image: thanapongc/project:icute-quotation

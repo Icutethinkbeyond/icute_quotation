@@ -188,8 +188,8 @@ jobs:
 
 
           # Run Docker Container
-          sudo docker stop icute-booking || true
-          sudo docker rm icute-booking || true
+          sudo docker stop icute-quotation || true
+          sudo docker rm icute-quotation || true
           # docker-compose up -d
           sudo docker-compose rm -f
           sudo docker-compose pull

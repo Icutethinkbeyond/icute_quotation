@@ -63,7 +63,7 @@ jobs:
 
               # 5. Scan Hosts
               ssh-keyscan -v -H ${{ secrets.HOST_NAME }} >> ~/.ssh/known_hosts
-              ssh-keyscan -v -H github.com >> ~/.ssh/known_hosts
+            # ssh-keyscan -v -H github.com >> ~/.ssh/known_hosts
 
     # ขั้นตอนที่ 4: ทดสอบการเชื่อมต่อ SSH
     - name: Test SSH Connection

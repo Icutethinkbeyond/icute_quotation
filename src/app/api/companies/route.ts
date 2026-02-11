@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/../lib/prisma';
+import { CompanyProfile } from '@/interfaces/Company';
 
 // ============================================================================
 // GET: Fetch All Companies
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
 // Create a NEW company profile.
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
+        const body: CompanyProfile = await req.json();
         const {
             companyName,
             companyAddress,
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
                 companyWebsite,
                 companyBusinessType,
                 companyRegistrationDate: companyRegistrationDate ? new Date(companyRegistrationDate) : null,
+                isDeleted: false,
                 userId: firstUser?.userId ?? undefined,
             },
         });

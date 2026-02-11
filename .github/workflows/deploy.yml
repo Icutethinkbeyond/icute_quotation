@@ -40,16 +40,30 @@ jobs:
       uses: actions/checkout@v3
 
     # ขั้นตอนที่ 3: ตั้งค่า SSH
-    ####### echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
     - name: Set up SSH
       run: |
-        mkdir -p ~/.ssh
-        cat <<'EOF' > ~/.ssh/id_ed25519
-        ${{ secrets.SSH_PRIVATE_KEY }}
-        EOF
-        chmod 600 ~/.ssh/id_ed25519
-        ssh-keyscan -H ${{ secrets.HOST_NAME }} >> ~/.ssh/known_hosts
-        ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+              # เปิดโหมด Debug เพื่อให้แสดงทุกคำสั่งที่กำลังรัน
+              set -x
+              
+              # 1. ตรวจสอบว่าโฟลเดอร์มีอยู่ไหม
+              mkdir -p ~/.ssh
+              
+              # 2. ตรวจสอบว่า Secret ถูกส่งมาจริงหรือไม่ (แสดงแค่ความยาว เพื่อความปลอดภัย)
+              if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+                echo "Error: SSH_PRIVATE_KEY is empty!"
+                exit 1
+              fi
+              
+              # 3. เขียนไฟล์ Key
+              echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_ed25519
+              chmod 600 ~/.ssh/id_ed25519
+              
+              # 4. ตรวจสอบ Format ของ Key ว่า Valid หรือไม่
+              ssh-keygen -l -f ~/.ssh/id_ed25519 || echo "Invalid Key Format!"
+
+              # 5. Scan Hosts
+              ssh-keyscan -v -H ${{ secrets.HOST_NAME }} >> ~/.ssh/known_hosts
+              ssh-keyscan -v -H github.com >> ~/.ssh/known_hosts
 
     # ขั้นตอนที่ 4: ทดสอบการเชื่อมต่อ SSH
     - name: Test SSH Connection

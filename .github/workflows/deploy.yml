@@ -88,12 +88,13 @@ jobs:
           # ตรวจสอบว่าโฟลเดอร์ repository มีอยู่หรือไม่
           if [ -d "$REPO_DIR" ]; then
               echo "✅ Directory exists. Checking for updates..."
+              sudo git config --global --add safe.directory $REPO_DIR
               cd $REPO_DIR
 
               # ดึง commit hash ล่าสุดจาก remote
               REMOTE_COMMIT=$(git ls-remote $REPO_URL refs/heads/main | awk '{print $1}')
               LOCAL_COMMIT=$(git rev-parse HEAD)
-              git config --global --add safe.directory $REPO_DIR
+              
 
               # เปรียบเทียบ commit hash
               if [ "$REMOTE_COMMIT" != "$LOCAL_COMMIT" ]; then

@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "npx prisma generate --no-engine && npx prisma db push && next dev",
-    "postinstall": "prisma generate",
     "build": "next build",
     "start": "next start",
     "docker": "docker build --platform linux/amd64 --build-arg DATABASE_URL=DATABASE_URL_FAKE --build-arg NEXTAUTH_SECRET=NEXTAUTH_SECRET_FAKE --build-arg NEXTAUTH_URL=NEXTAUTH_URL_FAKE -t thanapongc/project:icute-quotation . && docker push thanapongc/project:icute-quotation",

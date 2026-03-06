@@ -85,10 +85,10 @@ jobs:
           REPO_DIR="/home/icute_quotation"
           REPO_URL="https://${{ secrets.PERSONAL_TOKEN }}@github.com/thanapongC/icute_quotation.git"
 
-          sudo git config --global --add safe.directory $REPO_DIR
 
           # ตรวจสอบว่าโฟลเดอร์ repository มีอยู่หรือไม่
           if [ -d "$REPO_DIR" ]; then
+              git config --global --add safe.directory /home/icute_quotation
               echo "✅ Directory exists. Checking for updates..."
               cd $REPO_DIR
 

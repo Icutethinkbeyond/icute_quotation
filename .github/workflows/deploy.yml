@@ -72,12 +72,12 @@ jobs:
     # ขั้นตอนที่ 4: ทดสอบการเชื่อมต่อ SSH
     - name: Test SSH Connection
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} "echo 'SSH connection successful'"
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 sendmail9_noreply@${{ secrets.HOST_NAME }} "echo 'SSH connection successful'"
 
     # ขั้นตอนที่ 5: Deploy โค้ดไปยังเซิร์ฟเวอร์
     - name: Deploy Code to VPS Server
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 sendmail9_noreply@${{ secrets.HOST_NAME }} << 'EOF'
 
           set -e  # หยุดการทำงานทันทีถ้าเจอ error
 
@@ -116,7 +116,7 @@ jobs:
     # ขั้นตอนที่ 6: Deploy โค้ดไปยังเซิร์ฟเวอร์
     - name: Nginx Settings
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 sendmail9_noreply@${{ secrets.HOST_NAME }} << 'EOF'
 
           set -e  # หยุดการทำงานทันทีถ้าเจอ error
           # ตั้งค่าโฟลเดอร์โปรเจกต์และ repository URL
@@ -176,7 +176,7 @@ jobs:
     # ขั้นตอนที่ 7: Run Docker Image
     - name: Run Docker Image And Cleaning
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 thanapongchun@${{ secrets.HOST_NAME }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 sendmail9_noreply@${{ secrets.HOST_NAME }} << 'EOF'
 
           set -e  # หยุดการทำงานทันทีถ้าเจอ error
           REPO_DIR="/home/icute_quotation"

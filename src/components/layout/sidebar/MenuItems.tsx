@@ -5,6 +5,7 @@ import {
   IconPackage,
   IconBuilding,
   IconUsers,
+  IconRulerMeasure,
 } from "@tabler/icons-react";
 
 import { uniqueId } from "lodash";
@@ -34,6 +35,12 @@ export const useMenuItems = () => {
       title: "ข้อมูลสินค้า",
       icon: IconPackage,
       href: `/product`,
+    },
+    {
+      id: uniqueId(),
+      title: "ข้อมูลหน่วยสินค้า",
+      icon: IconRulerMeasure,
+      href: `/unit`,
     },
   ];
 };

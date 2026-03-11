@@ -47,29 +47,132 @@ export async function POST(req: NextRequest) {
         // Generate a Document ID
         const docIdNo = `QT-${Date.now()}`;
 
-        // Create Customer Company
-        const customer = await prisma.customerCompany.create({
-            data: {
-                companyName: data.companyName,
-                taxId: data.taxId,
-                companyTel: data.companyTel,
-                branch: data.branch,
-                companyAddress: data.companyAddress,
+        // 1. Handle CompanyProfile (Our Company)
+        // Check if our company exists in CompanyProfile, if not create it
+        if (data.companyName) {
+            const existingCompanyProfile = await prisma.companyProfile.findFirst({
+                where: { companyName: data.companyName }
+            });
+
+            if (!existingCompanyProfile) {
+                const firstUser = await prisma.user.findFirst();
+                await prisma.companyProfile.create({
+                    data: {
+                        companyName: data.companyName,
+                        companyTaxId: data.taxId,
+                        companyPhoneNumber: data.companyTel,
+                        companyAddress: data.companyAddress,
+                        userId: firstUser?.userId,
+                    }
+                });
+                console.log("✅ Auto-created new CompanyProfile:", data.companyName);
             }
+        }
+
+        // 2. Handle CustomerCompany
+        // Check if customer company exists, if not create it
+        let customer = await prisma.customerCompany.findFirst({
+            where: { companyName: data.companyName }
         });
 
-        // Create Contactor
-        const contactor = await prisma.contactor.create({
-            data: {
+        if (!customer) {
+            customer = await prisma.customerCompany.create({
+                data: {
+                    companyName: data.companyName,
+                    taxId: data.taxId,
+                    companyTel: data.companyTel,
+                    branch: data.branch,
+                    companyAddress: data.companyAddress,
+                }
+            });
+            console.log("✅ Auto-created new CustomerCompany:", data.companyName);
+        } else {
+            // Optional: Update existing customer company info if it matches the name
+            customer = await prisma.customerCompany.update({
+                where: { customerCompanyId: customer.customerCompanyId },
+                data: {
+                    taxId: data.taxId,
+                    companyTel: data.companyTel,
+                    branch: data.branch,
+                    companyAddress: data.companyAddress,
+                }
+            });
+        }
+
+        // 3. Handle Contactor
+        // Check if contactor exists for this customer company, if not create it
+        let contactor = await prisma.contactor.findFirst({
+            where: {
                 contactorName: data.contactorName,
-                contactorTel: data.contactorTel,
-                contactorEmail: data.contactorEmail,
-                contactorAddress: data.contactorAddress,
-                customerCompanyId: customer.customerCompanyId,
+                customerCompanyId: customer.customerCompanyId
             }
         });
 
-        // Create DocumentPaper
+        if (!contactor) {
+            contactor = await prisma.contactor.create({
+                data: {
+                    contactorName: data.contactorName,
+                    contactorTel: data.contactorTel,
+                    contactorEmail: data.contactorEmail,
+                    contactorAddress: data.contactorAddress,
+                    customerCompanyId: customer.customerCompanyId,
+                }
+            });
+            console.log("✅ Auto-created new Contactor:", data.contactorName);
+        } else {
+            // Optional: Update existing contactor info
+            contactor = await prisma.contactor.update({
+                where: { contactorId: contactor.contactorId },
+                data: {
+                    contactorTel: data.contactorTel,
+                    contactorEmail: data.contactorEmail,
+                    contactorAddress: data.contactorAddress,
+                }
+            });
+        }
+
+        // 4. Handle Products and Units
+        for (const cat of data.categories) {
+            for (const item of cat.subItems) {
+                // Check and create Unit
+                if (item.unit) {
+                    const existingUnit = await prisma.unit.findUnique({
+                        where: { unitName: item.unit }
+                    });
+                    if (!existingUnit) {
+                        await prisma.unit.create({
+                            data: { unitName: item.unit }
+                        });
+                        console.log("✅ Auto-created new Unit:", item.unit);
+                    }
+                }
+
+                // Check and create Product
+                if (item.name) {
+                    const existingProduct = await prisma.product.findFirst({
+                        where: { productName: item.name }
+                    });
+
+                    if (!existingProduct) {
+                        await prisma.product.create({
+                            data: {
+                                productName: item.name,
+                                productDescription: item.description,
+                                aboutProduct: {
+                                    create: {
+                                        productPrice: item.pricePerUnit,
+                                        unitName: item.unit
+                                    }
+                                }
+                            }
+                        });
+                        console.log("✅ Auto-created new Product:", item.name);
+                    }
+                }
+            }
+        }
+
+        // 5. Create DocumentPaper
         const document = await prisma.documentPaper.create({
             data: {
                 documentIdNo: docIdNo,
@@ -105,8 +208,6 @@ export async function POST(req: NextRequest) {
                 }
             }
         });
-
-        // revalidatePath("/protected/income/quotation"); // Not strictly needed in API route unless we want to clear cache, but client will re-fetch
 
         return NextResponse.json({ success: true, documentId: document.documentId });
 

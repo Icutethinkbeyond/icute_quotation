@@ -93,9 +93,13 @@ const ContactotInformation: React.FC = () => {
         }}
       >
         {({ touched, errors, values, setFieldValue }) => {
+          // Update context when values change, but only if they differ to prevent loops
           useEffect(() => {
-            setHeadForm(values);
-          }, [values, setHeadForm]);
+            const hasChanged = JSON.stringify(values) !== JSON.stringify(headForm);
+            if (hasChanged) {
+              setHeadForm(values);
+            }
+          }, [values, headForm, setHeadForm]);
 
           return (
             <Form>

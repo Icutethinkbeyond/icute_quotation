@@ -104,9 +104,87 @@ export async function PATCH(
             return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
         }
 
-        // Update or Create CustomerCompany
+        // 1. Handle CompanyProfile (Our Company)
+        if (data.companyName) {
+            const existingCompanyProfile = await prisma.companyProfile.findFirst({
+                where: { companyName: data.companyName }
+            });
+
+            if (!existingCompanyProfile) {
+                const firstUser = await prisma.user.findFirst();
+                await prisma.companyProfile.create({
+                    data: {
+                        companyName: data.companyName,
+                        companyTaxId: data.taxId,
+                        companyPhoneNumber: data.companyTel,
+                        companyAddress: data.companyAddress,
+                        userId: firstUser?.userId,
+                    }
+                });
+                console.log("✅ Auto-created new CompanyProfile during edit:", data.companyName);
+            }
+        }
+
+        // 2. Handle Products and Units
+        for (const cat of data.categories) {
+            for (const item of cat.subItems) {
+                // Check and create Unit
+                if (item.unit) {
+                    const existingUnit = await prisma.unit.findUnique({
+                        where: { unitName: item.unit }
+                    });
+                    if (!existingUnit) {
+                        await prisma.unit.create({
+                            data: { unitName: item.unit }
+                        });
+                        console.log("✅ Auto-created new Unit during edit:", item.unit);
+                    }
+                }
+
+                // Check and create Product
+                if (item.name) {
+                    const existingProduct = await prisma.product.findFirst({
+                        where: { productName: item.name }
+                    });
+
+                    if (!existingProduct) {
+                        await prisma.product.create({
+                            data: {
+                                productName: item.name,
+                                productDescription: item.description,
+                                aboutProduct: {
+                                    create: {
+                                        productPrice: item.pricePerUnit,
+                                        unitName: item.unit
+                                    }
+                                }
+                            }
+                        });
+                        console.log("✅ Auto-created new Product during edit:", item.name);
+                    }
+                }
+            }
+        }
+
+        // 3. Update or Create CustomerCompany
         let customerCompanyId = existingQuotation.customerCompanyId;
-        if (customerCompanyId) {
+        // Search for customer company by name if it's not linked correctly
+        const existingCustomerByName = await prisma.customerCompany.findFirst({
+            where: { companyName: data.companyName }
+        });
+
+        if (existingCustomerByName) {
+            customerCompanyId = existingCustomerByName.customerCompanyId;
+            await prisma.customerCompany.update({
+                where: { customerCompanyId },
+                data: {
+                    taxId: data.taxId,
+                    companyTel: data.companyTel,
+                    branch: data.branch,
+                    companyAddress: data.companyAddress,
+                }
+            });
+        } else if (customerCompanyId) {
             await prisma.customerCompany.update({
                 where: { customerCompanyId },
                 data: {
@@ -118,7 +196,6 @@ export async function PATCH(
                 }
             });
         } else {
-            console.log("⚠️ customerCompanyId missing on quotation, creating new link...");
             const newCustomer = await prisma.customerCompany.create({
                 data: {
                     companyName: data.companyName,
@@ -131,9 +208,26 @@ export async function PATCH(
             customerCompanyId = newCustomer.customerCompanyId;
         }
 
-        // Update or Create Contactor
+        // 4. Update or Create Contactor
         let contactorId = existingQuotation.contactorId;
-        if (contactorId) {
+        const existingContactorByName = await prisma.contactor.findFirst({
+            where: {
+                contactorName: data.contactorName,
+                customerCompanyId: customerCompanyId
+            }
+        });
+
+        if (existingContactorByName) {
+            contactorId = existingContactorByName.contactorId;
+            await prisma.contactor.update({
+                where: { contactorId },
+                data: {
+                    contactorTel: data.contactorTel,
+                    contactorEmail: data.contactorEmail,
+                    contactorAddress: data.contactorAddress,
+                }
+            });
+        } else if (contactorId) {
             await prisma.contactor.update({
                 where: { contactorId },
                 data: {
@@ -141,10 +235,10 @@ export async function PATCH(
                     contactorTel: data.contactorTel,
                     contactorEmail: data.contactorEmail,
                     contactorAddress: data.contactorAddress,
+                    customerCompanyId: customerCompanyId
                 }
             });
         } else {
-            console.log("⚠️ contactorId missing on quotation, creating new link...");
             const newContactor = await prisma.contactor.create({
                 data: {
                     contactorName: data.contactorName,

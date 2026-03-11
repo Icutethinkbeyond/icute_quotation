@@ -28,6 +28,7 @@ interface PricingContextType {
   addSubItem: (categoryId: string, subItem: Omit<SubItem, "id">) => void
   removeSubItem: (categoryId: string, subItemId: string) => void
   updateSubItem: (categoryId: string, subItemId: string, subItem: Partial<SubItem>) => void
+  duplicateSubItem: (categoryId: string, subItemId: string) => void
   getTotalPrice: () => number
   getCategoryTotal: (categoryId: string) => number
   discount: number
@@ -129,6 +130,30 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
     )
   }, [])
 
+  const duplicateSubItem = useCallback((categoryId: string, subItemId: string) => {
+    setCategories((prev) =>
+      prev.map((cat) => {
+        if (cat.id !== categoryId) return cat;
+        const itemIndex = cat.subItems.findIndex((item) => item.id === subItemId);
+        if (itemIndex === -1) return cat;
+
+        const itemToDuplicate = cat.subItems[itemIndex];
+        const duplicatedItem = {
+          ...itemToDuplicate,
+          id: `item-${Date.now()}`,
+        };
+
+        const newSubItems = [...cat.subItems];
+        newSubItems.splice(itemIndex + 1, 0, duplicatedItem);
+
+        return {
+          ...cat,
+          subItems: newSubItems,
+        };
+      }),
+    )
+  }, [])
+
   const getCategoryTotal = useCallback((categoryId: string): number => {
     const category = categories.find((cat) => cat.id === categoryId)
     if (!category) return 0
@@ -186,6 +211,7 @@ export const PricingProvider: React.FC<PricingProviderProps> = ({ children }) =>
         addSubItem,
         removeSubItem,
         updateSubItem,
+        duplicateSubItem,
         getTotalPrice,
         getCategoryTotal,
         discount,

@@ -18,6 +18,7 @@ import {
 } from "@mui/material"
 import AddIcon from "@mui/icons-material/Add"
 import DeleteIcon from "@mui/icons-material/Delete"
+import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import ExpandLessIcon from "@mui/icons-material/ExpandLess"
 import InventoryIcon from "@mui/icons-material/Inventory"
@@ -34,6 +35,7 @@ const PricingTable: React.FC = () => {
     addSubItem,
     removeSubItem,
     updateSubItem,
+    duplicateSubItem,
     updateCategoryName,
     getCategoryTotal,
     getTotalPrice,
@@ -42,6 +44,7 @@ const PricingTable: React.FC = () => {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
   const [allProducts, setAllProducts] = useState<any[]>([])
   const [loadingProducts, setLoadingProducts] = useState(false)
+  const [unitOptions, setUnitOptions] = useState<string[]>([])
 
   const fetchProducts = async () => {
     if (allProducts.length > 0 || loadingProducts) return;
@@ -57,6 +60,22 @@ const PricingTable: React.FC = () => {
       setLoadingProducts(false);
     }
   }
+
+  const fetchUnits = async () => {
+    try {
+      const response = await fetch("/api/units")
+      const data = await response.json()
+      if (Array.isArray(data)) {
+        setUnitOptions(data.map((u: any) => u.unitName))
+      }
+    } catch (error) {
+      console.error("Error fetching units:", error)
+    }
+  }
+
+  useEffect(() => {
+    fetchUnits()
+  }, [])
 
   const handleAddCategory = () => {
     addCategory("")
@@ -274,6 +293,9 @@ const PricingTable: React.FC = () => {
                           />
                         </TableCell>
                         <TableCell>
+                          <IconButton size="small" onClick={() => duplicateSubItem(category.id, item.id)} color="primary">
+                            <ContentCopyIcon fontSize="small" />
+                          </IconButton>
                           <IconButton size="small" onClick={() => removeSubItem(category.id, item.id)} color="error">
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -301,13 +323,25 @@ const PricingTable: React.FC = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <TextField
-                            fullWidth
-                            placeholder="หน่วย"
+                          <Autocomplete
+                            freeSolo
+                            options={unitOptions}
                             value={item.unit}
-                            onChange={(e) => updateSubItem(category.id, item.id, { unit: e.target.value })}
-                            variant="standard"
-                            size="small"
+                            onInputChange={(event, newInputValue) => {
+                              updateSubItem(category.id, item.id, { unit: newInputValue });
+                            }}
+                            onChange={(event, newValue) => {
+                              updateSubItem(category.id, item.id, { unit: newValue || "" });
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                fullWidth
+                                placeholder="หน่วย"
+                                variant="standard"
+                                size="small"
+                              />
+                            )}
                           />
                         </TableCell>
                         <TableCell>

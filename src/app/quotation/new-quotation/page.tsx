@@ -19,18 +19,47 @@ const NewQuotation = () => {
 
   // Reset ฟอร์มทั้งหมดเมื่อเข้าหน้า New Quotation
   useEffect(() => {
-    console.log("🔄 Resetting form data for new quotation...");
+    const initNewQuotation = async () => {
+      console.log("🔄 Resetting form data for new quotation...");
 
-    // Reset header form (บริษัท + ผู้ติดต่อ)
-    setHeadForm(headerClean);
+      // Start with clean header and set current date
+      const today = new Date().toISOString().split('T')[0];
+      let initialHead = { ...headerClean, dateCreate: today };
 
-    // Reset pricing data
-    setCategories([]);
-    setDiscount(0);
-    setVatIncluded(false);
-    setWithholdingTaxRate(0);
+      // Try to fetch favorite company for auto-fill
+      try {
+        const response = await fetch('/api/companies');
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const favorite = data.find((c: any) => c.isFavorite);
+          if (favorite) {
+            initialHead = {
+              ...initialHead,
+              companyName: favorite.companyName || "",
+              companyTel: favorite.companyPhoneNumber || "",
+              taxId: favorite.companyTaxId || "",
+              companyAddress: favorite.companyAddress || "",
+            };
+            console.log("✅ Auto-filled favorite company:", favorite.companyName);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching favorite company:", error);
+      }
 
-    console.log("✅ Form reset complete");
+      // Reset header form
+      setHeadForm(initialHead);
+
+      // Reset pricing data
+      setCategories([]);
+      setDiscount(0);
+      setVatIncluded(false);
+      setWithholdingTaxRate(0);
+
+      console.log("✅ Form reset complete");
+    };
+
+    initNewQuotation();
   }, []); // Run only once when component mounts
 
   return (
@@ -38,7 +67,7 @@ const NewQuotation = () => {
       <DashboardCard title="เพิ่มใบเสนอราคาใหม่">
         <Grid2 container spacing={3}>
           <Grid2 size={6}>
-            <CompanyInformation />
+            {/* <CompanyInformation /> */}
           </Grid2>
           <Grid2 size={6}>
             <ContactotInformation />

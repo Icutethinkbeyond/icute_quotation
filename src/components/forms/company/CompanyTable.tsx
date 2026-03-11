@@ -4,7 +4,7 @@ import React, { useCallback } from "react";
 import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { Box, Button, IconButton, Tooltip } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { Add, EditCalendar, Delete, Visibility, DeleteSweep } from "@mui/icons-material";
+import { Add, EditCalendar, Delete, Visibility, DeleteSweep, Star, StarBorder } from "@mui/icons-material";
 import { GenericDataTable } from "@/components/shared/GenericDataTable";
 import { useDataTable } from "@/hooks/useDataTable";
 import { useDebounceSearch } from "@/hooks/useDebounceSearch";
@@ -55,7 +55,40 @@ const CompanyTable = () => {
         }
     };
 
+    const handleToggleFavorite = async (id: string, currentStatus: boolean) => {
+        try {
+            const res = await fetch(`/api/companies/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isFavorite: !currentStatus }),
+            });
+            if (res.ok) {
+                refresh();
+            } else {
+                console.error("Failed to toggle favorite");
+            }
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+        }
+    };
+
     const columns: GridColDef[] = [
+        {
+            field: "isFavorite",
+            headerName: "โปรด",
+            width: 70,
+            headerAlign: "center",
+            align: "center",
+            renderCell: (params: GridRenderCellParams) => (
+                <IconButton
+                    onClick={() => handleToggleFavorite(params.row.companyId, params.row.isFavorite)}
+                    size="small"
+                    sx={{ color: params.row.isFavorite ? "#ffc107" : "#ccc" }}
+                >
+                    {params.row.isFavorite ? <Star /> : <StarBorder />}
+                </IconButton>
+            ),
+        },
         { field: "companyName", headerName: "ชื่อบริษัท", flex: 3, type: "string", },
         { field: "companyTaxId", headerName: "เลขผู้เสียภาษี", flex: 3, type: "string", },
         { field: "companyPhoneNumber", headerName: "เบอร์โทรศัพท์", flex: 3, type: "string", },

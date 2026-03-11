@@ -10,6 +10,7 @@ export interface CompanyProfile {
     companyWebsite?: string | null;
     companyRegistrationDate?: string | Date | null;
     companyBusinessType?: string | null;
+    isFavorite?: boolean;
     createdAt?: string | Date;
     updatedAt?: string | Date;
 }
@@ -22,6 +23,7 @@ export interface CustomerCompany {
     taxId?: string | null;
     branch?: string | null;
     companyAddress?: string | null;
+    isFavorite?: boolean;
     createdAt?: string | Date;
     updatedAt?: string | Date;
 }
@@ -36,6 +38,7 @@ export const initialCompany: CompanyProfile = {
     companyWebsite: '',
     companyBusinessType: '',
     companyRegistrationDate: '',
+    isFavorite: false,
 };
 
 export const initialCustomerCompany: CustomerCompany = {
@@ -46,4 +49,5 @@ export const initialCustomerCompany: CustomerCompany = {
     taxId: '',
     branch: '',
     companyAddress: '',
+    isFavorite: false,
 };

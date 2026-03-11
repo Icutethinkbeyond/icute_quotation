@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
                 companyBusinessType,
                 companyRegistrationDate: companyRegistrationDate ? new Date(companyRegistrationDate) : null,
                 isDeleted: false,
+                isFavorite: body.isFavorite || false,
                 userId: firstUser?.userId ?? undefined,
             },
         });

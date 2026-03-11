@@ -109,6 +109,7 @@ model CompanyProfile {
 
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
+  isFavorite Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -122,6 +123,7 @@ model CustomerCompany {
   taxId                String?
   branch               String?
   companyAddress       String?
+  isFavorite           Boolean @default(false)
 
   companyProfile CompanyProfile? @relation(fields: [companyId], references: [companyId])
   companyId      String?

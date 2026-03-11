@@ -80,19 +80,33 @@ export async function PUT(
             companyWebsite,
             companyBusinessType,
             companyRegistrationDate,
+            isFavorite,
         } = body;
+
+        // ถ้ามีการตั้งเป็น Favorite ให้ไปปลด Favorite ตัวอื่นๆ ก่อน
+        if (isFavorite === true) {
+            await prisma.companyProfile.updateMany({
+                where: {
+                    companyId: { not: id },
+                },
+                data: {
+                    isFavorite: false,
+                },
+            });
+        }
 
         const updatedProfile = await prisma.companyProfile.update({
             where: { companyId: id },
             data: {
-                companyName,
-                companyAddress,
-                companyTaxId,
-                companyPhoneNumber,
-                companyEmail,
-                companyWebsite,
-                companyBusinessType,
-                companyRegistrationDate: companyRegistrationDate ? new Date(companyRegistrationDate) : null,
+                ...(companyName !== undefined && { companyName }),
+                ...(companyAddress !== undefined && { companyAddress }),
+                ...(companyTaxId !== undefined && { companyTaxId }),
+                ...(companyPhoneNumber !== undefined && { companyPhoneNumber }),
+                ...(companyEmail !== undefined && { companyEmail }),
+                ...(companyWebsite !== undefined && { companyWebsite }),
+                ...(companyBusinessType !== undefined && { companyBusinessType }),
+                ...(companyRegistrationDate !== undefined && { companyRegistrationDate: companyRegistrationDate ? new Date(companyRegistrationDate) : null }),
+                ...(isFavorite !== undefined && { isFavorite }),
             },
         });
 

@@ -415,7 +415,7 @@ export const QuotationProvider = ({ children }: { children: ReactNode }) => {
       vatAmount !== footerForm.vatPrice ||
       totalWithVAT !== footerForm.totalAmount ||
       withholdingTaxAmount !== footerForm.withholdingTaxPrice ||
-      totalAfterWithholdingTax !== footerForm.withholdingTaxPrice
+      totalAfterWithholdingTax !== footerForm.totalAmountDue
     ) {
       setFooterForm((prevForm) => ({
         ...prevForm,

@@ -21,7 +21,7 @@ export const calculateTax = (totalPrice: number, vatRate: number, withholdingTax
 
     // Calculate Withholding Tax if withholdingTaxPercent is greater than 0
     if (withholdingTaxPercent > 0) {
-        withholdingTaxAmount = totalWithVAT * (withholdingTaxPercent / 100);
+        withholdingTaxAmount = totalPrice * (withholdingTaxPercent / 100);
         totalAfterWithholdingTax = totalWithVAT - withholdingTaxAmount;
     }
 

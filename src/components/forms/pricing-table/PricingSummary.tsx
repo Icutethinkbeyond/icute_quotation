@@ -80,7 +80,8 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
     discount,
     vatIncluded,
     taxRate,
-    withholdingTaxRate * subtotal / 100 // แปลง % เป็นจำนวนเงิน
+    0, // ให้ฟังก์ชันคำนวณจาก rate แทน
+    withholdingTaxRate
   );
 
   // สำหรับความเข้ากันได้กับโค้ดเดิม (backward compatibility)
@@ -286,7 +287,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               input={
                 <OutlinedInput
                   id="select-serviceIds-label"
-                  label="ภาษี ณ ที่จ่าย<"
+                  label="ภาษี ณ ที่จ่าย"
                 />
               }
               value={withholdingTaxRate}

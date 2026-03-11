@@ -62,11 +62,19 @@ function EditQuotation({ params }: { params: { id: string } }) {
 
         console.log("📦 Transformed categories:", categories);
 
+        // คำนวณยอดรวมเพื่อหาอัตราภาษีหัก ณ ที่จ่าย (เนื่องจากใน DB เก็บเป็นยอดเงิน)
+        const subtotal = categories.reduce((sum: number, cat: any) =>
+          sum + cat.subItems.reduce((s: number, item: any) => s + (item.qty * item.pricePerUnit), 0)
+          , 0);
+        const totalAfterDiscount = subtotal - (quotation.globalDiscount || 0);
+        const whtAmount = quotation.withholdingTax || 0;
+        const whtRate = totalAfterDiscount > 0 ? Math.round((whtAmount / totalAfterDiscount) * 100) : 0;
+
         // โหลดข้อมูลเข้า PricingContext
         setCategories(categories);
-        setWithholdingTaxRate(quotation.withholdingTax);
-        setDiscount(quotation.globalDiscount);
-        setVatIncluded(quotation.includeVat);
+        setWithholdingTaxRate(whtRate);
+        setDiscount(quotation.globalDiscount || 0);
+        setVatIncluded(quotation.includeVat || false);
 
         // โหลดข้อมูลบริษัทและผู้ติดต่อ
         setHeadForm({

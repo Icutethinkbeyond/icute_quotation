@@ -25,6 +25,7 @@ interface CompanyFormProps {
 interface CompanyFormData {
     companyName: string;
     companyTaxId: string;
+    branch: string;
     companyAddress: string;
     companyPhoneNumber: string;
     companyEmail: string;
@@ -40,6 +41,7 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
     const [formData, setFormData] = useState<CompanyFormData>({
         companyName: "",
         companyTaxId: "",
+        branch: "",
         companyAddress: "",
         companyPhoneNumber: "",
         companyEmail: "",
@@ -66,6 +68,7 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
                     setFormData({
                         companyName: data.companyName || "",
                         companyTaxId: data.companyTaxId || "",
+                        branch: data.branch || "",
                         companyAddress: data.companyAddress || "",
                         companyPhoneNumber: data.companyPhoneNumber || "",
                         companyEmail: data.companyEmail || "",
@@ -163,12 +166,23 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
                                         size="small"
                                     />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="เลขที่เสียภาษี"
                                         name="companyTaxId"
                                         value={formData.companyTaxId}
+                                        onChange={handleChange}
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="สาขา"
+                                        name="branch"
+                                        value={formData.branch}
                                         onChange={handleChange}
                                         variant="outlined"
                                         size="small"

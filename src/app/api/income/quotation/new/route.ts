@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
                     data: {
                         companyName: data.companyName,
                         companyTaxId: data.taxId,
+                        branch: data.branch,
                         companyPhoneNumber: data.companyTel,
                         companyAddress: data.companyAddress,
                         userId: firstUser?.userId,

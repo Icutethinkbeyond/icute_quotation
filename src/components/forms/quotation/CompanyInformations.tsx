@@ -1,9 +1,21 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Grid2, TextField, Autocomplete, Box, Typography, useTheme } from "@mui/material";
+import {
+  Grid2,
+  TextField,
+  Autocomplete,
+  Box,
+  Typography,
+  useTheme,
+  CircularProgress,
+} from "@mui/material";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import FormSection from "../../shared/FormSection";
-import { HeadForm, useQuotationListContext } from "@/contexts/QuotationContext";
+import {
+  headerClean,
+  HeadForm,
+  useQuotationListContext,
+} from "@/contexts/QuotationContext";
 import { CompanyProfile } from "@/interfaces/Company";
 import debounce from "lodash/debounce";
 
@@ -22,17 +34,18 @@ const getTextFieldSx = (theme: any) => ({
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
       borderColor: theme.palette.primary.main,
       borderWidth: "2px",
-    }
+    },
   },
   "& .MuiInputLabel-root.Mui-focused": {
     color: theme.palette.primary.main,
-  }
+  },
 });
 
 const CompanyInformation: React.FC = () => {
   const { headForm, setHeadForm } = useQuotationListContext();
   const [suggestions, setSuggestions] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingFavorite, setLoadingFavorite] = useState(false);
   const theme = useTheme();
 
   // Fetch company profiles for autocomplete
@@ -44,12 +57,13 @@ const CompanyInformation: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/companies');
+      const response = await fetch("/api/companies");
       const data = await response.json();
       if (Array.isArray(data)) {
-        const filtered = data.filter((c: CompanyProfile) =>
-          c.companyName.toLowerCase().includes(search.toLowerCase()) ||
-          c.companyTaxId?.toLowerCase().includes(search.toLowerCase())
+        const filtered = data.filter(
+          (c: CompanyProfile) =>
+            c.companyName.toLowerCase().includes(search.toLowerCase()) ||
+            c.companyTaxId?.toLowerCase().includes(search.toLowerCase()),
         );
         setSuggestions(filtered);
       }
@@ -63,19 +77,88 @@ const CompanyInformation: React.FC = () => {
   // Debounced search
   const debouncedFetch = useCallback(
     debounce((value: string) => fetchSuggestions(value), 300),
-    []
+    [],
   );
 
   // Handle select company from suggestions
-  const handleSelectCompany = (profile: CompanyProfile | null, setFieldValue: any) => {
+  const handleSelectCompany = (
+    profile: CompanyProfile | null,
+    setFieldValue: any,
+  ) => {
     if (profile) {
       setFieldValue("companyName", profile.companyName || "");
       setFieldValue("companyTel", profile.companyPhoneNumber || "");
       setFieldValue("taxId", profile.companyTaxId || "");
+      setFieldValue("branch", profile.branch || "");
       setFieldValue("companyAddress", profile.companyAddress || "");
     }
     setSuggestions([]);
   };
+
+  // Reset ฟอร์มทั้งหมดเมื่อเข้าหน้า New Quotation
+  useEffect(
+    () => {
+      const initNewQuotation = async () => {
+
+        setLoadingFavorite(true)
+        console.log("🔄 Resetting form data for new quotation...");
+
+        const today = new Date().toISOString().split("T")[0];
+        let initialHead = { ...headerClean, dateCreate: today };
+
+        // Try to fetch favorite company for auto-fill
+        try {
+          const response = await fetch("/api/companies");
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            const favorite = data.find((c: any) => c.isFavorite);
+            if (favorite) {
+              initialHead = {
+                ...initialHead,
+                companyName: favorite.companyName || "",
+                companyTel: favorite.companyPhoneNumber || "",
+                taxId: favorite.companyTaxId || "",
+                branch: favorite.branch || "",
+                companyAddress: favorite.companyAddress || "",
+              };
+              console.log(
+                "✅ Auto-filled favorite company:",
+                favorite.companyName,
+              );
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching favorite company:", error);
+        }
+
+        console.log(initialHead);
+        setHeadForm(initialHead);
+
+        console.log("✅ Form reset complete");
+        setLoadingFavorite(false)
+      };
+
+      initNewQuotation();
+    },
+    [
+      // setHeadForm,
+    ],
+  ); // Run only once when component mounts
+
+  if (loadingFavorite) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 400,
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -120,32 +203,46 @@ const CompanyInformation: React.FC = () => {
                         }
                       }}
                       getOptionLabel={(option) =>
-                        typeof option === "string" ? option : option.companyName || ""
+                        typeof option === "string"
+                          ? option
+                          : option.companyName || ""
                       }
                       isOptionEqualToValue={(option, value) =>
                         option.companyId === value.companyId
                       }
-                      noOptionsText={values.companyName ? "ไม่พบข้อมูล พิมพ์เพื่อใช้ชื่อบริษัทนี้" : "พิมพ์เพื่อค้นหาบริษัท..."}
+                      noOptionsText={
+                        values.companyName
+                          ? "ไม่พบข้อมูล พิมพ์เพื่อใช้ชื่อบริษัทนี้"
+                          : "พิมพ์เพื่อค้นหาบริษัท..."
+                      }
                       loadingText="กำลังค้นหา..."
                       renderOption={(props, option) => (
                         <Box component="li" {...props} key={option.companyId}>
                           <Box sx={{ py: 0.5 }}>
-                            <Typography variant="body1" fontWeight={500} sx={{ color: theme.palette.primary.main }}>
+                            <Typography
+                              variant="body1"
+                              fontWeight={500}
+                              sx={{ color: theme.palette.primary.main }}
+                            >
                               {option.companyName}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              {option.companyTaxId ? `เลขภาษี: ${option.companyTaxId}` : ""}
-                              {option.companyPhoneNumber ? ` • ${option.companyPhoneNumber}` : ""}
+                              {option.companyTaxId
+                                ? `เลขภาษี: ${option.companyTaxId}`
+                                : ""}
+                              {option.companyPhoneNumber
+                                ? ` • ${option.companyPhoneNumber}`
+                                : ""}
                             </Typography>
                             <Typography
                               variant="caption"
                               color="text.disabled"
                               sx={{
                                 display: "block",
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                maxWidth: '400px'
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: "400px",
                               }}
                             >
                               {option.companyAddress || "ไม่ระบุที่อยู่"}
@@ -161,7 +258,9 @@ const CompanyInformation: React.FC = () => {
                           variant="outlined"
                           size="small"
                           fullWidth
-                          error={touched.companyName && Boolean(errors.companyName)}
+                          error={
+                            touched.companyName && Boolean(errors.companyName)
+                          }
                           helperText={<ErrorMessage name="companyName" />}
                           placeholder="พิมพ์ 3 ตัวอักษรเพื่อเริ่มค้นหา..."
                           sx={getTextFieldSx(theme)}
@@ -177,7 +276,9 @@ const CompanyInformation: React.FC = () => {
                       size="small"
                       fullWidth
                       value={values.companyTel || ""}
-                      onChange={(e) => setFieldValue("companyTel", e.target.value)}
+                      onChange={(e) =>
+                        setFieldValue("companyTel", e.target.value)
+                      }
                       error={touched.companyTel && Boolean(errors.companyTel)}
                       helperText={<ErrorMessage name="companyTel" />}
                       sx={getTextFieldSx(theme)}
@@ -223,7 +324,9 @@ const CompanyInformation: React.FC = () => {
                         shrink: true,
                       }}
                       value={values.dateCreate || ""}
-                      onChange={(e) => setFieldValue("dateCreate", e.target.value)}
+                      onChange={(e) =>
+                        setFieldValue("dateCreate", e.target.value)
+                      }
                       error={touched.dateCreate && Boolean(errors.dateCreate)}
                       helperText={<ErrorMessage name="dateCreate" />}
                       sx={getTextFieldSx(theme)}
@@ -239,7 +342,9 @@ const CompanyInformation: React.FC = () => {
                       multiline
                       rows={3}
                       value={values.companyAddress || ""}
-                      onChange={(e) => setFieldValue("companyAddress", e.target.value)}
+                      onChange={(e) =>
+                        setFieldValue("companyAddress", e.target.value)
+                      }
                       error={
                         touched.companyAddress && Boolean(errors.companyAddress)
                       }

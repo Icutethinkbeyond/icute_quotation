@@ -97,6 +97,7 @@ model CompanyProfile {
   companyName             String
   companyAddress          String?
   companyTaxId            String?
+  branch                  String?
   companyPhoneNumber      String?
   companyEmail            String?
   companyWebsite          String?

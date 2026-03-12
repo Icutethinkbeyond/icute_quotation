@@ -116,6 +116,7 @@ export async function PATCH(
                     data: {
                         companyName: data.companyName,
                         companyTaxId: data.taxId,
+                        branch: data.branch,
                         companyPhoneNumber: data.companyTel,
                         companyAddress: data.companyAddress,
                         userId: firstUser?.userId,

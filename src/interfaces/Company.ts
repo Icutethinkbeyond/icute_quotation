@@ -5,6 +5,7 @@ export interface CompanyProfile {
     companyName: string;
     companyAddress?: string | null;
     companyTaxId?: string | null;
+    branch?: string | null;
     companyPhoneNumber?: string | null;
     companyEmail?: string | null;
     companyWebsite?: string | null;
@@ -33,6 +34,7 @@ export const initialCompany: CompanyProfile = {
     companyName: '',
     companyAddress: '',
     companyTaxId: '',
+    branch: '',
     companyPhoneNumber: '',
     companyEmail: '',
     companyWebsite: '',

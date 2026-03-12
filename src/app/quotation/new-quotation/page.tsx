@@ -26,31 +26,31 @@ const NewQuotation = () => {
     const initNewQuotation = async () => {
       console.log("🔄 Resetting form data for new quotation...");
 
-      const today = new Date().toISOString().split("T")[0];
-      let initialHead = { ...headerClean, dateCreate: today };
+      // const today = new Date().toISOString().split("T")[0];
+      // let initialHead = { ...headerClean, dateCreate: today };
 
       // Try to fetch favorite company for auto-fill
-      try {
-        const response = await fetch("/api/companies");
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          const favorite = data.find((c: any) => c.isFavorite);
-          if (favorite) {
-            initialHead = {
-              ...initialHead,
-              companyName: favorite.companyName || "",
-              companyTel: favorite.companyPhoneNumber || "",
-              taxId: favorite.companyTaxId || "",
-              companyAddress: favorite.companyAddress || "",
-            };
-            console.log("✅ Auto-filled favorite company:", favorite.companyName);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching favorite company:", error);
-      }
+      // try {
+      //   const response = await fetch("/api/companies");
+      //   const data = await response.json();
+      //   if (Array.isArray(data)) {
+      //     const favorite = data.find((c: any) => c.isFavorite);
+      //     if (favorite) {
+      //       initialHead = {
+      //         ...initialHead,
+      //         companyName: favorite.companyName || "",
+      //         companyTel: favorite.companyPhoneNumber || "",
+      //         taxId: favorite.companyTaxId || "",
+      //         companyAddress: favorite.companyAddress || "",
+      //       };
+      //       console.log("✅ Auto-filled favorite company:", favorite.companyName);
+      //     }
+      //   }
+      // } catch (error) {
+      //   console.error("Error fetching favorite company:", error);
+      // }
 
-      console.log(initialHead);
+      // console.log(initialHead);
       // setHeadForm(initialHead);
 
       // Reset pricing data

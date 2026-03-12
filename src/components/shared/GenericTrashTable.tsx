@@ -2,12 +2,13 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Typography, useTheme } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { GridColDef } from "@mui/x-data-grid";
 import GenericDataTable from "@/components/shared/GenericDataTable";
 import { TrashActionButtons } from "./TrashActionButtons";
 import useDataTable from "@/hooks/useDataTable";
+import PageHeader from "@/components/shared/PageHeader";
 
 interface GenericTrashTableProps {
     // API Configuration
@@ -38,18 +39,16 @@ export const GenericTrashTable: React.FC<GenericTrashTableProps> = ({
     mapData,
 }) => {
     const router = useRouter();
+    const theme = useTheme();
 
-    // useDataTable ต้องมี mapData function
     const identityMap = (item: any) => item;
     const { rows, loading, refresh, paginationModel, setPaginationModel } = useDataTable({
         apiUrl: fetchEndpoint,
         mapData: mapData || identityMap,
     });
 
-    // Search state
     const [searchQuery, setSearchQuery] = React.useState("");
 
-    // ฟังก์ชัน Restore
     const handleRestore = async (itemId: string) => {
         try {
             const response = await fetch(restoreEndpoint(itemId), {
@@ -66,7 +65,6 @@ export const GenericTrashTable: React.FC<GenericTrashTableProps> = ({
         }
     };
 
-    // ฟังก์ชัน Permanent Delete
     const handlePermanentDelete = async (itemId: string) => {
         try {
             const response = await fetch(deleteEndpoint(itemId), {
@@ -83,14 +81,13 @@ export const GenericTrashTable: React.FC<GenericTrashTableProps> = ({
         }
     };
 
-    // เพิ่มคอลัมน์ Actions
     const columnsWithActions: GridColDef[] = [
         ...columns,
         {
             field: "actions",
             headerName: "จัดการ",
-            minWidth: 120,
-            flex: 0.5,
+            minWidth: 150,
+            flex: 1,
             sortable: false,
             renderCell: (params) => (
                 <TrashActionButtons
@@ -115,18 +112,24 @@ export const GenericTrashTable: React.FC<GenericTrashTableProps> = ({
             getRowId={(row) => row[idField]}
             checkboxSelection={false}
             customHeader={
-                <Box display="flex" alignItems="center" gap={2} mb={2}>
-                    <Button
-                        variant="outlined"
-                        startIcon={<ArrowBack />}
-                        onClick={() => router.push(backUrl)}
-                    >
-                        ย้อนกลับ
-                    </Button>
-                    <Typography variant="h5" component="h1" fontWeight="bold">
-                        {title}
-                    </Typography>
-                </Box>
+                <PageHeader
+                    title={title}
+                    actions={
+                        <Button
+                            variant="outlined"
+                            startIcon={<ArrowBack />}
+                            onClick={() => router.push(backUrl)}
+                            sx={{
+                                borderRadius: "8px",
+                                textTransform: "none",
+                                fontWeight: 600,
+                                px: 2,
+                            }}
+                        >
+                            ย้อนกลับ
+                        </Button>
+                    }
+                />
             }
         />
     );

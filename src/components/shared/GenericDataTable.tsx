@@ -2,7 +2,7 @@
 
 import React from "react";
 import { DataGrid, GridColDef, GridPaginationModel } from "@mui/x-data-grid";
-import { Box } from "@mui/material";
+import { Box, Paper, useTheme } from "@mui/material";
 import { CustomNoRowsOverlay } from "@/components/shared/NoData";
 import { CustomToolbar } from "@/components/shared/CustomToolbar";
 import SearchBox from "@/components/shared/SearchBox";
@@ -58,6 +58,8 @@ export function GenericDataTable<T>({
     customHeader,
     searchPlaceholder,
 }: GenericDataTableProps<T>) {
+    const theme = useTheme();
+
     return (
         <Box>
             {customHeader || (
@@ -67,22 +69,22 @@ export function GenericDataTable<T>({
                 />
             )}
 
-            <Box mb={2}>
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
                 <SearchBox
                     value={searchQuery}
                     onChange={onSearchChange}
-                    placeholder={searchPlaceholder}
+                    placeholder={searchPlaceholder || "ค้นหา..."}
                 />
             </Box>
 
-            <Box
+            <Paper
+                variant="outlined"
                 sx={{
-                    backgroundColor: '#fff',
                     borderRadius: '12px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                     overflow: 'hidden',
-                    mb: 2,
-                    mt: 2,
+                    boxShadow: theme.shadows[1], // Subtle shadow
+                    border: '1px solid',
+                    borderColor: theme.palette.divider,
                 }}
             >
                 <DataGrid
@@ -100,59 +102,69 @@ export function GenericDataTable<T>({
                         toolbar: CustomToolbar,
                     }}
                     sx={{
-                        minHeight: '70vh',
+                        minHeight: '60vh', // Adjust as needed
                         border: 'none',
                         '& .MuiDataGrid-columnHeaders': {
-                            backgroundColor: '#e5fafb',
-                            borderBottom: '2px solid #03c9d7',
+                            backgroundColor: theme.palette.grey[50],
+                            borderBottom: '1px solid',
+                            borderColor: theme.palette.divider,
                             '& .MuiDataGrid-columnHeaderTitle': {
-                                fontWeight: 600,
-                                color: '#2A3547',
-                                fontSize: '0.875rem',
+                                fontWeight: 700,
+                                color: theme.palette.text.secondary,
+                                fontSize: '0.8rem',
+                                textTransform: 'uppercase',
                             },
                         },
                         '& .MuiDataGrid-row': {
+                            '&:nth-of-type(odd)': {
+                                backgroundColor: theme.palette.background.paper, // White for odd rows
+                            },
                             '&:nth-of-type(even)': {
-                                backgroundColor: '#fafbfb',
+                                backgroundColor: theme.palette.grey[50], // Light gray for even rows
                             },
                             '&:hover': {
-                                backgroundColor: '#e5fafb',
+                                backgroundColor: theme.palette.action.hover, // Subtle hover effect
                             },
                             '&.Mui-selected': {
-                                backgroundColor: '#cef4f6',
+                                backgroundColor: theme.palette.primary.light + '!important', // Keep primary light for selection
                                 '&:hover': {
-                                    backgroundColor: '#b8eef1',
+                                    backgroundColor: theme.palette.primary.light,
                                 },
                             },
                         },
                         '& .MuiDataGrid-cell': {
-                            borderBottom: '1px solid #e5eaef',
+                            borderBottom: '1px solid',
+                            borderColor: theme.palette.divider,
                             fontSize: '0.875rem',
-                            color: '#5A6A85',
+                            color: theme.palette.text.primary,
                             '&:focus': {
                                 outline: 'none',
                             },
+                            '&.MuiDataGrid-cell--textLeft': {
+                                pl: 2, // Adjust padding for text alignment
+                            },
                         },
                         '& .MuiDataGrid-footerContainer': {
-                            borderTop: '1px solid #e5eaef',
-                            backgroundColor: '#fff',
+                            borderTop: '1px solid',
+                            borderColor: theme.palette.divider,
+                            backgroundColor: theme.palette.grey[50],
                         },
                         '& .MuiCheckbox-root': {
-                            color: '#03c9d7',
+                            color: theme.palette.primary.main,
                             '&.Mui-checked': {
-                                color: '#05b2bd',
+                                color: theme.palette.primary.dark,
                             },
                         },
+                        // Custom toolbar styling
                         '& .MuiDataGrid-toolbarContainer': {
-                            padding: '12px 16px',
-                            borderBottom: '1px solid #e5eaef',
-                            '& .MuiButton-root': {
-                                color: '#05b2bd',
-                            },
+                            padding: theme.spacing(1, 2),
+                            borderBottom: '1px solid',
+                            borderColor: theme.palette.divider,
+                            backgroundColor: theme.palette.background.paper,
                         },
                     }}
                 />
-            </Box>
+            </Paper>
         </Box>
     );
 }

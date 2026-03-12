@@ -15,13 +15,13 @@ import {
   Typography,
   useTheme,
   Autocomplete,
+  Tooltip,
 } from "@mui/material"
 import AddIcon from "@mui/icons-material/Add"
-import DeleteIcon from "@mui/icons-material/Delete"
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline"
 import ContentCopyIcon from "@mui/icons-material/ContentCopy"
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
-import ExpandLessIcon from "@mui/icons-material/ExpandLess"
-import InventoryIcon from "@mui/icons-material/Inventory"
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp"
 import React, { useEffect, useState } from "react"
 import { usePricingContext, SubItem, Category } from "@/contexts/PricingContext"
 import { calculateSubItemTotal } from "@/utils/utils"
@@ -101,15 +101,14 @@ const PricingTable: React.FC = () => {
       name: "",
       description: "",
       unit: "",
-      qty: 0,
+      qty: 1,
       pricePerUnit: 0,
       remark: "",
     })
   }
 
-
   return (
-    <Box sx={{ p: 2 }}>
+    <Box>
       <Box
         sx={{
           display: "flex",
@@ -118,124 +117,135 @@ const PricingTable: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h5" fontWeight={500}>
-          ตารางราคา
+        <Typography variant="h4" fontWeight={600} color="text.primary">
+          รายการสินค้าและบริการ
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAddCategory}
           sx={{
-            bgcolor: theme.palette.primary.main,
+            px: 3,
+            py: 1,
+            borderRadius: "8px",
+            textTransform: "none",
+            fontWeight: 600,
+            boxShadow: "none",
             "&:hover": {
-              bgcolor: theme.palette.primary.dark,
+              boxShadow: theme.shadows[2],
             },
           }}
         >
-          เพิ่มหมวดหมู่หลัก
+          เพิ่มหมวดหมู่
         </Button>
       </Box>
 
-      <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: "#f6f9fc" }}>
-              <TableCell sx={{ fontWeight: 500, width: "5%" }}>#</TableCell>
-              <TableCell sx={{ fontWeight: 500, width: "35%" }}>รายการ</TableCell>
-              <TableCell sx={{ fontWeight: 500, width: "10%" }}>หน่วย</TableCell>
-              <TableCell sx={{ fontWeight: 500, width: "10%" }}>จำนวน</TableCell>
-              <TableCell sx={{ fontWeight: 500, width: "12%" }}>ราคา/หน่วย</TableCell>
-              <TableCell sx={{ fontWeight: 500, width: "12%" }}>ราคา</TableCell>
-              <TableCell sx={{ fontWeight: 500, width: "12%" }}>หมายเหตุ</TableCell>
-              <TableCell sx={{ fontWeight: 500, width: "4%" }}>ลบ</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {categories.map((category, catIndex) => (
-              <React.Fragment key={category.id}>
-                {/* Category Header Row */}
-                <TableRow
-                  sx={{
-                    bgcolor: theme.palette.primary.main,
-                    "&:hover": {
-                      bgcolor: theme.palette.primary.dark,
-                    },
-                  }}
-                >
-                  <TableCell
-                    sx={{
-                      color: "white",
-                      fontWeight: 500,
-                      fontSize: "1.1rem",
-                    }}
-                  >
-                    {catIndex + 1}
-                  </TableCell>
-                  <TableCell colSpan={6}>
-                    <TextField
-                      fullWidth
-                      placeholder="ชื่อหมวดหมู่หลัก"
-                      value={category.name}
-                      onChange={(e) => handleUpdateCategoryName(category.id, e.target.value)}
-                      variant="standard"
-                      sx={{
-                        '& .MuiInputBase-input': {
-                          color: "white",
-                          fontWeight: 500,
-                          fontSize: "1.1rem",
-                        },
-                        '& .MuiInput-underline:before': {
-                          borderBottomColor: "rgba(255, 255, 255, 0.5)",
-                        },
-                        '& .MuiInput-underline:hover:before': {
-                          borderBottomColor: "rgba(255, 255, 255, 0.8)",
-                        },
-                        '& .MuiInput-underline:after': {
-                          borderBottomColor: "white",
-                        },
-                        '& .MuiInputBase-input::placeholder': {
-                          color: "rgba(255, 255, 255, 0.7)",
-                          opacity: 1,
-                        },
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ textAlign: "right" }}>
-                    <IconButton size="small" onClick={() => toggleCategory(category.id)} sx={{ color: "white" }}>
-                      {isCategoryExpanded(category.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                    </IconButton>
-                    <IconButton size="small" onClick={() => removeCategory(category.id)} sx={{ color: "white", ml: 1 }}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
+      {categories.map((category, catIndex) => (
+        <Paper
+          key={category.id}
+          elevation={0}
+          sx={{
+            mb: 4,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: "12px",
+            overflow: "hidden",
+          }}
+        >
+          {/* Category Header */}
+          <Box
+            sx={{
+              px: 3,
+              py: 2,
+              display: "flex",
+              alignItems: "center",
+              bgcolor: "grey.50",
+              borderBottom: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                mr: 2,
+                bgcolor: "primary.main",
+                color: "white",
+                width: 28,
+                height: 28,
+                borderRadius: "6px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "0.875rem",
+                fontWeight: 700,
+              }}
+            >
+              {catIndex + 1}
+            </Typography>
+            <TextField
+              placeholder="ระบุชื่อหมวดหมู่หลัก (เช่น ค่าแรง, ค่าอุปกรณ์)"
+              value={category.name}
+              onChange={(e) => handleUpdateCategoryName(category.id, e.target.value)}
+              variant="standard"
+              InputProps={{
+                disableUnderline: true,
+                sx: {
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                  color: "text.primary",
+                }
+              }}
+              sx={{ flexGrow: 1 }}
+            />
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Tooltip title={isCategoryExpanded(category.id) ? "ย่อ" : "ขยาย"}>
+                <IconButton size="small" onClick={() => toggleCategory(category.id)}>
+                  {isCategoryExpanded(category.id) ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="ลบหมวดหมู่">
+                <IconButton size="small" onClick={() => removeCategory(category.id)} color="error">
+                  <DeleteOutlineIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
 
-                {/* Sub Items */}
-                {isCategoryExpanded(category.id) &&
-                  category.subItems.map((item, itemIndex) => (
+          {isCategoryExpanded(category.id) && (
+            <Box sx={{ overflowX: "auto" }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "transparent" }}>
+                    <TableCell sx={{ width: "40px", borderBottom: "none" }}></TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.75rem", textTransform: "uppercase", py: 1.5 }}>รายการ / รายละเอียด</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.75rem", textTransform: "uppercase", width: "100px" }}>หน่วย</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.75rem", textTransform: "uppercase", width: "100px" }}>จำนวน</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.75rem", textTransform: "uppercase", width: "140px" }}>ราคา/หน่วย</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.75rem", textTransform: "uppercase", width: "140px" }}>รวมเงิน</TableCell>
+                    <TableCell sx={{ width: "80px", borderBottom: "none" }}></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {category.subItems.map((item, itemIndex) => (
                     <React.Fragment key={item.id}>
-                      {/* Product Name Row */}
-                      <TableRow sx={{ bgcolor: "#f0f7ff" }}>
-                        <TableCell sx={{ fontWeight: 500, fontSize: "1.1rem" }}>
-                          {catIndex + 1}.{itemIndex + 1}
+                      <TableRow sx={{ "& td": { borderBottom: "none", pt: 1, pb: 0 } }}>
+                        <TableCell sx={{ verticalAlign: "top", pt: 2.5 }}>
+                          <Typography variant="caption" color="text.disabled" fontWeight={700}>
+                            {catIndex + 1}.{itemIndex + 1}
+                          </Typography>
                         </TableCell>
-                        <TableCell colSpan={6}>
+                        <TableCell sx={{ pb: 0 }}>
                           <Autocomplete
                             freeSolo
                             disableClearable={false}
-                            options={item.name && item.name.length >= 3 ? allProducts : []}
+                            options={item.name && item.name.length >= 2 ? allProducts : []}
                             loading={loadingProducts}
-                            getOptionLabel={(option) => {
-                              if (typeof option === 'string') return option;
-                              return option.productName || "";
-                            }}
+                            getOptionLabel={(option) => typeof option === 'string' ? option : option.productName || ""}
                             value={item.name}
                             onInputChange={(event, newInputValue, reason) => {
                               if (reason === "input" || reason === "clear") {
                                 updateSubItem(category.id, item.id, { name: newInputValue });
-                                if (newInputValue.length >= 3) {
-                                  fetchProducts();
-                                }
+                                if (newInputValue.length >= 2) fetchProducts();
                               }
                             }}
                             onChange={(event, newValue: any) => {
@@ -248,78 +258,21 @@ const PricingTable: React.FC = () => {
                                 });
                               }
                             }}
-                            isOptionEqualToValue={(option, value) =>
-                              typeof value === 'string' ? option.productName === value : option.id === value.id
-                            }
-                            noOptionsText={item.name ? "ไม่พบข้อมูล พิมพ์เพื่อเพิ่มรายการใหม่" : "พิมพ์เพื่อค้นหาสินค้า..."}
-                            renderOption={(props, option) => (
-                              <Box component="li" {...props} key={option.id}>
-                                <Box sx={{ flexGrow: 1, py: 0.5 }}>
-                                  <Typography variant="body1" fontWeight={500} component="span">
-                                    {option.productName}
-                                  </Typography>
-                                  <Typography variant="body2" color="primary.main" component="span" sx={{ ml: 1, fontWeight: 500 }}>
-                                    • ฿{Number(option.aboutProduct?.productPrice || 0).toLocaleString()} / {option.aboutProduct?.unitName || "หน่วย"}
-                                  </Typography>
-                                  <Typography
-                                    variant="caption"
-                                    color="text.disabled"
-                                    display="block"
-                                    sx={{
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      maxWidth: '400px'
-                                    }}
-                                  >
-                                    {option.productDescription || "ไม่มีรายละเอียดสินค้า"}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                            )}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                placeholder="ค้นหาสินค้า..."
-                                variant="standard"
+                                placeholder="ค้นหาหรือพิมพ์ชื่อสินค้า..."
+                                variant="outlined"
+                                size="small"
                                 sx={{
-                                  '& .MuiInputBase-input': {
-                                    fontWeight: 500,
-                                    fontSize: "1.1rem",
-                                  },
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "8px",
+                                    bgcolor: "white",
+                                    fontWeight: 600,
+                                  }
                                 }}
                               />
                             )}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <IconButton size="small" onClick={() => duplicateSubItem(category.id, item.id)} color="primary">
-                            <ContentCopyIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" onClick={() => removeSubItem(category.id, item.id)} color="error">
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                      {/* Product Details Row */}
-                      <TableRow hover>
-                        <TableCell />
-                        <TableCell>
-                          <TextField
-                            fullWidth
-                            multiline
-                            minRows={2}
-                            placeholder="รายละเอียดสินค้า"
-                            value={item.description}
-                            onChange={(e) => updateSubItem(category.id, item.id, { description: e.target.value })}
-                            variant="outlined"
-                            size="small"
-                            sx={{
-                              '& .MuiInputBase-root': {
-                                fontSize: '0.875rem',
-                                lineHeight: 1.5,
-                              }
-                            }}
                           />
                         </TableCell>
                         <TableCell>
@@ -327,149 +280,189 @@ const PricingTable: React.FC = () => {
                             freeSolo
                             options={unitOptions}
                             value={item.unit}
-                            onInputChange={(event, newInputValue) => {
-                              updateSubItem(category.id, item.id, { unit: newInputValue });
-                            }}
-                            onChange={(event, newValue) => {
-                              updateSubItem(category.id, item.id, { unit: newValue || "" });
-                            }}
+                            onInputChange={(event, newInputValue) => updateSubItem(category.id, item.id, { unit: newInputValue })}
+                            onChange={(event, newValue) => updateSubItem(category.id, item.id, { unit: newValue || "" })}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                fullWidth
-                                placeholder="หน่วย"
-                                variant="standard"
+                                variant="outlined"
                                 size="small"
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "white" } }}
                               />
                             )}
                           />
                         </TableCell>
                         <TableCell>
                           <TextField
-                            fullWidth
                             type="number"
                             value={item.qty || ""}
                             onChange={(e) => updateSubItem(category.id, item.id, { qty: Number(e.target.value) })}
-                            variant="standard"
+                            variant="outlined"
                             size="small"
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "white" } }}
                           />
                         </TableCell>
                         <TableCell>
                           <TextField
-                            fullWidth
                             type="number"
                             value={item.pricePerUnit || ""}
-                            onChange={(e) =>
-                              updateSubItem(category.id, item.id, { pricePerUnit: Number(e.target.value) })
-                            }
-                            variant="standard"
+                            onChange={(e) => updateSubItem(category.id, item.id, { pricePerUnit: Number(e.target.value) })}
+                            variant="outlined"
                             size="small"
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "white" } }}
                           />
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2">
-                            {calculateSubItemTotal(item.qty, item.pricePerUnit).toLocaleString("th-TH", {
+                          <Typography variant="subtitle2" fontWeight={700} color="text.primary" sx={{ pt: 1 }}>
+                            ฿{calculateSubItemTotal(item.qty, item.pricePerUnit).toLocaleString("th-TH", {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ verticalAlign: "top", pt: 1.5 }}>
+                          <Box sx={{ display: "flex" }}>
+                            <Tooltip title="คัดลอก">
+                              <IconButton size="small" onClick={() => duplicateSubItem(category.id, item.id)} sx={{ color: "primary.main" }}>
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="ลบรายการ">
+                              <IconButton size="small" onClick={() => removeSubItem(category.id, item.id)} sx={{ color: "error.main" }}>
+                                <DeleteOutlineIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow sx={{ "& td": { borderBottom: "1px solid", borderColor: "grey.100", pt: 0.5, pb: 2 } }}>
+                        <TableCell />
+                        <TableCell colSpan={1}>
                           <TextField
                             fullWidth
-                            placeholder="หมายเหตุ"
+                            multiline
+                            placeholder="รายละเอียดเพิ่มเติม (ระบุหรือไม่ก็ได้)"
+                            value={item.description}
+                            onChange={(e) => updateSubItem(category.id, item.id, { description: e.target.value })}
+                            variant="outlined"
+                            size="small"
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                                fontSize: "0.8125rem",
+                                bgcolor: "grey.50",
+                                "& fieldset": { borderColor: "transparent" },
+                                "&:hover fieldset": { borderColor: "grey.300" },
+                                "&.Mui-focused fieldset": { borderColor: "primary.main", bgcolor: "white" },
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell colSpan={4}>
+                          <TextField
+                            fullWidth
+                            placeholder="หมายเหตุ (ภายใน)"
                             value={item.remark}
                             onChange={(e) => updateSubItem(category.id, item.id, { remark: e.target.value })}
-                            variant="standard"
+                            variant="outlined"
                             size="small"
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                                fontSize: "0.8125rem",
+                                bgcolor: "grey.50",
+                                "& fieldset": { borderColor: "transparent" },
+                              }
+                            }}
                           />
                         </TableCell>
                         <TableCell />
                       </TableRow>
                     </React.Fragment>
                   ))}
-
-                {/* Add Sub Item Button */}
-                {isCategoryExpanded(category.id) && (
-                  <TableRow>
-                    <TableCell colSpan={8} sx={{ py: 1 }}>
-                      <Button
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() => handleAddSubItem(category.id)}
-                        sx={{ ml: 2 }}
-                      >
-                        เพิ่มรายการย่อย
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
-
-                {/* Category Subtotal */}
-                {isCategoryExpanded(category.id) && category.subItems.length > 0 && (
-                  <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-                    <TableCell colSpan={5} sx={{ textAlign: "right" }}>
-                      <Typography variant="body1" fontWeight={500}>
-                        รวมหมวดหมู่
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body1" fontWeight={500}>
-                        {getCategoryTotal(category.id).toLocaleString("th-TH", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell colSpan={2} />
-                  </TableRow>
-                )}
-              </React.Fragment>
-            ))}
-
-            {/* Grand Total */}
-            {categories.length > 0 && (
-              <TableRow
-                sx={{
-                  bgcolor: theme.palette.primary.main,
-                  "& td": { color: "white", fontWeight: 500 },
-                }}
-              >
-                <TableCell colSpan={5} sx={{ textAlign: "right" }}>
-                  <Typography variant="h6" sx={{ color: "white", fontWeight: 500 }}>
-                    มูลค่ารวมทั้งหมด
+                </TableBody>
+              </Table>
+              <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "grey.25" }}>
+                <Button
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => handleAddSubItem(category.id)}
+                  sx={{
+                    borderRadius: "6px",
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  เพิ่มรายการย่อย
+                </Button>
+                <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    รวมหมวดหมู่ ({category.name || "ยังไม่ระบุชื่อ"}):
                   </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="h6" sx={{ color: "white", fontWeight: 500 }}>
-                    {getTotalPrice().toLocaleString("th-TH", {
+                  <Typography variant="h6" color="primary.main" fontWeight={700}>
+                    ฿{getCategoryTotal(category.id).toLocaleString("th-TH", {
                       minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
                     })}
                   </Typography>
-                </TableCell>
-                <TableCell colSpan={2} />
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                </Box>
+              </Box>
+            </Box>
+          )}
+        </Paper>
+      ))}
 
-      {categories.length === 0 && (
+      {categories.length === 0 ? (
         <Box
           sx={{
             textAlign: "center",
-            py: 8,
-            bgcolor: "#f5f5f5",
-            borderRadius: 2,
-            mt: 2,
+            py: 10,
+            bgcolor: "grey.50",
+            borderRadius: "16px",
+            border: "2px dashed",
+            borderColor: "grey.200",
           }}
         >
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            ยังไม่มีข้อมูล
+          <Typography variant="h6" color="text.secondary" gutterBottom fontWeight={600}>
+            ยังไม่มีรายการสินค้าหรือบริการ
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            กดปุ่ม "เพิ่มหมวดหมู่หลัก" เพื่อเริ่มต้นสร้างตารางราคา
+          <Typography variant="body2" color="text.disabled" sx={{ mb: 3 }}>
+            เริ่มต้นโดยการเพิ่มหมวดหมู่เพื่อจัดกลุ่มรายการของคุณ
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={handleAddCategory}
+            sx={{ borderRadius: "8px", px: 4 }}
+          >
+            สร้างหมวดหมู่แรก
+          </Button>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            mt: 4,
+            p: 3,
+            borderRadius: "12px",
+            bgcolor: "primary.main",
+            color: "white",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: theme.shadows[4],
+          }}
+        >
+          <Box>
+            <Typography variant="subtitle2" sx={{ opacity: 0.8, fontWeight: 600 }}>
+              มูลค่ารวมทุกหมวดหมู่ (Subtotal)
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.6 }}>
+              ยังไม่รวมส่วนลดและภาษีมูลค่าเพิ่ม
+            </Typography>
+          </Box>
+          <Typography variant="h3" fontWeight={800}>
+            ฿{getTotalPrice().toLocaleString("th-TH", {
+              minimumFractionDigits: 2,
+            })}
           </Typography>
         </Box>
       )}

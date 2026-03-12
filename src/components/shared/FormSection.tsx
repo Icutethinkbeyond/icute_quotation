@@ -24,18 +24,29 @@ const FormSection: React.FC<FormSectionProps> = ({
                 borderRadius: "12px",
                 height: "100%",
                 backgroundColor: "#ffffff",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                // border: "1px solid",
+                // borderColor: "grey.100",
+                // boxShadow: "0 2px 12px rgba(0, 0, 0, 0.04)",
             }}
         >
             <Typography
-                variant="h4"
-                fontWeight={600}
+                variant="h5"
+                fontWeight={700}
                 gutterBottom
                 sx={{
-                    mb: 2,
-                    color: theme.palette.primary.main,
-                    pb: 1.5,
-                    borderBottom: `2px solid ${theme.palette.primary.main}`,
+                    mb: 3,
+                    color: "text.primary",
+                    display: "flex",
+                    alignItems: "center",
+                    "&::before": {
+                        content: '""',
+                        display: "inline-block",
+                        width: "4px",
+                        height: "20px",
+                        bgcolor: theme.palette.primary.main,
+                        borderRadius: "4px",
+                        mr: 1.5
+                    }
                 }}
             >
                 {title}

@@ -44,18 +44,60 @@ const QuotationHeader: React.FC<QuotationHeaderProps> = ({
         >
           {/* ข้อมูลลูกค้า (ฝั่งซ้าย) */}
           <Grid2 size={6}>
-            <Typography variant="h6" sx={{ fontSize: 16, mb: 1, fontWeight: "bold" }}>
-              ลูกค้า: คุณ{headForm?.contactorName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
-              เบอร์โทรศัพท์: {headForm?.companyTel}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
-              อีเมล: {headForm?.contactorEmail}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
-              ที่อยู่ {headForm?.contactorAddress}
-            </Typography>
+            {headForm.customerType === "Corporate" ? (
+              <>
+                <Typography variant="h6" sx={{ fontSize: 16, mb: 1, fontWeight: "bold" }}>
+                  ลูกค้า: {headForm?.customerCompanyName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                  เบอร์โทรศัพท์: {headForm?.customerCompanyTel || "-"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                  ที่อยู่: {headForm?.customerCompanyAddress}
+                </Typography>
+                {headForm?.customerTaxId && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                    เลขประจำตัวผู้เสียภาษี: {headForm?.customerTaxId}
+                    {headForm?.customerBranch ? ` (สาขา: ${headForm?.customerBranch})` : ""}
+                  </Typography>
+                )}
+                {headForm?.contactorName && (
+                  <Typography variant="body2" sx={{ mb: 0.5, fontSize: 13, fontWeight: 500 }}>
+                    ชื่อผู้ติดต่อ: {headForm?.contactorName}
+                  </Typography>
+                )}
+                {headForm?.contactorTel && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                    โทรศัพท์: {headForm?.contactorTel}
+                  </Typography>
+                )}
+                {headForm?.contactorEmail && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                    อีเมล: {headForm?.contactorEmail}
+                  </Typography>
+                )}
+              </>
+            ) : (
+              // Individual Customer
+              <>
+                <Typography variant="h6" sx={{ fontSize: 16, mb: 1, fontWeight: "bold" }}>
+                  ลูกค้า: {headForm?.contactorName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                  เบอร์โทรศัพท์: {headForm?.contactorTel || "-"}
+                </Typography>
+                {headForm?.contactorEmail && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                    อีเมล: {headForm?.contactorEmail}
+                  </Typography>
+                )}
+                {headForm?.contactorAddress && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                    ที่อยู่: {headForm?.contactorAddress}
+                  </Typography>
+                )}
+              </>
+            )}
           </Grid2>
 
           {/* ข้อมูลบริษัทและเลขที่เอกสาร (ฝั่งขวา) */}
@@ -83,7 +125,7 @@ const QuotationHeader: React.FC<QuotationHeaderProps> = ({
                 fontSize: 14,
               }}
             >
-              {headForm?.companyName} สาขา {headForm?.branch}
+              {headForm?.companyName} {headForm?.branch ? `สาขา ${headForm?.branch}` : ""}
             </Typography>
 
             {headForm?.taxId && (
@@ -107,7 +149,7 @@ const QuotationHeader: React.FC<QuotationHeaderProps> = ({
               color="text.secondary"
               sx={{ lineHeight: 1, fontSize: 11 }}
             >
-              โทร: {headForm?.contactorTel}
+              โทร: {headForm?.companyTel}
             </Typography>
           </Grid2>
         </Grid2>

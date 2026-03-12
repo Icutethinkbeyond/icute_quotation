@@ -1,78 +1,97 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useCallback } from "react";
 import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { Box, Button, IconButton, Tooltip, useTheme } from "@mui/material";
+import { Box, Button, IconButton, Tooltip, Chip, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { Add, EditCalendar, Delete, Visibility, DeleteSweep } from "@mui/icons-material";
 import { GenericDataTable } from "@/components/shared/GenericDataTable";
 import { useDataTable } from "@/hooks/useDataTable";
 import { useDebounceSearch } from "@/hooks/useDebounceSearch";
 
-interface ProductRow {
+interface QuotationRow {
     id: string;
-    keyId: string;
-    productName: string;
-    description: string;
-    price: number;
-    unit: string;
+    quotationNumber: string;
+    customerCompanyName: string;
+    totalAmount: number;
+    status: string;
+    dateCreate: string;
 }
 
-const ProductsTable: React.FC = () => {
+const QuotationsTable: React.FC = () => {
     const router = useRouter();
     const theme = useTheme();
 
-    // Data mapping function
-    const mapProductData = useCallback((product: any): ProductRow => ({
-        id: product.productId,
-        keyId: product.productId,
-        productName: product.productName,
-        description: product.productDescription || "",
-        price: product.aboutProduct?.productPrice || 0,
-        unit: product.aboutProduct?.unitName || "ชิ้น",
+    const mapQuotationData = useCallback((quotation: any): QuotationRow => ({
+        id: quotation.quotationId,
+        quotationNumber: quotation.quotationNumber,
+        customerCompanyName: quotation.customerCompanyName,
+        totalAmount: quotation.finalTotal,
+        status: quotation.status, // Assuming a status field exists
+        dateCreate: new Date(quotation.dateCreate).toLocaleDateString("th-TH"),
     }), []);
 
-    // Use data table hook
     const {
         rows,
         loading,
         paginationModel,
         setPaginationModel,
         refresh,
-    } = useDataTable<any, ProductRow>({
-        apiUrl: "/api/inventory/product",
-        mapData: mapProductData,
+    } = useDataTable<any, QuotationRow>({
+        apiUrl: "/api/income/quotation",
+        mapData: mapQuotationData,
     });
 
-    // Use debounce search hook
     const { searchQuery, setSearchQuery, filteredRows } = useDebounceSearch({
         rows,
-        searchFields: ["productName", "description"],
+        searchFields: ["quotationNumber", "customerCompanyName"],
         debounceMs: 500,
     });
 
-    const handleDelete = async (productId: string) => {
-        if (!confirm("คุณต้องการย้ายสินค้านี้ไปถังขยะใช่หรือไม่?")) return;
+    const handleDelete = async (quotationId: string) => {
+        if (!confirm("คุณต้องการย้ายใบเสนอราคานี้ไปถังขยะใช่หรือไม่?")) return;
         try {
-            const response = await fetch(`/api/inventory/product/${productId}`, {
+            const response = await fetch(`/api/income/quotation/${quotationId}`, {
                 method: "DELETE",
             });
-
             if (response.ok) {
                 refresh();
             } else {
-                console.error("Failed to delete product");
+                console.error("Failed to move quotation to trash");
             }
         } catch (error) {
-            console.error("Error deleting product:", error);
+            console.error("Error moving quotation to trash:", error);
         }
     };
 
     const columns: GridColDef[] = [
-        { field: "productName", headerName: "ชื่อสินค้า", flex: 3, type: "string", },
-        { field: "description", headerName: "รายละเอียด", flex: 3, type: "string", },
-        { field: "price", headerName: "ราคา", flex: 3, type: "number", valueFormatter: (params: any) => params.value},
-        { field: "unit", headerName: "หน่วย", flex: 3, type: "string", },
+        { field: "quotationNumber", headerName: "เลขที่ใบเสนอราคา", flex: 1.5, minWidth: 150 },
+        { field: "customerCompanyName", headerName: "บริษัทลูกค้า", flex: 2, minWidth: 200 },
+        { 
+            field: "totalAmount", 
+            headerName: "ยอดรวม", 
+            flex: 1, 
+            minWidth: 120, 
+            type: "number",
+            valueFormatter: (params) => params.value.toLocaleString("th-TH", { minimumFractionDigits: 2 }),
+        },
+        { 
+            field: "status", 
+            headerName: "สถานะ", 
+            flex: 1, 
+            minWidth: 100,
+            renderCell: (params: GridRenderCellParams) => {
+                let color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' = 'default';
+                switch (params.value) {
+                    case 'Pending': color = 'warning'; break;
+                    case 'Approved': color = 'success'; break;
+                    case 'Rejected': color = 'error'; break;
+                    default: color = 'info'; break;
+                }
+                return <Chip label={params.value} color={color} size="small" />;
+            },
+        },
+        { field: "dateCreate", headerName: "วันที่สร้าง", flex: 1, minWidth: 120 },
         {
             field: "actions",
             headerName: "การจัดการ",
@@ -82,19 +101,12 @@ const ProductsTable: React.FC = () => {
             sortable: false,
             width: 150,
             renderCell: (params: GridRenderCellParams) => (
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        gap: 0.5,
-                    }}
-                >
+                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 0.5 }}>
                     <Tooltip title="แก้ไข">
                         <IconButton
                             size="small"
                             color="secondary"
-                            onClick={() => router.push(`/product/edit/${params.row.id}`)}
+                            onClick={() => router.push(`/quotation/edit-quotation/${params.row.id}`)}
                         >
                             <EditCalendar fontSize="small" />
                         </IconButton>
@@ -102,7 +114,7 @@ const ProductsTable: React.FC = () => {
                     <Tooltip title="ดูข้อมูล">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/product/view-product/${params.row.id}`)}
+                            onClick={() => router.push(`/quotation/view-quotation/${params.row.id}`)}
                             size="small"
                         >
                             <Visibility fontSize="small" />
@@ -127,7 +139,7 @@ const ProductsTable: React.FC = () => {
             <Button
                 variant="outlined"
                 startIcon={<DeleteSweep />}
-                onClick={() => router.push("/product/trash")}
+                onClick={() => router.push("/quotation/trash")}
                 sx={{
                     color: theme.palette.error.main,
                     borderColor: theme.palette.error.main,
@@ -147,7 +159,7 @@ const ProductsTable: React.FC = () => {
             <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => router.push("/product/new")}
+                onClick={() => router.push("/quotation/new-quotation")}
                 sx={{
                     textTransform: "none",
                     borderRadius: "8px",
@@ -158,14 +170,14 @@ const ProductsTable: React.FC = () => {
                     },
                 }}
             >
-                เพิ่มสินค้าใหม่
+                สร้างใบเสนอราคาใหม่
             </Button>
         </>
     );
 
     return (
         <GenericDataTable
-            title="ข้อมูลสินค้าทั้งหมด"
+            title="ใบเสนอราคาทั้งหมด"
             rows={filteredRows}
             columns={columns}
             loading={loading}
@@ -173,10 +185,10 @@ const ProductsTable: React.FC = () => {
             onSearchChange={setSearchQuery}
             paginationModel={paginationModel}
             onPaginationChange={setPaginationModel}
-            getRowId={(row) => row.id} // Changed from row.keyId to row.id
+            getRowId={(row) => row.id}
             headerActions={headerActions}
         />
     );
 };
 
-export default ProductsTable;
+export default QuotationsTable;

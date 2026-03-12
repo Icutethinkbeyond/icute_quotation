@@ -76,18 +76,30 @@ function EditQuotation({ params }: { params: { id: string } }) {
         setDiscount(quotation.globalDiscount || 0);
         setVatIncluded(quotation.includeVat || false);
 
-        // โหลดข้อมูลบริษัทและผู้ติดต่อ
+        // โหลดข้อมูลเข้า headForm
         setHeadForm({
           quotationNumber: quotation.documentIdNo || "",
-          companyName: quotation.customerCompany?.companyName || "",
-          companyTel: quotation.customerCompany?.companyTel || "",
+          
+          // Issuer Info (Our Company)
+          companyName: "",
+          companyTel: "",
+          companyAddress: "",
+          taxId: "",
+          branch: "",
+
+          // Customer Company Info
+          customerCompanyName: quotation.customerCompany?.companyName || "",
+          customerCompanyTel: quotation.customerCompany?.companyTel || "",
+          customerCompanyAddress: quotation.customerCompany?.companyAddress || "",
+          customerTaxId: quotation.customerCompany?.taxId || "",
+          customerBranch: quotation.customerCompany?.branch || "",
+
+          // Contactor Info
           contactorName: quotation.contactor?.contactorName || "",
           contactorTel: quotation.contactor?.contactorTel || "",
-          companyAddress: quotation.customerCompany?.companyAddress || "",
-          contactorAddress: quotation.contactor?.contactorAddress || "",
           contactorEmail: quotation.contactor?.contactorEmail || "",
-          taxId: quotation.customerCompany?.taxId || "",
-          branch: quotation.customerCompany?.branch || "",
+          contactorAddress: quotation.contactor?.contactorAddress || "",
+
           dateCreate: quotation.documentCreateDate
             ? new Date(quotation.documentCreateDate).toISOString().split("T")[0]
             : "",
@@ -154,4 +166,3 @@ function EditQuotation({ params }: { params: { id: string } }) {
 }
 
 export default EditQuotation;
-

@@ -1,42 +1,44 @@
 "use client"
 
 import React from 'react';
-import { Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button } from '@mui/material';
+import { Box, AppBar, Toolbar, styled, Stack, IconButton, useTheme } from '@mui/material';
 import PropTypes from 'prop-types';
 
 // components
 import Profile from './Profile';
-import Search from './Search';
-import {IconMenu2 } from '@tabler/icons-react';
+import { IconMenu2 } from '@tabler/icons-react';
 
 interface ItemType {
-  toggleMobileSidebar?:  (event: React.MouseEvent<HTMLElement>) => void ;
+  toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
-const Header = ({toggleMobileSidebar}: ItemType) => {
+const Header = ({ toggleMobileSidebar }: ItemType) => {
+  const theme = useTheme();
 
-  // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
-  // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
-
-  
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: 'none',
-    background: theme.palette.background.paper,
+    background: 'rgba(255, 255, 255, 0.7)',
     justifyContent: 'center',
-    backdropFilter: 'blur(4px)',
+    backdropFilter: 'blur(10px)',
+    borderBottom: '1px solid rgba(0,0,0,0.08)',
     [theme.breakpoints.up('lg')]: {
       minHeight: '70px',
     },
   }));
+
   const ToolbarStyled = styled(Toolbar)(({ theme }) => ({
     width: '100%',
     color: theme.palette.text.secondary,
+    padding: '0 25px ! from theme', // or theme.spacing(0, 3)
+    [theme.breakpoints.up('lg')]: {
+      padding: theme.spacing(0, 3),
+    },
   }));
 
   return (
     <AppBarStyled position="sticky" color="default">
       <ToolbarStyled>
-        {/* <IconButton
+        <IconButton
           color="inherit"
           aria-label="menu"
           onClick={toggleMobileSidebar}
@@ -47,14 +49,13 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
             },
           }}
         >
-          <IconMenu2 width="20" height="20" />
-        </IconButton> */}
+          <IconMenu2 width="22" height="22" />
+        </IconButton>
 
-        {/* <Search/> */}
-         
         <Box flexGrow={1} />
+        
         <Stack spacing={1} direction="row" alignItems="center">
-          {/* <Profile /> */}
+          <Profile />
         </Stack>
       </ToolbarStyled>
     </AppBarStyled>
@@ -62,7 +63,7 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
 };
 
 Header.propTypes = {
-  sx: PropTypes.object,
+  toggleMobileSidebar: PropTypes.func,
 };
 
 export default Header;

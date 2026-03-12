@@ -7,6 +7,7 @@ import {
   Typography,
   useTheme,
   CircularProgress,
+  InputAdornment,
 } from "@mui/material";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -18,39 +19,53 @@ import {
 } from "@/contexts/QuotationContext";
 import { CompanyProfile } from "@/interfaces/Company";
 import debounce from "lodash/debounce";
+import { 
+  Business, 
+  Phone, 
+  Receipt, 
+  AccountTree, 
+  CalendarToday, 
+  LocationOn 
+} from "@mui/icons-material";
 
 // Validation Schema with Yup
 const CompanyInformationSchema = Yup.object({
-  // companyName: Yup.string().required("ชื่อบริษัทจำเป็นต้องกรอก"),
+  companyName: Yup.string().required("กรุณาระบุชื่อบริษัท"),
+  taxId: Yup.string().required("กรุณาระบุเลขประจำตัวผู้เสียภาษี"),
 });
 
-// Styled TextField - focus border only, no background change
-const getTextFieldSx = (theme: any) => ({
+// Styled Input Helper
+const inputStyles = (theme: any) => ({
   "& .MuiOutlinedInput-root": {
-    borderRadius: "8px",
-    "&:hover .MuiOutlinedInput-notchedOutline": {
-      borderColor: theme.palette.primary.main,
+    borderRadius: "10px",
+    transition: "all 0.2s ease-in-out",
+    backgroundColor: "grey.50",
+    "& fieldset": { borderColor: "grey.200" }, // Always visible border
+    "&:hover": {
+      backgroundColor: "grey.100",
+      "& fieldset": { borderColor: "grey.300" }, // Darker border on hover
     },
-    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-      borderColor: theme.palette.primary.main,
-      borderWidth: "2px",
+    "&.Mui-focused": {
+      backgroundColor: "#ffffff",
+      "& fieldset": { borderColor: theme.palette.primary.main, borderWidth: "2px" },
     },
   },
-  "& .MuiInputLabel-root.Mui-focused": {
-    color: theme.palette.primary.main,
+  "& .MuiInputLabel-root": {
+    fontSize: "0.875rem",
+    fontWeight: 500,
   },
 });
 
 const CompanyInformation: React.FC = () => {
+  const theme = useTheme();
   const { headForm, setHeadForm } = useQuotationListContext();
   const [suggestions, setSuggestions] = useState<CompanyProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
-  const theme = useTheme();
 
   // Fetch company profiles for autocomplete
   const fetchSuggestions = async (search: string) => {
-    if (search.length < 3) {
+    if (search.length < 2) {
       setSuggestions([]);
       return;
     }
@@ -74,13 +89,11 @@ const CompanyInformation: React.FC = () => {
     }
   };
 
-  // Debounced search
   const debouncedFetch = useCallback(
     debounce((value: string) => fetchSuggestions(value), 300),
     [],
   );
 
-  // Handle select company from suggestions
   const handleSelectCompany = (
     profile: CompanyProfile | null,
     setFieldValue: any,
@@ -92,273 +105,218 @@ const CompanyInformation: React.FC = () => {
       setFieldValue("branch", profile.branch || "");
       setFieldValue("companyAddress", profile.companyAddress || "");
     }
-    setSuggestions([]);
   };
 
-  // Reset ฟอร์มทั้งหมดเมื่อเข้าหน้า New Quotation
-  useEffect(
-    () => {
-      const initNewQuotation = async () => {
+  const initNewQuotation = async () => {
+    setLoadingFavorite(true);
+    const today = new Date().toISOString().split("T")[0];
+    let initialHead = { ...headerClean, dateCreate: today };
 
-        setLoadingFavorite(true)
-        console.log("🔄 Resetting form data for new quotation...");
-
-        const today = new Date().toISOString().split("T")[0];
-        let initialHead = { ...headerClean, dateCreate: today };
-
-        // Try to fetch favorite company for auto-fill
-        try {
-          const response = await fetch("/api/companies");
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            const favorite = data.find((c: any) => c.isFavorite);
-            if (favorite) {
-              initialHead = {
-                ...initialHead,
-                companyName: favorite.companyName || "",
-                companyTel: favorite.companyPhoneNumber || "",
-                taxId: favorite.companyTaxId || "",
-                branch: favorite.branch || "",
-                companyAddress: favorite.companyAddress || "",
-              };
-              console.log(
-                "✅ Auto-filled favorite company:",
-                favorite.companyName,
-              );
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching favorite company:", error);
+    try {
+      const response = await fetch("/api/companies/favorite");
+      if (response.ok) {
+        const data = await response.json();
+        if (data) {
+          initialHead = {
+            ...initialHead,
+            companyName: data.companyName || "",
+            companyTel: data.companyPhoneNumber || "",
+            taxId: data.companyTaxId || "",
+            branch: data.branch || "",
+            companyAddress: data.companyAddress || "",
+          };
         }
+      }
+    } catch (error) {
+      console.error("Error fetching favorite company:", error);
+    }
 
-        console.log(initialHead);
-        setHeadForm(initialHead);
+    setHeadForm(initialHead);
+    setLoadingFavorite(false);
+  };
 
-        console.log("✅ Form reset complete");
-        setLoadingFavorite(false)
-      };
-
+  useEffect(() => {
+    if (!headForm.companyName) {
       initNewQuotation();
-    },
-    [
-      // setHeadForm,
-    ],
-  ); // Run only once when component mounts
+    }
+  }, []);
 
   if (loadingFavorite) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 400,
-        }}
-      >
-        <CircularProgress />
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 300 }}>
+        <CircularProgress size={32} thickness={5} />
       </Box>
     );
   }
 
   return (
-    <>
-      <Formik<HeadForm>
-        initialValues={headForm}
-        validationSchema={CompanyInformationSchema}
-        enableReinitialize
-        onSubmit={(values) => {
-          console.log("บันทึกข้อมูล:", values);
+    <Formik<HeadForm>
+      initialValues={headForm}
+      validationSchema={CompanyInformationSchema}
+      enableReinitialize
+      onSubmit={() => {}}
+    >
+      {({ touched, errors, values, setFieldValue }) => {
+        // Update context when formik values change
+        useEffect(() => {
           setHeadForm(values);
-        }}
-      >
-        {({ touched, errors, values, setFieldValue }) => {
-          useEffect(() => {
-            setHeadForm(values);
-          }, [values, setHeadForm]);
+        }, [values]);
 
-          return (
-            <Form>
-              <FormSection title="ข้อมูลบริษัท">
-                <Grid2 container spacing={2}>
-                  {/* Company Name with Autocomplete */}
-                  <Grid2 size={12}>
-                    <Autocomplete
-                      freeSolo
-                      disableClearable={false}
-                      options={suggestions}
-                      loading={loading}
-                      inputValue={values.companyName || ""}
-                      onInputChange={(event, newValue, reason) => {
-                        if (reason === "input" || reason === "clear") {
-                          setFieldValue("companyName", newValue);
-                          if (reason === "input") {
-                            debouncedFetch(newValue);
-                          }
-                        }
-                      }}
-                      onOpen={() => fetchSuggestions(values.companyName || "")}
-                      onChange={(event, newValue) => {
-                        if (typeof newValue === "object" && newValue !== null) {
-                          handleSelectCompany(newValue, setFieldValue);
-                        }
-                      }}
-                      getOptionLabel={(option) =>
-                        typeof option === "string"
-                          ? option
-                          : option.companyName || ""
+        return (
+          <Form>
+            <FormSection title="ผู้ออกเอกสาร (ข้อมูลบริษัท)">
+              <Grid2 container spacing={2.5}>
+                {/* Company Name with Autocomplete */}
+                <Grid2 size={12}>
+                  <Autocomplete
+                    freeSolo
+                    disableClearable={false}
+                    options={suggestions}
+                    loading={loading}
+                    inputValue={values.companyName || ""}
+                    onInputChange={(_, newValue, reason) => {
+                      if (reason === "input" || reason === "clear") {
+                        setFieldValue("companyName", newValue);
+                        if (reason === "input") debouncedFetch(newValue);
                       }
-                      isOptionEqualToValue={(option, value) =>
-                        option.companyId === value.companyId
+                    }}
+                    onChange={(_, newValue) => {
+                      if (typeof newValue === "object" && newValue !== null) {
+                        handleSelectCompany(newValue, setFieldValue);
                       }
-                      noOptionsText={
-                        values.companyName
-                          ? "ไม่พบข้อมูล พิมพ์เพื่อใช้ชื่อบริษัทนี้"
-                          : "พิมพ์เพื่อค้นหาบริษัท..."
-                      }
-                      loadingText="กำลังค้นหา..."
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props} key={option.companyId}>
-                          <Box sx={{ py: 0.5 }}>
-                            <Typography
-                              variant="body1"
-                              fontWeight={500}
-                              sx={{ color: theme.palette.primary.main }}
-                            >
-                              {option.companyName}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {option.companyTaxId
-                                ? `เลขภาษี: ${option.companyTaxId}`
-                                : ""}
-                              {option.companyPhoneNumber
-                                ? ` • ${option.companyPhoneNumber}`
-                                : ""}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.disabled"
-                              sx={{
-                                display: "block",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: "400px",
-                              }}
-                            >
-                              {option.companyAddress || "ไม่ระบุที่อยู่"}
-                            </Typography>
-                          </Box>
+                    }}
+                    getOptionLabel={(option) => typeof option === "string" ? option : option.companyName || ""}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.companyId} sx={{ borderBottom: "1px solid", borderColor: "grey.100" }}>
+                        <Box sx={{ py: 1 }}>
+                          <Typography variant="subtitle2" fontWeight={700} color="primary.main">
+                            {option.companyName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                            เลขภาษี: {option.companyTaxId || "-"} | สาขา: {option.branch || "สำนักงานใหญ่"}
+                          </Typography>
                         </Box>
-                      )}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          name="companyName"
-                          label="ชื่อบริษัท"
-                          variant="outlined"
-                          size="small"
-                          fullWidth
-                          error={
-                            touched.companyName && Boolean(errors.companyName)
-                          }
-                          helperText={<ErrorMessage name="companyName" />}
-                          placeholder="พิมพ์ 3 ตัวอักษรเพื่อเริ่มค้นหา..."
-                          sx={getTextFieldSx(theme)}
-                        />
-                      )}
-                    />
-                  </Grid2>
-                  <Grid2 size={6}>
-                    <TextField
-                      name="companyTel"
-                      label="เบอร์โทร"
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      value={values.companyTel || ""}
-                      onChange={(e) =>
-                        setFieldValue("companyTel", e.target.value)
-                      }
-                      error={touched.companyTel && Boolean(errors.companyTel)}
-                      helperText={<ErrorMessage name="companyTel" />}
-                      sx={getTextFieldSx(theme)}
-                    />
-                  </Grid2>
-                  <Grid2 size={6}>
-                    <TextField
-                      name="taxId"
-                      label="เลขที่เสียภาษี"
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      value={values.taxId || ""}
-                      onChange={(e) => setFieldValue("taxId", e.target.value)}
-                      error={touched.taxId && Boolean(errors.taxId)}
-                      helperText={<ErrorMessage name="taxId" />}
-                      sx={getTextFieldSx(theme)}
-                    />
-                  </Grid2>
-                  <Grid2 size={12}>
-                    <TextField
-                      name="branch"
-                      label="สาขา"
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      value={values.branch || ""}
-                      onChange={(e) => setFieldValue("branch", e.target.value)}
-                      error={touched.branch && Boolean(errors.branch)}
-                      helperText={<ErrorMessage name="branch" />}
-                      sx={getTextFieldSx(theme)}
-                    />
-                  </Grid2>
-                  <Grid2 size={12}>
-                    <TextField
-                      name="dateCreate"
-                      label="วันที่สร้าง"
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      type="date"
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                      value={values.dateCreate || ""}
-                      onChange={(e) =>
-                        setFieldValue("dateCreate", e.target.value)
-                      }
-                      error={touched.dateCreate && Boolean(errors.dateCreate)}
-                      helperText={<ErrorMessage name="dateCreate" />}
-                      sx={getTextFieldSx(theme)}
-                    />
-                  </Grid2>
-                  <Grid2 size={12}>
-                    <TextField
-                      name="companyAddress"
-                      label="ที่อยู่"
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      multiline
-                      rows={3}
-                      value={values.companyAddress || ""}
-                      onChange={(e) =>
-                        setFieldValue("companyAddress", e.target.value)
-                      }
-                      error={
-                        touched.companyAddress && Boolean(errors.companyAddress)
-                      }
-                      helperText={<ErrorMessage name="companyAddress" />}
-                      sx={getTextFieldSx(theme)}
-                    />
-                  </Grid2>
+                      </Box>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        name="companyName"
+                        label="ชื่อบริษัท / นามบุคคล"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        error={touched.companyName && Boolean(errors.companyName)}
+                        helperText={<ErrorMessage name="companyName" />}
+                        sx={inputStyles(theme)}
+                        InputProps={{
+                          ...params.InputProps,
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Business fontSize="small" color="action" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    )}
+                  />
                 </Grid2>
-              </FormSection>
-            </Form>
-          );
-        }}
-      </Formik>
-    </>
+
+                <Grid2 size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    name="companyTel"
+                    label="เบอร์โทรศัพท์"
+                    variant="outlined"
+                    size="small"
+                    placeholder="02-XXX-XXXX"
+                    fullWidth
+                    value={values.companyTel || ""}
+                    onChange={(e) => setFieldValue("companyTel", e.target.value)}
+                    sx={inputStyles(theme)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Phone fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid2>
+
+                <Grid2 size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    name="taxId"
+                    label="เลขประจำตัวผู้เสียภาษี"
+                    variant="outlined"
+                    placeholder="0123XXXXXXXX"
+                    size="small"
+                    fullWidth
+                    value={values.taxId || ""}
+                    onChange={(e) => setFieldValue("taxId", e.target.value)}
+                    error={touched.taxId && Boolean(errors.taxId)}
+                    helperText={<ErrorMessage name="taxId" />}
+                    sx={inputStyles(theme)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Receipt fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid2>
+
+                <Grid2 size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    name="branch"
+                    label="สาขา"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    placeholder="เช่น สำนักงานใหญ่ หรือ 00001"
+                    value={values.branch || ""}
+                    onChange={(e) => setFieldValue("branch", e.target.value)}
+                    sx={inputStyles(theme)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <AccountTree fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid2>
+
+
+
+                <Grid2 size={12}>
+                  <TextField
+                    name="companyAddress"
+                    label="ที่อยู่บริษัท"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    multiline
+                    rows={3}
+                    placeholder="ที่อยู่สำหรับออกใบกำกับภาษี..."
+                    value={values.companyAddress || ""}
+                    onChange={(e) => setFieldValue("companyAddress", e.target.value)}
+                    sx={inputStyles(theme)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1 }}>
+                          <LocationOn fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid2>
+              </Grid2>
+            </FormSection>
+          </Form>
+        );
+      }}
+    </Formik>
   );
 };
 

@@ -143,18 +143,33 @@ export default function QuotationPreviewPage({
         setDiscount(quotation.globalDiscount);
         setVatIncluded(quotation.includeVat);
 
-        // โหลดข้อมูลบริษัทและผู้ติดต่อ
+        // โหลดข้อมูลเข้า headForm
+        // NOTE: ใน Quotation model ของเราดูเหมือนจะไม่ได้เก็บ "Our Company" แยกไว้ในตาราง DocumentPaper 
+        // แต่อาจจะใช้ข้อมูลจาก favorite CompanyProfile มาแทน หรือเก็บไว้ใน fields อื่น
+        // สำหรับตอนนี้เราจะแมปตาม logic ที่ถูกต้องคือ customerCompany fields ไปลง customer fields ใน headForm
         setHeadForm({
           quotationNumber: quotation.documentIdNo || "",
-          companyName: quotation.customerCompany?.companyName || "",
-          companyTel: quotation.customerCompany?.companyTel || "",
+          
+          // Issuer Info (Our Company) - Ideally this should come from where it was saved, but let's leave it for now or use placeholders if unknown
+          companyName: "", 
+          companyTel: "",
+          companyAddress: "",
+          taxId: "",
+          branch: "",
+
+          // Customer Company Info
+          customerCompanyName: quotation.customerCompany?.companyName || "",
+          customerCompanyTel: quotation.customerCompany?.companyTel || "",
+          customerCompanyAddress: quotation.customerCompany?.companyAddress || "",
+          customerTaxId: quotation.customerCompany?.taxId || "",
+          customerBranch: quotation.customerCompany?.branch || "",
+
+          // Contactor Info
           contactorName: quotation.contactor?.contactorName || "",
           contactorTel: quotation.contactor?.contactorTel || "",
-          companyAddress: quotation.customerCompany?.companyAddress || "",
-          contactorAddress: quotation.contactor?.contactorAddress || "",
           contactorEmail: quotation.contactor?.contactorEmail || "",
-          taxId: quotation.customerCompany?.taxId || "",
-          branch: quotation.customerCompany?.branch || "",
+          contactorAddress: quotation.contactor?.contactorAddress || "",
+
           dateCreate: quotation.documentCreateDate
             ? new Date(quotation.documentCreateDate).toISOString().split("T")[0]
             : "",

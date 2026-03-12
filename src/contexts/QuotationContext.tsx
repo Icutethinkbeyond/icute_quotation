@@ -113,13 +113,26 @@ export interface IHeadForm {
   quotationNumber: string;
   companyName: string;
   companyTel: string;
-  contactorName: string;
-  contactorTel: string;
   companyAddress: string;
-  contactorAddress: string;
-  contactorEmail: string;
   taxId: string;
   branch: string;
+
+  // Customer Type
+  customerType: "Individual" | "Corporate"; // Added field
+
+  // Customer Company Fields
+  customerCompanyName: string;
+  customerCompanyTel: string;
+  customerCompanyAddress: string;
+  customerTaxId: string;
+  customerBranch: string;
+
+  // Contactor Fields
+  contactorName: string;
+  contactorTel: string;
+  contactorAddress: string;
+  contactorEmail: string;
+
   dateCreate: string;
   includeTax: boolean;
   note: string;
@@ -227,13 +240,21 @@ export const headerClean: IHeadForm = {
   quotationNumber: "",
   companyName: "",
   companyTel: "",
-  contactorName: "",
-  contactorTel: "",
   companyAddress: "",
-  contactorAddress: "",
-  contactorEmail: "",
   taxId: "",
   branch: "",
+  
+  customerCompanyName: "",
+  customerCompanyTel: "",
+  customerCompanyAddress: "",
+  customerTaxId: "",
+  customerBranch: "",
+
+  contactorName: "",
+  contactorTel: "",
+  contactorAddress: "",
+  contactorEmail: "",
+
   dateCreate: "",
   includeTax: false,
   note: "",
@@ -326,6 +347,10 @@ export const QuotationProvider = ({ children }: { children: ReactNode }) => {
   const [isSubProductEdit, setIsSubProductEdit] = useState<boolean>(false);
 
   const [isPreview, setIsPreview] = useState<boolean>(false);
+
+  // useEffect(() => {
+  //   console.log(headForm)
+  // }, [headForm])
 
 
   // Function to calculate totals

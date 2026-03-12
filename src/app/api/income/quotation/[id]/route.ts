@@ -2,17 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/../lib/prisma';
 
 interface QuotationInput {
+    // Our Company Info
     companyName: string;
     companyTel: string;
     taxId: string;
     branch: string;
-    dateCreate: string;
     companyAddress: string;
 
+    // Customer Company Info
+    customerCompanyName: string;
+    customerCompanyTel: string;
+    customerCompanyAddress: string;
+    customerTaxId: string;
+    customerBranch: string;
+
+    // Contactor Info
     contactorName: string;
     contactorTel: string;
     contactorEmail: string;
     contactorAddress: string;
+
+    dateCreate: string;
 
     includeVat: boolean;
     taxRate: number;
@@ -122,14 +132,22 @@ export async function PATCH(
                         userId: firstUser?.userId,
                     }
                 });
-                console.log("✅ Auto-created new CompanyProfile during edit:", data.companyName);
+            } else {
+                await prisma.companyProfile.update({
+                    where: { companyId: existingCompanyProfile.companyId },
+                    data: {
+                        companyTaxId: data.taxId,
+                        branch: data.branch,
+                        companyPhoneNumber: data.companyTel,
+                        companyAddress: data.companyAddress,
+                    }
+                });
             }
         }
 
         // 2. Handle Products and Units
         for (const cat of data.categories) {
             for (const item of cat.subItems) {
-                // Check and create Unit
                 if (item.unit) {
                     const existingUnit = await prisma.unit.findUnique({
                         where: { unitName: item.unit }
@@ -138,11 +156,9 @@ export async function PATCH(
                         await prisma.unit.create({
                             data: { unitName: item.unit }
                         });
-                        console.log("✅ Auto-created new Unit during edit:", item.unit);
                     }
                 }
 
-                // Check and create Product
                 if (item.name) {
                     const existingProduct = await prisma.product.findFirst({
                         where: { productName: item.name }
@@ -161,98 +177,77 @@ export async function PATCH(
                                 }
                             }
                         });
-                        console.log("✅ Auto-created new Product during edit:", item.name);
                     }
                 }
             }
         }
 
         // 3. Update or Create CustomerCompany
-        let customerCompanyId = existingQuotation.customerCompanyId;
-        // Search for customer company by name if it's not linked correctly
-        const existingCustomerByName = await prisma.customerCompany.findFirst({
-            where: { companyName: data.companyName }
-        });
+        let customer;
+        if (data.customerCompanyName) {
+            customer = await prisma.customerCompany.findFirst({
+                where: { companyName: data.customerCompanyName }
+            });
 
-        if (existingCustomerByName) {
-            customerCompanyId = existingCustomerByName.customerCompanyId;
-            await prisma.customerCompany.update({
-                where: { customerCompanyId },
-                data: {
-                    taxId: data.taxId,
-                    companyTel: data.companyTel,
-                    branch: data.branch,
-                    companyAddress: data.companyAddress,
-                }
-            });
-        } else if (customerCompanyId) {
-            await prisma.customerCompany.update({
-                where: { customerCompanyId },
-                data: {
-                    companyName: data.companyName,
-                    taxId: data.taxId,
-                    companyTel: data.companyTel,
-                    branch: data.branch,
-                    companyAddress: data.companyAddress,
-                }
-            });
-        } else {
-            const newCustomer = await prisma.customerCompany.create({
-                data: {
-                    companyName: data.companyName,
-                    taxId: data.taxId,
-                    companyTel: data.companyTel,
-                    branch: data.branch,
-                    companyAddress: data.companyAddress,
-                }
-            });
-            customerCompanyId = newCustomer.customerCompanyId;
+            if (customer) {
+                customer = await prisma.customerCompany.update({
+                    where: { customerCompanyId: customer.customerCompanyId },
+                    data: {
+                        taxId: data.customerTaxId,
+                        companyTel: data.customerCompanyTel,
+                        branch: data.customerBranch,
+                        companyAddress: data.customerCompanyAddress,
+                    }
+                });
+            } else {
+                customer = await prisma.customerCompany.create({
+                    data: {
+                        companyName: data.customerCompanyName,
+                        taxId: data.customerTaxId,
+                        companyTel: data.customerCompanyTel,
+                        branch: data.customerBranch,
+                        companyAddress: data.customerCompanyAddress,
+                    }
+                });
+            }
         }
 
         // 4. Update or Create Contactor
-        let contactorId = existingQuotation.contactorId;
-        const existingContactorByName = await prisma.contactor.findFirst({
-            where: {
-                contactorName: data.contactorName,
-                customerCompanyId: customerCompanyId
-            }
-        });
+        let contactor;
+        if (data.contactorName && customer) {
+            contactor = await prisma.contactor.findFirst({
+                where: {
+                    contactorName: data.contactorName,
+                    customerCompanyId: customer.customerCompanyId
+                }
+            });
 
-        if (existingContactorByName) {
-            contactorId = existingContactorByName.contactorId;
-            await prisma.contactor.update({
-                where: { contactorId },
-                data: {
-                    contactorTel: data.contactorTel,
-                    contactorEmail: data.contactorEmail,
-                    contactorAddress: data.contactorAddress,
-                }
-            });
-        } else if (contactorId) {
-            await prisma.contactor.update({
-                where: { contactorId },
-                data: {
-                    contactorName: data.contactorName,
-                    contactorTel: data.contactorTel,
-                    contactorEmail: data.contactorEmail,
-                    contactorAddress: data.contactorAddress,
-                    customerCompanyId: customerCompanyId
-                }
-            });
-        } else {
-            const newContactor = await prisma.contactor.create({
-                data: {
-                    contactorName: data.contactorName,
-                    contactorTel: data.contactorTel,
-                    contactorEmail: data.contactorEmail,
-                    contactorAddress: data.contactorAddress,
-                    customerCompanyId: customerCompanyId
-                }
-            });
-            contactorId = newContactor.contactorId;
+            if (contactor) {
+                contactor = await prisma.contactor.update({
+                    where: { contactorId: contactor.contactorId },
+                    data: {
+                        contactorTel: data.contactorTel,
+                        contactorEmail: data.contactorEmail,
+                        contactorAddress: data.contactorAddress,
+                    }
+                });
+            } else {
+                contactor = await prisma.contactor.create({
+                    data: {
+                        contactorName: data.contactorName,
+                        contactorTel: data.contactorTel,
+                        contactorEmail: data.contactorEmail,
+                        contactorAddress: data.contactorAddress,
+                        customerCompanyId: customer.customerCompanyId
+                    }
+                });
+            }
         }
 
-        // Ensure DocumentPaper is linked to the (potentially newly created) records
+        // Ensure DocumentPaper is linked correctly
+        const customerCompanyId = customer?.customerCompanyId || null;
+        const contactorId = contactor?.contactorId || null;
+
         if (customerCompanyId !== existingQuotation.customerCompanyId || contactorId !== existingQuotation.contactorId) {
             await prisma.documentPaper.update({
                 where: { documentId },

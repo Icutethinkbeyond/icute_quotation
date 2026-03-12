@@ -3,19 +3,28 @@ import prisma from '@/../lib/prisma';
 
 // Define input types based on what we see in the contexts
 interface QuotationInput {
-    // Header Info
+    // Our Company Info
     companyName: string;
     companyTel: string;
     taxId: string;
     branch: string;
-    dateCreate: string;
     companyAddress: string;
 
+    // Customer Company Info
+    customerCompanyName: string;
+    customerCompanyTel: string;
+    customerCompanyAddress: string;
+    customerTaxId: string;
+    customerBranch: string;
+
+    // Contactor Info
     contactorName: string;
     contactorTel: string;
     contactorEmail: string;
     contactorAddress: string;
 
+    dateCreate: string;
+    
     // Footer/Calculation Info
     includeVat: boolean;
     taxRate: number;
@@ -48,7 +57,6 @@ export async function POST(req: NextRequest) {
         const docIdNo = `QT-${Date.now()}`;
 
         // 1. Handle CompanyProfile (Our Company)
-        // Check if our company exists in CompanyProfile, if not create it
         if (data.companyName) {
             const existingCompanyProfile = await prisma.companyProfile.findFirst({
                 where: { companyName: data.companyName }
@@ -67,75 +75,87 @@ export async function POST(req: NextRequest) {
                     }
                 });
                 console.log("✅ Auto-created new CompanyProfile:", data.companyName);
+            } else {
+                // Update existing company profile info
+                await prisma.companyProfile.update({
+                    where: { companyId: existingCompanyProfile.companyId },
+                    data: {
+                        companyTaxId: data.taxId,
+                        branch: data.branch,
+                        companyPhoneNumber: data.companyTel,
+                        companyAddress: data.companyAddress,
+                    }
+                });
             }
         }
 
         // 2. Handle CustomerCompany
-        // Check if customer company exists, if not create it
-        let customer = await prisma.customerCompany.findFirst({
-            where: { companyName: data.companyName }
-        });
+        let customer;
+        if (data.customerCompanyName) {
+            customer = await prisma.customerCompany.findFirst({
+                where: { companyName: data.customerCompanyName }
+            });
 
-        if (!customer) {
-            customer = await prisma.customerCompany.create({
-                data: {
-                    companyName: data.companyName,
-                    taxId: data.taxId,
-                    companyTel: data.companyTel,
-                    branch: data.branch,
-                    companyAddress: data.companyAddress,
-                }
-            });
-            console.log("✅ Auto-created new CustomerCompany:", data.companyName);
-        } else {
-            // Optional: Update existing customer company info if it matches the name
-            customer = await prisma.customerCompany.update({
-                where: { customerCompanyId: customer.customerCompanyId },
-                data: {
-                    taxId: data.taxId,
-                    companyTel: data.companyTel,
-                    branch: data.branch,
-                    companyAddress: data.companyAddress,
-                }
-            });
+            if (!customer) {
+                customer = await prisma.customerCompany.create({
+                    data: {
+                        companyName: data.customerCompanyName,
+                        taxId: data.customerTaxId,
+                        companyTel: data.customerCompanyTel,
+                        branch: data.customerBranch,
+                        companyAddress: data.customerCompanyAddress,
+                    }
+                });
+                console.log("✅ Auto-created new CustomerCompany:", data.customerCompanyName);
+            } else {
+                customer = await prisma.customerCompany.update({
+                    where: { customerCompanyId: customer.customerCompanyId },
+                    data: {
+                        taxId: data.customerTaxId,
+                        companyTel: data.customerCompanyTel,
+                        branch: data.customerBranch,
+                        companyAddress: data.customerCompanyAddress,
+                    }
+                });
+            }
         }
 
         // 3. Handle Contactor
-        // Check if contactor exists for this customer company, if not create it
-        let contactor = await prisma.contactor.findFirst({
-            where: {
-                contactorName: data.contactorName,
-                customerCompanyId: customer.customerCompanyId
-            }
-        });
-
-        if (!contactor) {
-            contactor = await prisma.contactor.create({
-                data: {
+        let contactor;
+        if (data.contactorName && customer) {
+            contactor = await prisma.contactor.findFirst({
+                where: {
                     contactorName: data.contactorName,
-                    contactorTel: data.contactorTel,
-                    contactorEmail: data.contactorEmail,
-                    contactorAddress: data.contactorAddress,
-                    customerCompanyId: customer.customerCompanyId,
+                    customerCompanyId: customer.customerCompanyId
                 }
             });
-            console.log("✅ Auto-created new Contactor:", data.contactorName);
-        } else {
-            // Optional: Update existing contactor info
-            contactor = await prisma.contactor.update({
-                where: { contactorId: contactor.contactorId },
-                data: {
-                    contactorTel: data.contactorTel,
-                    contactorEmail: data.contactorEmail,
-                    contactorAddress: data.contactorAddress,
-                }
-            });
+
+            if (!contactor) {
+                contactor = await prisma.contactor.create({
+                    data: {
+                        contactorName: data.contactorName,
+                        contactorTel: data.contactorTel,
+                        contactorEmail: data.contactorEmail,
+                        contactorAddress: data.contactorAddress,
+                        customerCompanyId: customer.customerCompanyId,
+                    }
+                });
+                console.log("✅ Auto-created new Contactor:", data.contactorName);
+            } else {
+                contactor = await prisma.contactor.update({
+                    where: { contactorId: contactor.contactorId },
+                    data: {
+                        contactorTel: data.contactorTel,
+                        contactorEmail: data.contactorEmail,
+                        contactorAddress: data.contactorAddress,
+                    }
+                });
+            }
         }
 
         // 4. Handle Products and Units
         for (const cat of data.categories) {
             for (const item of cat.subItems) {
-                // Check and create Unit
                 if (item.unit) {
                     const existingUnit = await prisma.unit.findUnique({
                         where: { unitName: item.unit }
@@ -144,11 +164,9 @@ export async function POST(req: NextRequest) {
                         await prisma.unit.create({
                             data: { unitName: item.unit }
                         });
-                        console.log("✅ Auto-created new Unit:", item.unit);
                     }
                 }
 
-                // Check and create Product
                 if (item.name) {
                     const existingProduct = await prisma.product.findFirst({
                         where: { productName: item.name }
@@ -167,7 +185,6 @@ export async function POST(req: NextRequest) {
                                 }
                             }
                         });
-                        console.log("✅ Auto-created new Product:", item.name);
                     }
                 }
             }
@@ -179,8 +196,8 @@ export async function POST(req: NextRequest) {
                 documentIdNo: docIdNo,
                 docType: "Quotation",
                 documentDetials: "Generated from Web Form",
-                customerCompanyId: customer.customerCompanyId,
-                contactorId: contactor.contactorId,
+                customerCompanyId: customer?.customerCompanyId || null,
+                contactorId: contactor?.contactorId || null,
 
                 includeVat: data.includeVat,
                 taxRate: data.taxRate || 7,
@@ -219,113 +236,3 @@ export async function POST(req: NextRequest) {
         await prisma.$disconnect();
     }
 }
-
-// export async function POST(req: NextRequest) {
-
-//     try {
-
-//         const { categoryName, categoryDesc } = await req.json() as Category;
-
-//         // Validation
-//         if (!categoryName) {
-//             return new NextResponse(JSON.stringify('Category name is required'), { status: 400 });
-//         }
-
-//         //check name is exist
-//         const nameIsAlready = await prisma.category.findFirst({ where: { categoryName: { equals: categoryName } } })
-
-//         if (nameIsAlready) {
-//             return new NextResponse(JSON.stringify('Category name is Already'), { status: 400 });
-//         }
-
-//         // Create a new category
-//         const newCategory = await prisma.category.create({
-//             data: {
-//                 categoryName,
-//                 categoryDesc,
-//                 // equipments: equipments ? { connect: equipments } : undefined, // Assuming `equipments` is an array of IDs
-//             },
-//         });
-
-//         return new NextResponse(JSON.stringify(newCategory), { status: 201 });
-
-//     } catch (error) {
-
-//         console.error("Error Connect Local Server:", error);
-//         return new NextResponse(JSON.stringify({ error }), { status: 500 });
-
-//     } finally {
-//         await prisma.$disconnect();
-//     }
-
-// };
-
-// export async function DELETE(req: NextRequest) {
-
-//     try {
-//         // รับ categoryId จาก query parameter
-//         const { searchParams } = new URL(req.url);
-//         const categoryId = searchParams.get('categoryId');
-
-//         // ตรวจสอบว่ามี categoryId หรือไม่
-//         if (!categoryId) {
-//             return new NextResponse(JSON.stringify('Category ID is required'), { status: 400 });
-//         }
-
-//         // ลบ category โดยใช้ categoryId
-//         const deletedCategory = await prisma.category.delete({
-//             where: {
-//                 categoryId,
-//             },
-//         });
-
-//         // ส่งข้อมูล category ที่ถูกลบกลับ
-//         return new NextResponse(JSON.stringify(deletedCategory), { status: 200 });
-//     } catch (error: any) {
-//         console.error('Error deleting category:', error);
-
-//         if (error.code === 'P2025') {
-//             // Prisma error code สำหรับการไม่พบ record ที่ต้องการลบ
-//             return new NextResponse(JSON.stringify('Category not found'), { status: 404 });
-//         }
-
-//         return new NextResponse(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
-//     } finally {
-//         await prisma.$disconnect();
-//     }
-// }
-
-// export async function PATCH(req: NextRequest) {
-
-//     try {
-
-//         const { categoryId, categoryName, categoryDesc } = await req.json() as Category;
-
-//         if (!(categoryId && categoryName)) {
-//             return new NextResponse(JSON.stringify('Category ID is required'), { status: 400 });
-//         }
-
-//         const updatedCategory = await prisma.category.update({
-//             where: { categoryId: categoryId },
-//             data: {
-//                 categoryName, categoryDesc
-//             },
-//             // Update fields based on the request body
-//         });
-
-//         return new NextResponse(JSON.stringify(updatedCategory), { status: 200 });
-
-//     } catch (error: any) {
-
-//         console.error('Error updating category:', error);
-
-//         if (error.code === 'P2025') {
-//             // Prisma error code สำหรับการไม่พบ record ที่ต้องการลบ
-//             return new NextResponse(JSON.stringify('Category not found'), { status: 404 });
-//         }
-
-//         return new NextResponse(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
-//     } finally {
-//         await prisma.$disconnect();
-//     }
-// }

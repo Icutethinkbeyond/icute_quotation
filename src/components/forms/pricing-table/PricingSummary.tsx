@@ -16,6 +16,8 @@ import {
   Button,
   InputLabel,
   OutlinedInput,
+  Stack,
+  InputAdornment,
 } from "@mui/material";
 
 // Context สำหรับคำนวณราคา (หมวดสินค้า, VAT, ส่วนลด ฯลฯ)
@@ -27,7 +29,7 @@ import {
   useQuotationListContext,
 } from "@/contexts/QuotationContext";
 
-import { Visibility } from "@mui/icons-material";
+import { Visibility, Save, FileDownload, Description } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import PreviewDialog from "../preview/DialogPreview";
 import { useEffect, useState } from "react";
@@ -191,186 +193,199 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
     }
   };
 
+  const SummaryItem = ({ label, value, color = "text.primary", fontWeight = 500, secondary = false }: { label: string, value: string | number, color?: string, fontWeight?: number, secondary?: boolean }) => (
+    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+      <Typography variant="body2" color={secondary ? "text.secondary" : "text.primary"} fontWeight={secondary ? 400 : 500}>
+        {label}
+      </Typography>
+      <Typography variant="body1" color={color} fontWeight={fontWeight}>
+        {typeof value === "number" ? `฿${value.toLocaleString("th-TH", { minimumFractionDigits: 2 })}` : value}
+      </Typography>
+    </Box>
+  );
+
   return (
     <>
       <Paper
         elevation={0}
         sx={{
-          p: 3,
+          p: 0,
           backgroundColor: "#ffffff",
-          borderRadius: "12px",
-          border: "1px solid #e5eaef",
+          borderRadius: "16px",
+          border: "1px solid",
+          borderColor: "divider",
+          overflow: "hidden",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
         }}
       >
-        {/* หัวข้อสรุปราคา */}
-        <Typography variant="h5" fontWeight={500} gutterBottom sx={{ mb: 2, color: "text.primary" }}>
-          สรุปราคา
-        </Typography>
-
-        <Divider sx={{ mb: 2 }} />
-
-        {/* รวมเป็นเงิน */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Typography>รวมเป็นเงิน</Typography>
-          <Typography fontWeight={500}>
-            {subtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+        {/* Card Header */}
+        <Box sx={{ p: 3, bgcolor: "grey.50", borderBottom: "1px solid", borderColor: "divider" }}>
+          <Typography variant="h5" fontWeight={700} color="text.primary">
+            สรุปรายการชำระเงิน
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            ข้อมูลการคำนวณทั้งหมดอ้างอิงตามรายการสินค้า
           </Typography>
         </Box>
 
-        {/* ส่วนลด */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Typography>ส่วนลดรวม</Typography>
-          <TextField
-            type="number"
-            value={discount}
-            onChange={(e) => setDiscount(Number(e.target.value))}
-            size="small"
-            sx={{ width: 120 }}
+        <Box sx={{ p: 3 }}>
+          {/* Main Totals Section */}
+          <SummaryItem label="รวมเป็นเงิน (Subtotal)" value={subtotal} secondary />
+          
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              ส่วนลดรวม (Discount)
+            </Typography>
+            <TextField
+              type="number"
+              value={discount}
+              onChange={(e) => setDiscount(Number(e.target.value))}
+              size="small"
+              InputProps={{
+                startAdornment: <InputAdornment position="start">฿</InputAdornment>,
+                sx: { borderRadius: "8px", width: 140, fontWeight: 600 }
+              }}
+            />
+          </Box>
+
+          <SummaryItem 
+            label="ราคาหลังหักส่วนลด" 
+            value={priceAfterDiscount} 
+            color="primary.main" 
+            fontWeight={700} 
           />
-        </Box>
 
-        {/* ราคาหลังหักส่วนลด */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Typography>ราคาหลังหักส่วนลด</Typography>
-          <Typography fontWeight={500}>
-            {priceAfterDiscount.toLocaleString("th-TH", {
-              minimumFractionDigits: 2,
-            })}
-          </Typography>
-        </Box>
+          <Divider sx={{ my: 2.5, borderStyle: "dashed" }} />
 
-        <Divider sx={{ my: 2 }} />
-
-        {/* VAT */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={vatIncluded}
-                onChange={(e) => setVatIncluded(e.target.checked)}
-              />
-            }
-            label="ภาษีมูลค่าเพิ่ม 7%"
-          />
-          <Typography fontWeight={500}>
-            {vat.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
-          </Typography>
-        </Box>
-
-        {/* ยอดรวม VAT */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            mb: 2,
-            backgroundColor: theme.palette.primary.light,
-            p: 1.5,
-            borderRadius: 1,
-          }}
-        >
-          <Typography fontWeight={500}>จำนวนเงินรวมทั้งสิ้น</Typography>
-          <Typography fontWeight={500} variant="h6" color="primary">
-            {totalWithVat.toLocaleString("th-TH", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </Typography>
-        </Box>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* ภาษีหัก ณ ที่จ่าย */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel id="select-serviceIds-label">หัก ณ ที่จ่าย</InputLabel>
-            <Select
-              input={
-                <OutlinedInput
-                  id="select-serviceIds-label"
-                  label="ภาษี ณ ที่จ่าย"
+          {/* Taxes Section */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={vatIncluded}
+                  onChange={(e) => setVatIncluded(e.target.checked)}
+                  sx={{ color: "primary.main", "&.Mui-checked": { color: "primary.main" } }}
                 />
               }
-              value={withholdingTaxRate}
-              onChange={(e) => setWithholdingTaxRate(Number(e.target.value))}
+              label={
+                <Typography variant="body2" fontWeight={500}>
+                  ภาษีมูลค่าเพิ่ม 7%
+                </Typography>
+              }
+              sx={{ m: 0 }}
+            />
+            <Typography variant="body1" fontWeight={600}>
+              ฿{vat.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <FormControl size="small" sx={{ width: 160 }}>
+              <InputLabel id="withholding-tax-label">หัก ณ ที่จ่าย</InputLabel>
+              <Select
+                labelId="withholding-tax-label"
+                value={withholdingTaxRate}
+                label="หัก ณ ที่จ่าย"
+                onChange={(e) => setWithholdingTaxRate(Number(e.target.value))}
+                sx={{ borderRadius: "8px" }}
+              >
+                <MenuItem value={0}>ไม่หัก (0%)</MenuItem>
+                {[1, 2, 3, 5, 10].map((rate) => (
+                  <MenuItem key={rate} value={rate}>หัก {rate}%</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Typography variant="body1" color="error.main" fontWeight={600}>
+              - ฿{withholdingTax.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+
+          <Divider sx={{ my: 2.5, borderStyle: "dashed" }} />
+
+          {/* Grand Total Section */}
+          <Box
+            sx={{
+              p: 2.5,
+              borderRadius: "12px",
+              bgcolor: "primary.main",
+              color: "white",
+              mb: 3,
+              boxShadow: "0 8px 16px -4px rgba(theme.palette.primary.main, 0.3)",
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ opacity: 0.9, fontWeight: 600, mb: 0.5 }}>
+              ยอดชำระสุทธิ (Grand Total)
+            </Typography>
+            <Typography variant="h3" fontWeight={800}>
+              ฿{finalTotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+            </Typography>
+          </Box>
+
+          {/* Notes Section */}
+          <Box sx={{ mb: 4 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <Description fontSize="small" color="action" />
+              <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
+                หมายเหตุท้ายเอกสาร
+              </Typography>
+            </Stack>
+            <TextField
+              fullWidth
+              multiline
+              minRows={3}
+              placeholder="ข้อความที่จะแสดงในใบเสนอราคา..."
+              value={headForm.note || ""}
+              onChange={(e) => setHeadForm({ ...headForm, note: e.target.value })}
+              variant="outlined"
+              size="small"
+              sx={{ 
+                "& .MuiOutlinedInput-root": { 
+                  borderRadius: "10px",
+                  bgcolor: "grey.50",
+                  fontSize: "0.875rem"
+                } 
+              }}
+            />
+          </Box>
+
+          {/* Action Buttons */}
+          <Stack spacing={2}>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<Save />}
+              onClick={handleSaveQuotation}
+              fullWidth
+              sx={{ 
+                py: 1.5, 
+                borderRadius: "10px", 
+                textTransform: "none", 
+                fontWeight: 700,
+                fontSize: "1rem",
+                boxShadow: theme.shadows[4]
+              }}
             >
-              <MenuItem value={0}>คิด ณ ที่จ่าย 0%</MenuItem>
-              <MenuItem value={1}>1%</MenuItem>
-              <MenuItem value={2}>2%</MenuItem>
-              <MenuItem value={3}>3%</MenuItem>
-              <MenuItem value={4}>4%</MenuItem>
-              <MenuItem value={5}>5%</MenuItem>
-              <MenuItem value={6}>6%</MenuItem>
-              <MenuItem value={7}>7%</MenuItem>
-              <MenuItem value={8}>8%</MenuItem>
-              <MenuItem value={9}>9%</MenuItem>
-              <MenuItem value={10}>10%</MenuItem>
-            </Select>
-          </FormControl>
-          <Typography fontWeight={500}>
-            {withholdingTax.toLocaleString("th-TH", {
-              minimumFractionDigits: 2,
-            })}
-          </Typography>
-        </Box>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* หมายเหตุ */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-            หมายเหตุ (Notes)
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            minRows={3}
-            placeholder="ระบุหมายเหตุที่ต้องการให้แสดงในใบเสนอราคา..."
-            value={headForm.note || ""}
-            onChange={(e) => setHeadForm({ ...headForm, note: e.target.value })}
-            variant="outlined"
-            size="small"
-            sx={{ bgcolor: "white" }}
-          />
-        </Box>
-
-        {/* ยอดสุทธิ */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            backgroundColor: theme.palette.success.light,
-            p: 2,
-            borderRadius: 1,
-          }}
-        >
-          <Typography variant="h6" fontWeight={500}>
-            ยอดชำระรวม
-          </Typography>
-          <Typography variant="h5" fontWeight={500} color="success.dark">
-            {finalTotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
-          </Typography>
-        </Box>
-
-        {/* ปุ่มควบคุม */}
-        <Box sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
-          <Button
-            variant="contained"
-            startIcon={<Visibility />}
-            onClick={handlePreviewInvoice}
-            fullWidth
-          >
-            ดูตัวอย่างใบเสนอราคา
-          </Button>
-
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleSaveQuotation}
-            fullWidth
-            sx={{ color: "white" }}
-          >
-            บันทึกใบเสนอราคา
-          </Button>
+              บันทึกใบเสนอราคา
+            </Button>
+            
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<Visibility />}
+              onClick={handlePreviewInvoice}
+              fullWidth
+              sx={{ 
+                py: 1.2, 
+                borderRadius: "10px", 
+                textTransform: "none", 
+                fontWeight: 600,
+                borderWidth: "2px",
+                "&:hover": { borderWidth: "2px" }
+              }}
+            >
+              ดูตัวอย่างเอกสาร
+            </Button>
+          </Stack>
         </Box>
       </Paper>
       <PreviewDialog open={onOpen} onClose={() => setOnOpen(false)} />

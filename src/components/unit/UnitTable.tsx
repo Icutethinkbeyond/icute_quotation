@@ -9,7 +9,8 @@ import {
     DialogContent, 
     DialogActions, 
     TextField, 
-    Box
+    Box,
+    useTheme
 } from "@mui/material";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import GenericDataTable from "@/components/shared/GenericDataTable";
@@ -28,6 +29,7 @@ const UnitTable = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newUnitName, setNewUnitName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const theme = useTheme();
 
     // Data mapping function
     const mapUnitData = useCallback((item: any): UnitRow => ({
@@ -142,9 +144,10 @@ const UnitTable = () => {
             getActions: (params) => [
                 <GridActionsCellItem
                     key="delete"
-                    icon={<IconTrash style={{ color: "red" }} />}
+                    icon={<IconTrash style={{ color: theme.palette.error.main }} />} // Use theme color
                     label="Delete"
                     onClick={() => handleDeleteUnit(params.id as string)}
+                    showInMenu
                 />,
             ],
         },
@@ -161,12 +164,21 @@ const UnitTable = () => {
                 onSearchChange={setSearchQuery}
                 paginationModel={paginationModel}
                 onPaginationChange={setPaginationModel}
+                getRowId={(row) => row.id}
                 headerActions={
                     <Button
                         variant="contained"
                         startIcon={<IconPlus />}
                         onClick={() => setIsDialogOpen(true)}
-                        sx={{ bgcolor: "#03c9d7", "&:hover": { bgcolor: "#05b2bd" } }}
+                        sx={{ 
+                            textTransform: "none",
+                            borderRadius: "8px",
+                            fontWeight: 600,
+                            boxShadow: "none",
+                            "&:hover": {
+                                boxShadow: theme.shadows[2],
+                            },
+                        }}
                     >
                         เพิ่มหน่วยใหม่
                     </Button>
@@ -174,8 +186,17 @@ const UnitTable = () => {
             />
 
             <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>เพิ่มหน่วยสินค้าใหม่</DialogTitle>
-                <DialogContent>
+                <DialogTitle sx={{ 
+                    fontWeight: 700, 
+                    fontSize: "1.25rem", 
+                    pb: 1, 
+                    borderBottom: "1px solid", 
+                    borderColor: "divider",
+                    px: 3, py: 2
+                }}>
+                    เพิ่มหน่วยสินค้าใหม่
+                </DialogTitle>
+                <DialogContent sx={{ pt: 3, pb: 2, px: 3 }}>
                     <TextField
                         autoFocus
                         margin="dense"
@@ -185,17 +206,48 @@ const UnitTable = () => {
                         value={newUnitName}
                         onChange={(e) => setNewUnitName(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && handleAddUnit()}
+                        sx={{
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                                backgroundColor: theme.palette.grey[50],
+                                "& fieldset": { borderColor: theme.palette.grey[200] },
+                                "&:hover fieldset": { borderColor: theme.palette.grey[300] },
+                                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main, borderWidth: "2px" },
+                            },
+                            "& .MuiInputLabel-root": {
+                                fontSize: "0.875rem",
+                                fontWeight: 500,
+                            },
+                        }}
                     />
                 </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setIsDialogOpen(false)} color="inherit">
+                <DialogActions sx={{ p: 3, borderTop: "1px solid", borderColor: "divider" }}>
+                    <Button 
+                        onClick={() => setIsDialogOpen(false)} 
+                        color="inherit"
+                        sx={{ 
+                            textTransform: "none", 
+                            fontWeight: 600, 
+                            borderRadius: "8px", 
+                            px: 2.5 
+                        }}
+                    >
                         ยกเลิก
                     </Button>
                     <Button 
                         onClick={handleAddUnit} 
                         variant="contained" 
                         disabled={isSubmitting || !newUnitName.trim()}
-                        sx={{ bgcolor: "#03c9d7", "&:hover": { bgcolor: "#05b2bd" } }}
+                        sx={{ 
+                            textTransform: "none", 
+                            fontWeight: 600, 
+                            borderRadius: "8px", 
+                            px: 2.5,
+                            boxShadow: "none",
+                            "&:hover": {
+                                boxShadow: theme.shadows[2],
+                            },
+                        }}
                     >
                         บันทึก
                     </Button>

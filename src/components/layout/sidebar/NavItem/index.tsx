@@ -174,22 +174,35 @@ const NavItem = ({ item, onClick }: ItemType) => {
     padding: 0,
     ".MuiButtonBase-root": {
       whiteSpace: "nowrap",
-      marginBottom: "8px",
-      padding: "8px 10px",
-      borderRadius: "8px",
+      marginBottom: "2px",
+      padding: "10px 16px",
+      borderRadius: "0 24px 24px 0",
       backgroundColor: "inherit",
       color: theme.palette.text.secondary,
+      marginRight: "10px",
+      transition: "all 0.3s ease-in-out",
       "&:hover": {
-        backgroundColor: theme.palette.primary.light,
+        backgroundColor: "rgba(0, 0, 0, 0.04)",
         color: theme.palette.primary.main,
       },
       "&.Mui-selected": {
-        color: "white",
-        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.main,
+        backgroundColor: theme.palette.primary.light,
+        fontWeight: "600",
         "&:hover": {
-          backgroundColor: theme.palette.primary.main,
-          color: "white",
+          backgroundColor: theme.palette.primary.light,
+          color: theme.palette.primary.main,
         },
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: "4px",
+          backgroundColor: theme.palette.primary.main,
+          borderRadius: "0 4px 4px 0",
+        }
       },
     },
   }));

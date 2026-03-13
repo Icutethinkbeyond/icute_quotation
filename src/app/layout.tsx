@@ -30,7 +30,10 @@ export default async function RootLayout({
             <BreadcrumbProvider>
               <QuotationProvider>
                 <PricingProvider>
-                  <NotifyProvider>{children}</NotifyProvider>
+                  <NotifyProvider>
+                    
+                    {children}
+                    </NotifyProvider>
                 </PricingProvider>
               </QuotationProvider>
             </BreadcrumbProvider>

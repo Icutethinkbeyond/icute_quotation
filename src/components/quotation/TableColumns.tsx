@@ -18,7 +18,7 @@ export const creationDateColumn: GridColDef = {
     headerName: "วันที่ออกเอกสาร",
     width: 150,
     valueGetter: (value, row) => {
-        if (!row.createdAt) return "-";
+        if (!row.createdAt) return "N/A";
         return new Date(row.createdAt).toLocaleDateString("th-TH");
     },
 };
@@ -31,7 +31,7 @@ export const deletedDateColumn: GridColDef = {
     headerName: "วันที่ลบ",
     width: 150,
     valueGetter: (value, row) => {
-        if (!row.deletedAt) return "-";
+        if (!row.deletedAt) return "N/A";
         return new Date(row.deletedAt).toLocaleDateString("th-TH");
     },
 };
@@ -43,7 +43,7 @@ export const customerNameColumn: GridColDef = {
     field: "contactorName",
     headerName: "ชื่อลูกค้า",
     width: 250,
-    valueGetter: (value, row) => row.contactor?.contactorName || "-",
+    valueGetter: (value, row) => row.contactor?.contactorName || "N/A",
 };
 
 /**
@@ -53,7 +53,7 @@ export const customerNameColumn: GridColDef = {
 export const grandTotalColumn: GridColDef = {
     field: "grandTotal",
     headerName: "ยอดรวมสุทธิ",
-    width: 200,
+    width: 180,
     valueGetter: (value, row) => {
         // Read pre-calculated value from backend
         const grandTotal = row.grandTotal || row.calculated?.grandTotal || 0;

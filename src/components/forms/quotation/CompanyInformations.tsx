@@ -8,6 +8,7 @@ import {
   useTheme,
   CircularProgress,
   InputAdornment,
+  Button,
 } from "@mui/material";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -94,6 +95,19 @@ const CompanyInformation: React.FC = () => {
     [],
   );
 
+  // Helper to generate Quotation Number
+  // const generateQuotationNumber = () => {
+  //   const now = new Date();
+  //   const timestamp = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  //   const dateStr = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}`;
+  //   return `QT-${dateStr}-${timestamp}`;
+  // };
+
+  // const handleGenerateNumber = (setFieldValue: any) => {
+  //   const newNumber = generateQuotationNumber();
+  //   setFieldValue("quotationNumber", newNumber);
+  // };
+
   const handleSelectCompany = (
     profile: CompanyProfile | null,
     setFieldValue: any,
@@ -109,37 +123,34 @@ const CompanyInformation: React.FC = () => {
 
   const initNewQuotation = async () => {
     setLoadingFavorite(true);
-    const today = new Date().toISOString().split("T")[0];
-    let initialHead = { ...headerClean, dateCreate: today };
-
     try {
       const response = await fetch("/api/companies/favorite");
       if (response.ok) {
         const data = await response.json();
         if (data) {
-          initialHead = {
-            ...initialHead,
+          setHeadForm((prev) => ({
+            ...prev,
             companyName: data.companyName || "",
             companyTel: data.companyPhoneNumber || "",
             taxId: data.companyTaxId || "",
             branch: data.branch || "",
             companyAddress: data.companyAddress || "",
-          };
+          }));
         }
       }
     } catch (error) {
       console.error("Error fetching favorite company:", error);
+    } finally {
+      setLoadingFavorite(false);
     }
-
-    setHeadForm(initialHead);
-    setLoadingFavorite(false);
   };
 
   useEffect(() => {
+    // Only fetch if companyName is not already set (e.g. during an edit or if already auto-filled)
     if (!headForm.companyName) {
       initNewQuotation();
     }
-  }, []);
+  }, [headForm.companyName]);
 
   if (loadingFavorite) {
     return (
@@ -166,6 +177,63 @@ const CompanyInformation: React.FC = () => {
           <Form>
             <FormSection title="ผู้ออกเอกสาร (ข้อมูลบริษัท)">
               <Grid2 container spacing={2.5}>
+                {/* <Grid2 size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    name="quotationNumber"
+                    label="เลขที่ใบเสนอราคา"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    value={values.quotationNumber || ""}
+                    onChange={(e) =>
+                      setFieldValue("quotationNumber", e.target.value)
+                    }
+                    sx={inputStyles(theme)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Receipt fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Button 
+                            variant="text" 
+                            size="small" 
+                            onClick={() => handleGenerateNumber(setFieldValue)}
+                            sx={{ minWidth: "auto", fontSize: "11px", fontWeight: 700 }}
+                          >
+                            สร้างเลขที่
+                          </Button>
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid2> */}
+
+                {/* <Grid2 size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    name="dateCreate"
+                    label="วันที่ออกเอกสาร"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    type="date"
+                    value={values.dateCreate || ""}
+                    onChange={(e) =>
+                      setFieldValue("dateCreate", e.target.value)
+                    }
+                    sx={inputStyles(theme)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <CalendarToday fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid2> */}
+
                 {/* Company Name with Autocomplete */}
                 <Grid2 size={12}>
                   <Autocomplete

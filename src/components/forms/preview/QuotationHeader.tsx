@@ -49,21 +49,19 @@ const QuotationHeader: React.FC<QuotationHeaderProps> = ({
                 <Typography variant="h6" sx={{ fontSize: 16, mb: 1, fontWeight: "bold" }}>
                   ลูกค้า: {headForm?.customerCompanyName}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
-                  เบอร์โทรศัพท์: {headForm?.customerCompanyTel || "-"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
-                  ที่อยู่: {headForm?.customerCompanyAddress}
-                </Typography>
                 {headForm?.customerTaxId && (
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
                     เลขประจำตัวผู้เสียภาษี: {headForm?.customerTaxId}
                     {headForm?.customerBranch ? ` (สาขา: ${headForm?.customerBranch})` : ""}
                   </Typography>
                 )}
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: 12 }}>
+                  ที่อยู่: {headForm?.customerCompanyAddress || "-"}
+                </Typography>
+                
                 {headForm?.contactorName && (
-                  <Typography variant="body2" sx={{ mb: 0.5, fontSize: 13, fontWeight: 500 }}>
-                    ชื่อผู้ติดต่อ: {headForm?.contactorName}
+                  <Typography variant="body2" sx={{ mb: 0.5, fontSize: 13, fontWeight: "bold" }}>
+                    ผู้ติดต่อ: {headForm?.contactorName}
                   </Typography>
                 )}
                 {headForm?.contactorTel && (
@@ -84,16 +82,14 @@ const QuotationHeader: React.FC<QuotationHeaderProps> = ({
                   ลูกค้า: {headForm?.contactorName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
+                  ที่อยู่: {headForm?.contactorAddress || "-"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
                   เบอร์โทรศัพท์: {headForm?.contactorTel || "-"}
                 </Typography>
                 {headForm?.contactorEmail && (
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
                     อีเมล: {headForm?.contactorEmail}
-                  </Typography>
-                )}
-                {headForm?.contactorAddress && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: 12 }}>
-                    ที่อยู่: {headForm?.contactorAddress}
                   </Typography>
                 )}
               </>

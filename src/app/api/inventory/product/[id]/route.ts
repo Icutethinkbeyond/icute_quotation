@@ -34,6 +34,26 @@ export async function PATCH(
     try {
         const data = await req.json();
 
+        // Handle Units and Increment Frequency
+        if (data.unit) {
+            const existingUnit = await prisma.unit.findUnique({
+                where: { unitName: data.unit }
+            });
+            if (!existingUnit) {
+                await prisma.unit.create({
+                    data: { 
+                        unitName: data.unit,
+                        usageCount: 1
+                    }
+                });
+            } else {
+                await prisma.unit.update({
+                    where: { unitName: data.unit },
+                    data: { usageCount: { increment: 1 } }
+                });
+            }
+        }
+
         const product = await prisma.product.update({
             where: { productId: params.id },
             data: {

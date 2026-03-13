@@ -42,12 +42,15 @@ interface PricingSummaryProps {
 
 const PricingSummary: React.FC<PricingSummaryProps> = ({
   isEdit = false,
-  quotationId,
+  quotationId: propQuotationId,
 }) => {
   const theme = useTheme();
   const router = useRouter();
 
   const [onOpen, setOnOpen] = useState<boolean>(false);
+  const [internalId, setInternalId] = useState<string | undefined>(propQuotationId);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // ดึงข้อมูลและฟังก์ชันที่เกี่ยวกับการคำนวณราคาจาก PricingContext
   const {
@@ -97,8 +100,16 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
    * เปิดหน้า Preview ใบเสนอราคา
    */
   const handlePreviewInvoice = () => {
-    if (quotationId) {
-      window.open(`/quotation/preview/${quotationId}`, "_blank");
+    // ตรวจสอบว่ามีสินค้าอย่างน้อย 1 รายการหรือไม่
+    const hasItems = categories.some(cat => cat.subItems && cat.subItems.length > 0);
+    if (!hasItems) {
+      alert("กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการก่อนดูตัวอย่าง");
+      return;
+    }
+
+    const idToUse = internalId || propQuotationId;
+    if (idToUse) {
+      window.open(`/quotation/preview/${idToUse}`, "_blank");
     } else {
       setOnOpen(true);
     }
@@ -107,40 +118,71 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
   /**
    * บันทึกใบเสนอราคา
    */
-  const handleSaveQuotation = async () => {
+  const handleSaveQuotation = async (status: "draft" | "approve" = "approve", isAutoSave = false) => {
     try {
-      // ตรวจสอบข้อมูลที่จำเป็นต้องมี
-      if (!headForm.companyName || !headForm.contactorName) {
-        alert("กรุณากรอกข้อมูลบริษัทและผู้ติดต่อให้ครบถ้วน");
-        return;
+      // ตรวจสอบว่ามีสินค้าหรือไม่
+      const hasItems = categories.some(cat => cat.subItems && cat.subItems.length > 0);
+
+      // สำหรับ Auto Save จะไม่เช็คข้อมูลครบถ้วน และไม่แสดง alert
+      if (!isAutoSave) {
+        if (!headForm.companyName || !headForm.contactorName) {
+          alert("กรุณากรอกข้อมูลบริษัทและผู้ติดต่อให้ครบถ้วน");
+          return;
+        }
+
+        // ถ้าจะ Approve ต้องมีสินค้า
+        if (status === "approve" && !hasItems) {
+          alert("ไม่สามารถบันทึกอนุมัติได้เนื่องจากยังไม่มีรายการสินค้า");
+          return;
+        }
+      } else {
+        // ถ้าเป็น auto save แต่ไม่มีชื่อบริษัทหรือชื่อผู้ติดต่อ ก็ไม่ต้องเซฟ
+        if (!headForm.companyName && !headForm.contactorName && !hasItems) {
+          return;
+        }
       }
+
+      setIsSaving(true);
 
       /**
        * เตรียมข้อมูลสำหรับส่งไป Backend
-       * (แยก field ชัดเจน ป้องกัน type mismatch)
        */
       const quotationData = {
-        // ข้อมูลบริษัท
+        // เลขที่ใบเสนอราคา
+        quotationNumber: headForm.quotationNumber,
+
+        // ข้อมูลบริษัทผู้ออกเอกสาร (Issuer)
         companyName: headForm.companyName,
         companyTel: headForm.companyTel,
         taxId: headForm.taxId,
         branch: headForm.branch,
-        dateCreate: headForm.dateCreate,
         companyAddress: headForm.companyAddress,
 
-        // ข้อมูลผู้ติดต่อ
+        // ข้อมูลลูกค้า (Customer Company)
+        customerCompanyName: headForm.customerCompanyName,
+        customerCompanyTel: headForm.customerCompanyTel,
+        customerCompanyAddress: headForm.customerCompanyAddress,
+        customerTaxId: headForm.customerTaxId,
+        customerBranch: headForm.customerBranch,
+
+        // ข้อมูลผู้ติดต่อ (Contactor)
         contactorName: headForm.contactorName,
         contactorTel: headForm.contactorTel,
         contactorEmail: headForm.contactorEmail,
         contactorAddress: headForm.contactorAddress,
-        note: headForm.note, // บันทึกหมายเหตุลง DB
+        
+        dateCreate: headForm.dateCreate,
+        note: headForm.note,
+
+        // สถานะ
+        status: status,
 
         // ข้อมูลการเงิน
         includeVat: vatIncluded,
-        taxRate: 7, // อัตรา VAT (ปัจจุบันใช้ 7%)
-        globalDiscount: discount, // ส่วนลดรวม
-        withholdingTax: withholdingTax, // ภาษีหัก ณ ที่จ่าย
-        withholdingTaxRate: withholdingTaxRate, // อัตราภาษีหัก ณ ที่จ่าย
+        taxRate: 7,
+        globalDiscount: discount,
+        withholdingTax: withholdingTax,
+        withholdingTaxRate: withholdingTaxRate,
 
         // รายการสินค้า / บริการ
         categories: categories.map((cat) => ({
@@ -158,13 +200,16 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
         })),
       };
 
-      // เรียก Action เพื่อบันทึกหรืออัพเดทข้อมูล
+      // ใช้ internalId ถ้ามี (จากการ auto save ครั้งก่อน) หรือ propQuotationId ถ้าเป็นการ edit
+      const currentId = internalId || propQuotationId;
+      const isActuallyEdit = isEdit || !!internalId;
+
       const url =
-        isEdit && quotationId
-          ? `/api/income/quotation/${quotationId}`
+        isActuallyEdit && currentId
+          ? `/api/income/quotation/${currentId}`
           : "/api/income/quotation/new";
 
-      const method = isEdit ? "PATCH" : "POST";
+      const method = isActuallyEdit ? "PATCH" : "POST";
 
       const res = await fetch(url, {
         method: method,
@@ -176,22 +221,49 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
       const result = await res.json();
 
       if (result.success) {
-        alert(isEdit ? "อัพเดทใบเสนอราคาสำเร็จ!" : "บันทึกใบเสนอราคาสำเร็จ!");
-        router.push(`/quotation`);
-        setCategories([]);
-        setWithholdingTaxRate(0);
-        setDiscount(0);
-        setVatIncluded(false);
-        // โหลดข้อมูลบริษัทและผู้ติดต่อ
-        setHeadForm(headerClean);
+        if (result.documentId) {
+          setInternalId(result.documentId);
+        } else if (result.document?.documentId) {
+          setInternalId(result.document.documentId);
+        }
+
+        setLastSaved(new Date());
+
+        if (!isAutoSave) {
+          alert(status === "draft" ? "บันทึกร่างสำเร็จ!" : "บันทึกใบเสนอราคาสำเร็จ!");
+          if (status === "approve") {
+            router.push(`/quotation`);
+            setCategories([]);
+            setWithholdingTaxRate(0);
+            setDiscount(0);
+            setVatIncluded(false);
+            setHeadForm(headerClean);
+          }
+        }
       } else {
-        alert("เกิดข้อผิดพลาด: " + result.error);
+        if (!isAutoSave) alert("เกิดข้อผิดพลาด: " + result.error);
       }
     } catch (e) {
       console.error(e);
-      alert("เกิดข้อผิดพลาดในการบันทึก");
+      if (!isAutoSave) alert("เกิดข้อผิดพลาดในการบันทึก");
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  // Auto Save Logic
+  useEffect(() => {
+    if (isEdit) return; // ถ้าเป็นหน้า Edit ไม่ต้อง Auto save ทับของเก่าที่เป็น Approve แล้ว (นอกจาก user จะกดเอง)
+    
+    const timer = setTimeout(() => {
+      // Auto save เฉพาะเมื่อมีข้อมูลเบื้องต้น
+      if (headForm.companyName || headForm.contactorName || categories.length > 0) {
+        handleSaveQuotation("draft", true);
+      }
+    }, 3000); // Auto save ทุกๆ 3 วินาทีหลังจากมีการเปลี่ยนแปลง
+
+    return () => clearTimeout(timer);
+  }, [headForm, categories, discount, vatIncluded, withholdingTaxRate]);
 
   const SummaryItem = ({ label, value, color = "text.primary", fontWeight = 500, secondary = false }: { label: string, value: string | number, color?: string, fontWeight?: number, secondary?: boolean }) => (
     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
@@ -220,12 +292,27 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
       >
         {/* Card Header */}
         <Box sx={{ p: 3, bgcolor: "grey.50", borderBottom: "1px solid", borderColor: "divider" }}>
-          <Typography variant="h5" fontWeight={700} color="text.primary">
-            สรุปรายการชำระเงิน
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            ข้อมูลการคำนวณทั้งหมดอ้างอิงตามรายการสินค้า
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Box>
+              <Typography variant="h5" fontWeight={700} color="text.primary">
+                สรุปรายการชำระเงิน
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                ข้อมูลการคำนวณทั้งหมดอ้างอิงตามรายการสินค้า
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: "right" }}>
+              {isSaving ? (
+                <Typography variant="caption" sx={{ color: "primary.main", fontStyle: "italic", fontWeight: 600 }}>
+                  กำลังบันทึกร่าง...
+                </Typography>
+              ) : lastSaved ? (
+                <Typography variant="caption" sx={{ color: "success.main", fontStyle: "italic" }}>
+                  บันทึกร่างเมื่อ {lastSaved.toLocaleTimeString("th-TH", { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </Typography>
+              ) : null}
+            </Box>
+          </Stack>
         </Box>
 
         <Box sx={{ p: 3 }}>
@@ -353,19 +440,21 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
             <Button
               variant="contained"
               size="large"
+              color="success"
               startIcon={<Save />}
-              onClick={handleSaveQuotation}
+              onClick={() => handleSaveQuotation("approve")}
+              disabled={isSaving}
               fullWidth
               sx={{ 
                 py: 1.5, 
                 borderRadius: "10px", 
                 textTransform: "none", 
                 fontWeight: 700,
-                fontSize: "1rem",
+                fontSize: "1.1rem",
                 boxShadow: theme.shadows[4]
               }}
             >
-              บันทึกใบเสนอราคา
+              {isEdit ? "อัพเดทใบเสนอราคา" : "บันทึกและอนุมัติ"}
             </Button>
             
             <Button

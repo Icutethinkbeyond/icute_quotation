@@ -22,7 +22,8 @@ const Sidebar = ({
   const LogoutButton = (
     <Box px={2} pb={4} mt="auto">
       <Button
-        variant="light"
+        // variant="light"
+        // variant=""
         fullWidth
         startIcon={<IconLogout size="20" />}
         sx={{

@@ -244,6 +244,7 @@ export const headerClean: IHeadForm = {
   taxId: "",
   branch: "",
   
+  customerType: "Individual",
   customerCompanyName: "",
   customerCompanyTel: "",
   customerCompanyAddress: "",

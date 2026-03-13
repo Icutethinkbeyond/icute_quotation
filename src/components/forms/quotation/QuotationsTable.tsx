@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Chip } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { Add, DeleteSweep } from "@mui/icons-material";
 import { GenericDataTable } from "@/components/shared/GenericDataTable";
@@ -14,8 +14,13 @@ import {
   creationDateColumn,
   customerNameColumn,
   grandTotalColumn,
+  statusColumn,
 } from "@/components/quotation/TableColumns";
-import { IQuotation, IQuotationTableRow, QuotationsTableProps } from "@/contexts/QuotationContext";
+import {
+  IQuotation,
+  IQuotationTableRow,
+  QuotationsTableProps,
+} from "@/contexts/QuotationContext";
 import { min } from "lodash";
 
 const QuotationsTable: React.FC<QuotationsTableProps> = () => {
@@ -23,28 +28,31 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Data mapping function
-  const mapQuotationData = useCallback((item: IQuotation): IQuotationTableRow => ({
-    ...item,
-    keyId: item.documentIdNo,
-    id: item.documentIdNo,
-  }), []);
+  const mapQuotationData = useCallback(
+    (item: IQuotation): IQuotationTableRow => ({
+      ...item,
+      keyId: item.documentIdNo,
+      id: item.documentIdNo,
+    }),
+    [],
+  );
 
   // Use data table hook
-  const {
-    rows,
-    loading,
-    paginationModel,
-    setPaginationModel,
-    refresh,
-  } = useDataTable<IQuotation, IQuotationTableRow>({
-    apiUrl: "/api/income/quotation",
-    mapData: mapQuotationData,
-  });
+  const { rows, loading, paginationModel, setPaginationModel, refresh } =
+    useDataTable<IQuotation, IQuotationTableRow>({
+      apiUrl: "/api/income/quotation",
+      mapData: mapQuotationData,
+    });
 
   // Use debounce search hook
   const { searchQuery, setSearchQuery, filteredRows } = useDebounceSearch({
     rows,
-    searchFields: ["documentIdNo", "contactor.contactorName", "customerCompany.companyName", "grandTotal"],
+    searchFields: [
+      "documentIdNo",
+      "contactor.contactorName",
+      "customerCompany.companyName",
+      "grandTotal",
+    ],
     debounceMs: 1000,
   });
 
@@ -90,12 +98,37 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
     customerNameColumn,
     grandTotalColumn,
     {
+      field: "status",
+      headerName: "สถานะ",
+      headerAlign: "center",
+      align: "center",
+      disableColumnMenu: true,
+      width: 150,
+      sortable: false,
+      renderCell: (params: GridRenderCellParams) => (
+        <Chip
+          label={params.row.documentStatus}
+          size="small"
+          color={
+            params.row.documentStatus === "Approve"
+              ? "success"
+              : params.row.documentStatus === "Draft"
+                ? "default"
+                : params.row.documentStatus === "Waiting"
+                  ? "warning"
+                  : "error"
+          }
+          sx={{ fontWeight: 600 }}
+        />
+      ),
+    },
+    {
       field: "Actions",
       headerName: "การจัดการ",
       headerAlign: "center",
       align: "center",
       disableColumnMenu: true,
-      width: 200,
+      width: 150,
       sortable: false,
       renderCell: (params: GridRenderCellParams) => (
         <Box
@@ -110,7 +143,9 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
           <QuotationActionButtons
             documentId={params.row.documentId}
             onEdit={(id) => router.push(`/quotation/edit-quotation/${id}`)}
-            onPreview={(id) => window.open(`/quotation/preview/${id}`, "_blank")}
+            onPreview={(id) =>
+              window.open(`/quotation/preview/${id}`, "_blank")
+            }
             onDownloadPDF={handlePDFDownload}
             onDelete={handleDelete}
             isDownloading={downloadingId === params.row.documentId}

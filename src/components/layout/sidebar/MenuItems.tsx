@@ -1,6 +1,7 @@
 
 
 import {
+  IconLayoutDashboard,
   IconReceipt2,
   IconPackage,
   IconBuilding,
@@ -12,6 +13,12 @@ import { uniqueId } from "lodash";
 
 export const useMenuItems = () => {
   return [
+    {
+      id: uniqueId(),
+      title: "แดชบอร์ด",
+      icon: IconLayoutDashboard,
+      href: `/home`,
+    },
     {
       id: uniqueId(),
       title: "ใบเสนอราคา",

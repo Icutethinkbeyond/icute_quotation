@@ -30,7 +30,7 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
     });
 
   return (
-    <Grid2 container spacing={3} sx={{ mt: "auto", mb: 3 }}>
+    <Grid2 container spacing={3} sx={{ mb: 3 }}>
       {/* ฝั่งซ้าย: หมายเหตุ */}
       <Grid2 size={{ xs: 5 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>

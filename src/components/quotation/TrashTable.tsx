@@ -27,7 +27,7 @@ const QuotationTrashTable = () => {
             flex: 1,
             minWidth: 120,
             type: "number",
-            valueFormatter: (params) => params.value.toLocaleString("th-TH", { minimumFractionDigits: 2 }),
+            valueFormatter: (params: any) => params.value.toLocaleString("th-TH", { minimumFractionDigits: 2 }),
         },
         {
             field: "deletedAt",
@@ -40,21 +40,21 @@ const QuotationTrashTable = () => {
 
     // ฟังก์ชันแปลงข้อมูลก่อนแสดง
     const mapQuotationData = (quotation: any) => ({
-        id: quotation.quotationId,
-        quotationNumber: quotation.quotationNumber,
-        customerCompanyName: quotation.customerCompanyName,
-        totalAmount: quotation.finalTotal,
-        deletedAt: new Date(quotation.deletedAt).toLocaleDateString("th-TH"),
+        id: quotation.documentId,
+        quotationNumber: quotation.documentIdNo,
+        customerCompanyName: quotation.customerCompany?.companyName || quotation.contactor?.contactorName || "ทั่วไป",
+        totalAmount: quotation.grandTotal || 0,
+        deletedAt: quotation.deletedAt ? new Date(quotation.deletedAt).toLocaleDateString("th-TH") : "-",
     });
 
     return (
         <GenericTrashTable
             fetchEndpoint="/api/income/quotation?trash=true"
-            restoreEndpoint={(id) => `/api/income/quotation/${id}/restore`}
+            restoreEndpoint={(id) => `/api/income/quotation/${id}`}
             deleteEndpoint={(id) => `/api/income/quotation/${id}?permanent=true`}
             title="ถังขยะ - ใบเสนอราคา"
             backUrl="/quotation"
-            idField="quotationId"
+            idField="documentId"
             columns={columns}
             mapData={mapQuotationData}
         />

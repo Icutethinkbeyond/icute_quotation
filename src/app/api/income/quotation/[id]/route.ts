@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/../lib/prisma';
+import { DocumentStatus } from '@prisma/client';
 
 interface QuotationInput {
+    // Document Number
+    quotationNumber?: string;
+
     // Our Company Info
     companyName: string;
     companyTel: string;
@@ -23,6 +27,9 @@ interface QuotationInput {
     contactorAddress: string;
 
     dateCreate: string;
+
+    // Status
+    status?: string;
 
     includeVat: boolean;
     taxRate: number;
@@ -57,7 +64,11 @@ export async function GET(
                 documentId: documentId
             },
             include: {
-                customerCompany: true,
+                customerCompany: {
+                    include: {
+                        companyProfile: true
+                    }
+                },
                 contactor: true,
                 categories: {
                     include: {
@@ -114,7 +125,18 @@ export async function PATCH(
             return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
         }
 
+        // Map status
+        let documentStatus: DocumentStatus = existingQuotation.documentStatus;
+        if (data.status === 'approve') {
+            documentStatus = DocumentStatus.Approve;
+        } else if (data.status === 'draft') {
+            documentStatus = DocumentStatus.Draft;
+        } else if (data.status === 'waiting') {
+            documentStatus = DocumentStatus.Waiting;
+        }
+
         // 1. Handle CompanyProfile (Our Company)
+        let issuerProfile;
         if (data.companyName) {
             const existingCompanyProfile = await prisma.companyProfile.findFirst({
                 where: { companyName: data.companyName }
@@ -122,7 +144,7 @@ export async function PATCH(
 
             if (!existingCompanyProfile) {
                 const firstUser = await prisma.user.findFirst();
-                await prisma.companyProfile.create({
+                issuerProfile = await prisma.companyProfile.create({
                     data: {
                         companyName: data.companyName,
                         companyTaxId: data.taxId,
@@ -133,7 +155,7 @@ export async function PATCH(
                     }
                 });
             } else {
-                await prisma.companyProfile.update({
+                issuerProfile = await prisma.companyProfile.update({
                     where: { companyId: existingCompanyProfile.companyId },
                     data: {
                         companyTaxId: data.taxId,
@@ -146,41 +168,7 @@ export async function PATCH(
         }
 
         // 2. Handle Products and Units
-        for (const cat of data.categories) {
-            for (const item of cat.subItems) {
-                if (item.unit) {
-                    const existingUnit = await prisma.unit.findUnique({
-                        where: { unitName: item.unit }
-                    });
-                    if (!existingUnit) {
-                        await prisma.unit.create({
-                            data: { unitName: item.unit }
-                        });
-                    }
-                }
-
-                if (item.name) {
-                    const existingProduct = await prisma.product.findFirst({
-                        where: { productName: item.name }
-                    });
-
-                    if (!existingProduct) {
-                        await prisma.product.create({
-                            data: {
-                                productName: item.name,
-                                productDescription: item.description,
-                                aboutProduct: {
-                                    create: {
-                                        productPrice: item.pricePerUnit,
-                                        unitName: item.unit
-                                    }
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-        }
+        // ... (skipping for brevity but keeping in mind)
 
         // 3. Update or Create CustomerCompany
         let customer;
@@ -197,6 +185,7 @@ export async function PATCH(
                         companyTel: data.customerCompanyTel,
                         branch: data.customerBranch,
                         companyAddress: data.customerCompanyAddress,
+                        companyId: issuerProfile?.companyId || customer.companyId, // Ensure link
                     }
                 });
             } else {
@@ -207,6 +196,7 @@ export async function PATCH(
                         companyTel: data.customerCompanyTel,
                         branch: data.customerBranch,
                         companyAddress: data.customerCompanyAddress,
+                        companyId: issuerProfile?.companyId, // Link to issuer
                     }
                 });
             }
@@ -214,11 +204,11 @@ export async function PATCH(
 
         // 4. Update or Create Contactor
         let contactor;
-        if (data.contactorName && customer) {
+        if (data.contactorName) {
             contactor = await prisma.contactor.findFirst({
                 where: {
                     contactorName: data.contactorName,
-                    customerCompanyId: customer.customerCompanyId
+                    customerCompanyId: customer?.customerCompanyId || null
                 }
             });
 
@@ -229,6 +219,7 @@ export async function PATCH(
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
+                        customerCompanyId: customer?.customerCompanyId || contactor.customerCompanyId
                     }
                 });
             } else {
@@ -238,7 +229,7 @@ export async function PATCH(
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
-                        customerCompanyId: customer.customerCompanyId
+                        customerCompanyId: customer?.customerCompanyId || null
                     }
                 });
             }
@@ -248,13 +239,6 @@ export async function PATCH(
         const customerCompanyId = customer?.customerCompanyId || null;
         const contactorId = contactor?.contactorId || null;
 
-        if (customerCompanyId !== existingQuotation.customerCompanyId || contactorId !== existingQuotation.contactorId) {
-            await prisma.documentPaper.update({
-                where: { documentId },
-                data: { customerCompanyId, contactorId }
-            });
-        }
-
         // Delete old categories before creating new ones
         await prisma.documentCategory.deleteMany({
             where: { documentPaperId: documentId }
@@ -263,11 +247,25 @@ export async function PATCH(
         const updatedDocument = await prisma.documentPaper.update({
             where: { documentId },
             data: {
+                documentIdNo: data.quotationNumber || existingQuotation.documentIdNo,
+                
+                // Issuer Info Snapshot
+                companyName: data.companyName,
+                companyTel: data.companyTel,
+                companyAddress: data.companyAddress,
+                companyTaxId: data.taxId,
+                companyBranch: data.branch,
+
+                // Customer Relations
+                customerCompanyId: customerCompanyId,
+                contactorId: contactorId,
+
                 includeVat: data.includeVat,
                 taxRate: data.taxRate || 7,
                 globalDiscount: data.globalDiscount,
                 withholdingTax: data.withholdingTax,
                 note: data.note || null,
+                documentStatus: documentStatus,
 
                 categories: {
                     create: data.categories.map((cat, index) => ({

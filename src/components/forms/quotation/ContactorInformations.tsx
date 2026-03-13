@@ -12,6 +12,7 @@ import {
   InputAdornment,
   Checkbox,
   FormControlLabel,
+  Button,
 } from "@mui/material";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -33,6 +34,7 @@ import {
 
 // Validation Schema with Yup
 const ContactorInformationSchema = Yup.object().shape({
+  quotationNumber: Yup.string().required("กรุณาระบุเลขที่ใบเสนอราคา"),
   contactorName: Yup.string().required("กรุณาระบุชื่อผู้ติดต่อ"),
   // Conditional validation based on isCorporate
   customerCompanyName: Yup.string().when("isCorporate", {
@@ -83,8 +85,26 @@ const ContactorInformation: React.FC = () => {
   const [loadingFavorite, setLoadingFavorite] = useState(false);
   const theme = useTheme();
 
-  // State to manage customer type (default to individual)
-  const [isCorporate, setIsCorporate] = useState(false);
+  // State to manage customer type (sync with headForm.customerType)
+  const [isCorporate, setIsCorporate] = useState(headForm.customerType === "Corporate");
+
+  // Helper to generate Quotation Number
+  const generateQuotationNumber = () => {
+    const now = new Date();
+    const timestamp = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const dateStr = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}`;
+    return `QT-${dateStr}-${timestamp}`;
+  };
+
+  const handleGenerateNumber = (setFieldValue: any) => {
+    const newNumber = generateQuotationNumber();
+    setFieldValue("quotationNumber", newNumber);
+  };
+
+  // Update local state if headForm.customerType changes externally
+  useEffect(() => {
+    setIsCorporate(headForm.customerType === "Corporate");
+  }, [headForm.customerType]);
 
   // Fetch contactors for autocomplete
   const fetchContactorSuggestions = async (search: string = "") => {
@@ -127,6 +147,7 @@ const ContactorInformation: React.FC = () => {
   };
 
   useEffect(() => {
+    // Fetch Customer Specific favorite
     const fetchFavoriteCustomer = async () => {
       setLoadingFavorite(true);
       try {
@@ -136,6 +157,7 @@ const ContactorInformation: React.FC = () => {
           if (favorite) {
             setHeadForm((prev) => ({
               ...prev,
+              customerType: favorite.taxId ? "Corporate" : "Individual",
               customerCompanyName: favorite.companyName || "",
               customerCompanyTel: favorite.companyTel || "",
               customerCompanyAddress: favorite.companyAddress || "",
@@ -151,6 +173,7 @@ const ContactorInformation: React.FC = () => {
                   }
                 : {}),
             }));
+            if (favorite.taxId) setIsCorporate(true);
           }
         }
       } catch (error) {
@@ -160,7 +183,8 @@ const ContactorInformation: React.FC = () => {
       }
     };
 
-    if (!headForm.customerCompanyName && !headForm.customerTaxId) {
+    // Only fetch favorite if we are starting fresh (no existing company selected)
+    if (!headForm.customerCompanyName && !headForm.customerTaxId && !headForm.contactorName) {
       fetchFavoriteCustomer();
     }
   }, []);
@@ -194,6 +218,7 @@ const ContactorInformation: React.FC = () => {
 
         const handleTypeChange = (isCorp: boolean) => {
           setIsCorporate(isCorp);
+          setFieldValue("customerType", isCorp ? "Corporate" : "Individual");
           // Clear corporate fields if switching to individual
           if (!isCorp) {
             setFieldValue("customerCompanyName", "");
@@ -210,6 +235,45 @@ const ContactorInformation: React.FC = () => {
           <Form>
             <FormSection title="ผู้รับเอกสาร (ข้อมูลลูกค้า)">
               <Grid2 container spacing={2.5}>
+                <Grid2 size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    name="quotationNumber"
+                    label="เลขที่ใบเสนอราคา"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    value={values.quotationNumber || ""}
+                    onChange={(e) =>
+                      setFieldValue("quotationNumber", e.target.value)
+                    }
+                    error={
+                      touched.quotationNumber &&
+                      Boolean(errors.quotationNumber)
+                    }
+                    helperText={<ErrorMessage name="quotationNumber" />}
+                    sx={inputStyles(theme)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Receipt fontSize="small" color="action" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Button 
+                            variant="text" 
+                            size="small" 
+                            onClick={() => handleGenerateNumber(setFieldValue)}
+                            sx={{ minWidth: "auto", fontSize: "11px", fontWeight: 700 }}
+                          >
+                            สร้างเลขที่
+                          </Button>
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid2>
+
                 <Grid2 size={{ xs: 12, sm: 6 }}>
                   <TextField
                     name="dateCreate"

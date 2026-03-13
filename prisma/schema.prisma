@@ -214,6 +214,13 @@ model DocumentPaper {
   documentId   String @id @default(uuid())
   documentIdNo String @unique
 
+  // Issuer Info (Snapshot at creation)
+  companyName    String?
+  companyTel     String?
+  companyAddress String?
+  companyTaxId   String?
+  companyBranch  String?
+
   // Details
   docType         String
   docMonth        String?
@@ -302,8 +309,9 @@ model DocumentItem {
 // --------------------------------------
 
 model Unit {
-  unitId   String @id @default(uuid())
-  unitName String @unique
+  unitId     String @id @default(uuid())
+  unitName   String @unique
+  usageCount Int    @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

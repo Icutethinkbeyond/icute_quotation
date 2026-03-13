@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/../lib/prisma';
+import { DocumentStatus } from '@prisma/client';
 
 // Define input types based on what we see in the contexts
 interface QuotationInput {
+    // Document Number
+    quotationNumber?: string;
+
     // Our Company Info
     companyName: string;
     companyTel: string;
@@ -25,6 +29,9 @@ interface QuotationInput {
 
     dateCreate: string;
     
+    // Status
+    status?: string;
+
     // Footer/Calculation Info
     includeVat: boolean;
     taxRate: number;
@@ -53,10 +60,19 @@ export async function POST(req: NextRequest) {
         const data: QuotationInput = await req.json();
         console.log("Creating quotation with data:", JSON.stringify(data, null, 2));
 
-        // Generate a Document ID
-        const docIdNo = `QT-${Date.now()}`;
+        // Use provided quotationNumber or generate a fallback Document ID
+        const docIdNo = data.quotationNumber || `QT-${Date.now()}`;
+
+        // Map status
+        let documentStatus: DocumentStatus = DocumentStatus.Draft;
+        if (data.status === 'approve') {
+            documentStatus = DocumentStatus.Approve;
+        } else if (data.status === 'waiting') {
+            documentStatus = DocumentStatus.Waiting;
+        }
 
         // 1. Handle CompanyProfile (Our Company)
+        let issuerProfile;
         if (data.companyName) {
             const existingCompanyProfile = await prisma.companyProfile.findFirst({
                 where: { companyName: data.companyName }
@@ -64,7 +80,7 @@ export async function POST(req: NextRequest) {
 
             if (!existingCompanyProfile) {
                 const firstUser = await prisma.user.findFirst();
-                await prisma.companyProfile.create({
+                issuerProfile = await prisma.companyProfile.create({
                     data: {
                         companyName: data.companyName,
                         companyTaxId: data.taxId,
@@ -77,7 +93,7 @@ export async function POST(req: NextRequest) {
                 console.log("✅ Auto-created new CompanyProfile:", data.companyName);
             } else {
                 // Update existing company profile info
-                await prisma.companyProfile.update({
+                issuerProfile = await prisma.companyProfile.update({
                     where: { companyId: existingCompanyProfile.companyId },
                     data: {
                         companyTaxId: data.taxId,
@@ -104,6 +120,7 @@ export async function POST(req: NextRequest) {
                         companyTel: data.customerCompanyTel,
                         branch: data.customerBranch,
                         companyAddress: data.customerCompanyAddress,
+                        companyId: issuerProfile?.companyId, // Link to issuer
                     }
                 });
                 console.log("✅ Auto-created new CustomerCompany:", data.customerCompanyName);
@@ -115,6 +132,7 @@ export async function POST(req: NextRequest) {
                         companyTel: data.customerCompanyTel,
                         branch: data.customerBranch,
                         companyAddress: data.customerCompanyAddress,
+                        companyId: issuerProfile?.companyId || customer.companyId, // Ensure it's linked
                     }
                 });
             }
@@ -122,11 +140,11 @@ export async function POST(req: NextRequest) {
 
         // 3. Handle Contactor
         let contactor;
-        if (data.contactorName && customer) {
+        if (data.contactorName) {
             contactor = await prisma.contactor.findFirst({
                 where: {
                     contactorName: data.contactorName,
-                    customerCompanyId: customer.customerCompanyId
+                    customerCompanyId: customer?.customerCompanyId || null
                 }
             });
 
@@ -137,7 +155,7 @@ export async function POST(req: NextRequest) {
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
-                        customerCompanyId: customer.customerCompanyId,
+                        customerCompanyId: customer?.customerCompanyId || null,
                     }
                 });
                 console.log("✅ Auto-created new Contactor:", data.contactorName);
@@ -148,6 +166,7 @@ export async function POST(req: NextRequest) {
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
+                        customerCompanyId: customer?.customerCompanyId || contactor.customerCompanyId,
                     }
                 });
             }
@@ -162,7 +181,16 @@ export async function POST(req: NextRequest) {
                     });
                     if (!existingUnit) {
                         await prisma.unit.create({
-                            data: { unitName: item.unit }
+                            data: { 
+                                unitName: item.unit,
+                                usageCount: 1
+                            }
+                        });
+                    } else {
+                        // Increment usage count for existing units
+                        await prisma.unit.update({
+                            where: { unitName: item.unit },
+                            data: { usageCount: { increment: 1 } }
                         });
                     }
                 }
@@ -196,8 +224,17 @@ export async function POST(req: NextRequest) {
                 documentIdNo: docIdNo,
                 docType: "Quotation",
                 documentDetials: "Generated from Web Form",
+                
+                // Issuer Info Snapshot
+                companyName: data.companyName,
+                companyTel: data.companyTel,
+                companyAddress: data.companyAddress,
+                companyTaxId: data.taxId,
+                companyBranch: data.branch,
+
                 customerCompanyId: customer?.customerCompanyId || null,
                 contactorId: contactor?.contactorId || null,
+                documentStatus: documentStatus,
 
                 includeVat: data.includeVat,
                 taxRate: data.taxRate || 7,

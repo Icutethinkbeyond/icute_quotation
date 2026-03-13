@@ -40,6 +40,26 @@ export async function POST(req: NextRequest) {
         // Auto-generate SKU if not provided
         const sku = data.productSKU || `SKU-${Date.now()}`;
 
+        // Handle Units and Increment Frequency
+        if (data.unit) {
+            const existingUnit = await prisma.unit.findUnique({
+                where: { unitName: data.unit }
+            });
+            if (!existingUnit) {
+                await prisma.unit.create({
+                    data: { 
+                        unitName: data.unit,
+                        usageCount: 1
+                    }
+                });
+            } else {
+                await prisma.unit.update({
+                    where: { unitName: data.unit },
+                    data: { usageCount: { increment: 1 } }
+                });
+            }
+        }
+
         const product = await prisma.product.create({
             data: {
                 productName: data.productName,

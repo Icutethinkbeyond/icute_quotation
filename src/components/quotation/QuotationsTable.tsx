@@ -23,12 +23,12 @@ const QuotationsTable: React.FC = () => {
     const theme = useTheme();
 
     const mapQuotationData = useCallback((quotation: any): QuotationRow => ({
-        id: quotation.quotationId,
-        quotationNumber: quotation.quotationNumber,
-        customerCompanyName: quotation.customerCompanyName,
-        totalAmount: quotation.finalTotal,
-        status: quotation.status, // Assuming a status field exists
-        dateCreate: new Date(quotation.dateCreate).toLocaleDateString("th-TH"),
+        id: quotation.documentId,
+        quotationNumber: quotation.documentIdNo,
+        customerCompanyName: quotation.customerCompany?.companyName || quotation.contactor?.contactorName || "ทั่วไป",
+        totalAmount: quotation.grandTotal || 0,
+        status: quotation.documentStatus,
+        dateCreate: quotation.documentCreateDate ? new Date(quotation.documentCreateDate).toLocaleDateString("th-TH") : "-",
     }), []);
 
     const {
@@ -73,7 +73,7 @@ const QuotationsTable: React.FC = () => {
             flex: 1, 
             minWidth: 120, 
             type: "number",
-            valueFormatter: (params) => params.value.toLocaleString("th-TH", { minimumFractionDigits: 2 }),
+            valueFormatter: (params: any) => params.value.toLocaleString("th-TH", { minimumFractionDigits: 2 }),
         },
         { 
             field: "status", 
@@ -82,13 +82,29 @@ const QuotationsTable: React.FC = () => {
             minWidth: 100,
             renderCell: (params: GridRenderCellParams) => {
                 let color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' = 'default';
+                let label = params.value;
                 switch (params.value) {
-                    case 'Pending': color = 'warning'; break;
-                    case 'Approved': color = 'success'; break;
-                    case 'Rejected': color = 'error'; break;
-                    default: color = 'info'; break;
+                    case 'Draft': 
+                        color = 'info'; 
+                        label = 'ฉบับร่าง';
+                        break;
+                    case 'Waiting': 
+                        color = 'warning'; 
+                        label = 'รออนุมัติ';
+                        break;
+                    case 'Approve': 
+                        color = 'success'; 
+                        label = 'อนุมัติแล้ว';
+                        break;
+                    case 'Cancel': 
+                        color = 'error'; 
+                        label = 'ยกเลิก';
+                        break;
+                    default: 
+                        color = 'default'; 
+                        break;
                 }
-                return <Chip label={params.value} color={color} size="small" />;
+                return <Chip label={label} color={color} size="small" sx={{ fontWeight: 600 }} />;
             },
         },
         { field: "dateCreate", headerName: "วันที่สร้าง", flex: 1, minWidth: 120 },

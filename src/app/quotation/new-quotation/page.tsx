@@ -12,6 +12,8 @@ import PricingTable from "@/components/forms/pricing-table/PricingTable";
 import PricingSummary from "@/components/forms/pricing-table/PricingSummary";
 import DashboardCard from "@/components/shared/DashboardCard";
 import { usePricingContext } from "@/contexts/PricingContext";
+import { useBreadcrumbContext } from "@/contexts/BreadcrumbContext";
+import { headerClean, useQuotationListContext } from "@/contexts/QuotationContext";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -25,12 +27,12 @@ function CustomTabPanel(props: TabPanelProps) {
   return (
     <div
       role="tabpanel"
-      hidden={value !== index}
+      style={{ display: value === index ? 'block' : 'none' }}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+      <Box sx={{ pt: 3 }}>{children}</Box>
     </div>
   );
 }
@@ -38,16 +40,41 @@ function CustomTabPanel(props: TabPanelProps) {
 const NewQuotation = () => {
   const { setCategories, setDiscount, setVatIncluded, setWithholdingTaxRate } =
     usePricingContext();
+  const { setHeadForm } = useQuotationListContext();
+  const { setBreadcrumbs } = useBreadcrumbContext();
 
   const [value, setValue] = useState(0); // 0 for Contactor, 1 for Company
 
   useEffect(() => {
-    // Reset pricing state when entering new quotation page
+    setBreadcrumbs([
+      { name: "หน้าแรก", href: `/` },
+      { name: "ใบเสนอราคา", href: `/quotation` },
+      { name: "เพิ่มใบเสนอราคาใหม่" },
+    ]);
+
+    // Reset pricing state
     setCategories([]);
     setDiscount(0);
     setVatIncluded(false);
     setWithholdingTaxRate(0);
-  }, [setCategories, setDiscount, setVatIncluded, setWithholdingTaxRate]);
+
+    // Initialize Header with Auto ID and Current Date
+    const now = new Date();
+    const today = now.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+    const timestamp = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const dateStr = today.replace(/-/g, '');
+    const autoId = `QT-${dateStr}-${timestamp}`;
+
+    setHeadForm({
+      ...headerClean,
+      dateCreate: today,
+      quotationNumber: autoId
+    });
+
+    return () => {
+      setBreadcrumbs([]);
+    };
+  }, [setCategories, setDiscount, setVatIncluded, setWithholdingTaxRate, setHeadForm, setBreadcrumbs]);
 
   const handleChange = (event: SyntheticEvent, newValue: number) => {
     setValue(newValue);

@@ -59,7 +59,7 @@ export default function QuotationPreviewPage({
         format: "a4" as const,
         orientation: "portrait" as const,
       },
-      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      // pagebreak: { mode: ["avoid-all", "css", "legacy"] },
     };
 
     try {

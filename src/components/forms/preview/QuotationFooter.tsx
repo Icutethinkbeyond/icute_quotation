@@ -9,7 +9,7 @@ const QuotationFooter: React.FC = () => {
         sx={{
           position: "relative",
           backgroundColor: "#1976d2", // Primary blue, matching header
-          height: "35px", // Adjusted height, slightly smaller than header
+          height: "25px", // Adjusted height, slightly smaller than header
           width: "100%",
           overflow: "hidden", // กันส่วนเกินของ pseudo-element
           "&::after": {

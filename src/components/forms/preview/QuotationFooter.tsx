@@ -8,8 +8,8 @@ const QuotationFooter: React.FC = () => {
       <Box
         sx={{
           position: "relative",
-          backgroundColor: "#1565c0",
-          height: "30px",
+          backgroundColor: "#1976d2", // Primary blue, matching header
+          height: "35px", // Adjusted height, slightly smaller than header
           width: "100%",
           overflow: "hidden", // กันส่วนเกินของ pseudo-element
           "&::after": {
@@ -17,10 +17,10 @@ const QuotationFooter: React.FC = () => {
             position: "absolute",
             right: 0,
             bottom: 0,
-            width: "120px",
+            width: "150px", // Wider diagonal section, matching header
             height: "100%",
-            backgroundColor: "#0d47a1",
-            clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0 100%)",
+            backgroundColor: "#115293", // Darker accent blue, matching header
+            clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0 100%)", // Adjusted clipPath to complement header
           },
         }}
       />

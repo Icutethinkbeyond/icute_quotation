@@ -33,7 +33,7 @@ import { Visibility, Save, FileDownload, Description } from "@mui/icons-material
 import { useRouter } from "next/navigation";
 import PreviewDialog from "../preview/DialogPreview";
 import { useEffect, useState } from "react";
-import { calculateQuotationTotals } from "@/utils/quotationCalculations";
+import { calculateQuotationTotals, formatCurrency } from "@/utils/quotationCalculations";
 
 interface PricingSummaryProps {
   isEdit?: boolean;
@@ -271,7 +271,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
         {label}
       </Typography>
       <Typography variant="body1" color={color} fontWeight={fontWeight}>
-        {typeof value === "number" ? `฿${value.toLocaleString("th-TH", { minimumFractionDigits: 2 })}` : value}
+        {typeof value === "number" ? `${formatCurrency(value)} บาท` : value}
       </Typography>
     </Box>
   );
@@ -362,7 +362,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               sx={{ m: 0 }}
             />
             <Typography variant="body1" fontWeight={600}>
-              ฿{vat.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+               {formatCurrency(vat)} บาท
             </Typography>
           </Box>
 
@@ -383,7 +383,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               </Select>
             </FormControl>
             <Typography variant="body1" color="error.main" fontWeight={600}>
-              - ฿{withholdingTax.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+              -{formatCurrency(withholdingTax)} บาท
             </Typography>
           </Box>
 
@@ -404,7 +404,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               ยอดชำระสุทธิ (Grand Total)
             </Typography>
             <Typography variant="h3" fontWeight={800}>
-              ฿{finalTotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+              {formatCurrency(finalTotal)} บาท
             </Typography>
           </Box>
 

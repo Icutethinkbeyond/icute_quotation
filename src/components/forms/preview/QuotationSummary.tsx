@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Typography, Grid2, Divider } from "@mui/material";
+import { HeadForm } from "@/contexts/QuotationContext";
 
 interface QuotationSummaryProps {
   displayNote?: string;
@@ -49,38 +50,38 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
       <Grid2 size={{ xs: 7 }}>
         <Box sx={{ backgroundColor: "#f5f5f5", p: 2, borderRadius: 1 }}>
           {/* ยอดรวมย่อย */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-            <Typography variant="body2">ยอดรวมย่อย:</Typography>
-            <Typography variant="body2">
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Typography sx={{ fontSize: 12 }}>ยอดรวมย่อย:</Typography>
+            <Typography sx={{ fontSize: 12 }}>
               {formatCurrency(subtotal)} บาท
             </Typography>
           </Box>
 
           {/* ส่วนลด */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-            <Typography variant="body2">ส่วนลด:</Typography>
-            <Typography variant="body2">
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Typography sx={{ fontSize: 12 }}>ส่วนลด:</Typography>
+            <Typography sx={{ fontSize: 12 }}>
               {formatCurrency(discount)} บาท
             </Typography>
           </Box>
 
           {/* ภาษีมูลค่าเพิ่ม */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-            <Typography variant="body2">
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Typography sx={{ fontSize: 12 }}>
               {!vatIncluded && "ไม่มี"}ภาษีมูลค่าเพิ่ม {vatIncluded && "(7%)"}:
             </Typography>
-            <Typography variant="body2">
+            <Typography sx={{ fontSize: 12 }}>
               {formatCurrency(taxAmount)} บาท
             </Typography>
           </Box>
 
           {/* หัก ณ ที่จ่าย */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-            <Typography variant="body2">
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Typography sx={{ fontSize: 12 }}>
               หัก ฯ ที่จ่าย{" "}
               {withholdingTaxRate ? `(${withholdingTaxRate}%)` : ""}:
             </Typography>
-            <Typography variant="body2">
+            <Typography sx={{ fontSize: 12 }}>
               {formatCurrency(withholdingTaxAmount)} บาท
             </Typography>
           </Box>
@@ -92,42 +93,24 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
             sx={{
               display: "flex",
               justifyContent: "space-between",
+              alignItems: "center",
               backgroundColor: "#1565c0",
-              p: 2,
+              p: 1,
               borderRadius: 1,
             }}
           >
-            <Typography
-              variant="h6"
-              sx={{ color: "white", fontWeight: "bold" }}
-            >
+            <Typography sx={{ color: "white", fontSize: 14 }}>
               รวมทั้งสิ้น:
             </Typography>
             <Typography
-              sx={{ color: "white", fontSize: 18, letterSpacing: 0.5 }}
+              sx={{ color: "white", fontSize: 16, letterSpacing: 0.5 }}
             >
               {formatCurrency(grandTotal)} บาท
             </Typography>
           </Box>
         </Box>
-
-        {/* ส่วนลงลายมือชื่อ */}
-        <Box sx={{ mt: 3, textAlign: "right" }}>
-          <Box
-            sx={{
-              borderBottom: "1px solid black",
-              width: "200px",
-              ml: "auto",
-              mb: 1,
-              mt: 5,
-              height: "40px", // พื้นที่สำหรับลายเซ็น
-            }}
-          />
-          <Typography variant="body2" sx={{ mr: 7 }}>
-            ลงลายมือชื่อ
-          </Typography>
-        </Box>
       </Grid2>
+
     </Grid2>
   );
 };

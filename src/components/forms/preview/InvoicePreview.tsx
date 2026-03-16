@@ -9,6 +9,7 @@ import QuotationSummary from "./QuotationSummary";
 import QuotationFooter from "./QuotationFooter";
 import QuotationTable from "./QuotationTable";
 import { ContactSupportOutlined } from "@mui/icons-material";
+import Signature from "./Signature";
 
 interface InvoiceProps {}
 
@@ -66,7 +67,7 @@ const InvoicePreview: React.FC<InvoiceProps> = ({}) => {
       });
     });
 
-    console.log(allContentRows)
+    console.log(allContentRows);
 
     const resultPages: Array<typeof allContentRows> = [];
     let currentPageRows: typeof allContentRows = [];
@@ -103,7 +104,8 @@ const InvoicePreview: React.FC<InvoiceProps> = ({}) => {
       // Also, ensure item_name and item_details (2 rows) always fit together
       // And header + first item always fit together (3 rows)
       // const isNewPageNeeded = currentPageRowCount + rowsToAdd > limit && currentPageRows.length > 0;
-      const isNewPageNeeded = currentPageRowCount + rowsToAdd > limit && currentPageRows.length > 0;
+      const isNewPageNeeded =
+        currentPageRowCount + rowsToAdd > limit && currentPageRows.length > 0;
 
       if (isNewPageNeeded) {
         resultPages.push(currentPageRows);
@@ -148,7 +150,6 @@ const InvoicePreview: React.FC<InvoiceProps> = ({}) => {
 
     return resultPages;
   }, [categories, getCategoryTotal]);
-
 
   return (
     <>
@@ -198,6 +199,7 @@ const InvoicePreview: React.FC<InvoiceProps> = ({}) => {
                   grandTotal={getGrandTotal()}
                 />
                 {/* ส่วน QuotationFooter */}
+                <Signature headForm={headForm}/>
                 <QuotationFooter />
               </>
             )}

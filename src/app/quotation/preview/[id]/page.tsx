@@ -84,7 +84,7 @@ export default function QuotationPreviewPage({
       { name: "ใบเสนอราคา", href: `/quotation` },
       { name: "ตัวอย่างเอกสาร" },
     ]);
-    
+
     return () => {
       setBreadcrumbs([]);
       setCategories([]);
@@ -93,7 +93,14 @@ export default function QuotationPreviewPage({
       setVatIncluded(false);
       setHeadForm(headerClean);
     };
-  }, [setBreadcrumbs, setCategories, setWithholdingTaxRate, setDiscount, setVatIncluded, setHeadForm]);
+  }, [
+    setBreadcrumbs,
+    setCategories,
+    setWithholdingTaxRate,
+    setDiscount,
+    setVatIncluded,
+    setHeadForm,
+  ]);
 
   useEffect(() => {
     const fetchQuotationData = async () => {
@@ -107,26 +114,38 @@ export default function QuotationPreviewPage({
         console.log("✅ Loaded data:", quotation);
 
         // Transform categories
-        const transformedCategories = quotation.categories?.map((cat: any, catIndex: number) => ({
-          id: `category-${catIndex + 1}`,
-          name: cat.name,
-          subItems: cat.items?.map((item: any, itemIndex: number) => ({
-            id: `item-${catIndex + 1}-${itemIndex + 1}`,
-            name: item.name || "",
-            description: item.description,
-            unit: item.unit || "ชิ้น",
-            qty: item.qty,
-            pricePerUnit: item.pricePerUnit,
-            remark: item.remark || "",
-          })) || [],
-        })) || [];
+        const transformedCategories =
+          quotation.categories?.map((cat: any, catIndex: number) => ({
+            id: `category-${catIndex + 1}`,
+            name: cat.name,
+            subItems:
+              cat.items?.map((item: any, itemIndex: number) => ({
+                id: `item-${catIndex + 1}-${itemIndex + 1}`,
+                name: item.name || "",
+                description: item.description,
+                unit: item.unit || "ชิ้น",
+                qty: item.qty,
+                pricePerUnit: item.pricePerUnit,
+                remark: item.remark || "",
+              })) || [],
+          })) || [];
 
         // Calculation mapping
-        const subtotal = transformedCategories.reduce((sum: number, cat: any) =>
-          sum + cat.subItems.reduce((s: number, item: any) => s + (item.qty * item.pricePerUnit), 0), 0);
+        const subtotal = transformedCategories.reduce(
+          (sum: number, cat: any) =>
+            sum +
+            cat.subItems.reduce(
+              (s: number, item: any) => s + item.qty * item.pricePerUnit,
+              0,
+            ),
+          0,
+        );
         const totalAfterDiscount = subtotal - (quotation.globalDiscount || 0);
         const whtAmount = quotation.withholdingTax || 0;
-        const whtRate = totalAfterDiscount > 0 ? Math.round((whtAmount / totalAfterDiscount) * 100) : 0;
+        const whtRate =
+          totalAfterDiscount > 0
+            ? Math.round((whtAmount / totalAfterDiscount) * 100)
+            : 0;
 
         setCategories(transformedCategories);
         setWithholdingTaxRate(whtRate);
@@ -135,7 +154,7 @@ export default function QuotationPreviewPage({
 
         setHeadForm({
           quotationNumber: quotation.documentIdNo || "",
-          
+
           // Issuer (Our Company) - Loaded from Snapshot
           companyName: quotation.companyName || "",
           companyTel: quotation.companyTel || "",
@@ -144,10 +163,13 @@ export default function QuotationPreviewPage({
           branch: quotation.companyBranch || "",
 
           // Customer
-          customerType: quotation.customerCompany?.taxId ? "Corporate" : "Individual",
+          customerType: quotation.customerCompany?.taxId
+            ? "Corporate"
+            : "Individual",
           customerCompanyName: quotation.customerCompany?.companyName || "",
           customerCompanyTel: quotation.customerCompany?.companyTel || "",
-          customerCompanyAddress: quotation.customerCompany?.companyAddress || "",
+          customerCompanyAddress:
+            quotation.customerCompany?.companyAddress || "",
           customerTaxId: quotation.customerCompany?.taxId || "",
           customerBranch: quotation.customerCompany?.branch || "",
 
@@ -172,104 +194,155 @@ export default function QuotationPreviewPage({
     };
 
     if (params.id) fetchQuotationData();
-  }, [params.id, router, setCategories, setDiscount, setVatIncluded, setWithholdingTaxRate, setHeadForm]);
+  }, [
+    params.id,
+    router,
+    setCategories,
+    setDiscount,
+    setVatIncluded,
+    setWithholdingTaxRate,
+    setHeadForm,
+  ]);
 
   if (loading) {
     return (
-      <PageContainer title="กำลังโหลด...">
-        <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="60vh" gap={2}>
+      <PageContainer title="ดูตัวอย่างใบเสนอราคา">
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          height="60vh"
+          gap={2}
+        >
           <CircularProgress size={40} thickness={4} />
-          <Typography variant="body1" color="textSecondary">กำลังเตรียมตัวอย่างเอกสาร...</Typography>
+          <Typography variant="body1" color="textSecondary">
+            กำลังเตรียมตัวอย่างเอกสาร...
+          </Typography>
         </Box>
       </PageContainer>
     );
   }
 
   return (
-    <Box sx={{ bgcolor: "grey.100", minHeight: "100vh" }}>
-      {/* Control Toolbar */}
-      <Box 
-        className="no-print" 
-        sx={{ 
-          position: "sticky", 
-          top: 0, 
-          zIndex: 1000, 
-          bgcolor: "white", 
-          borderBottom: "1px solid", 
-          borderColor: "divider",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-          py: 1.5
-        }}
-      >
-        <Container maxWidth="lg">
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Stack direction="row" spacing={1.5}>
-              <Button
-                variant="outlined"
-                color="inherit"
-                startIcon={<ArrowBackIcon />}
-                onClick={() => router.push("/quotation")}
-                sx={{ textTransform: "none", borderRadius: "8px", fontWeight: 600 }}
-              >
-                ย้อนกลับ
-              </Button>
-              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-              <Typography variant="subtitle1" fontWeight={700} sx={{ display: { xs: "none", sm: "block" }, alignSelf: "center" }}>
-                ตัวอย่าง: {headForm.quotationNumber}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" spacing={1.5}>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<FileDownloadIcon />}
-                onClick={handleDownloadPDF}
-                sx={{ textTransform: "none", borderRadius: "8px", fontWeight: 600 }}
-              >
-                ดาวน์โหลด PDF
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<PrintIcon />}
-                onClick={() => window.print()}
-                sx={{ textTransform: "none", borderRadius: "8px", fontWeight: 600, px: 3 }}
-              >
-                พิมพ์เอกสาร
-              </Button>
-            </Stack>
-          </Stack>
-        </Container>
-      </Box>
-
-      {/* Preview Area */}
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box 
-          id="invoice-print-area" 
-          className={isPrintMode ? "pdf-capture-mode" : ""}
-          sx={{ 
-            display: "flex", 
-            justifyContent: "center",
-            "@media print": {
-              p: 0,
-              m: 0,
-              display: "block"
-            }
+    <PageContainer title="กำลังโหลด...">
+      <Box sx={{ bgcolor: "grey.100", minHeight: "100vh" }}>
+        {/* Control Toolbar */}
+        <Box
+          className="no-print"
+          sx={{
+            position: "sticky",
+            top: 0,
+            zIndex: 1000,
+            bgcolor: "white",
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+            py: 1.5,
           }}
         >
-          <InvoicePrintPage />
-        </Box>
-      </Container>
+          <Container maxWidth="lg">
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Stack direction="row" spacing={1.5}>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  startIcon={<ArrowBackIcon />}
+                  onClick={() => router.push("/quotation")}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                  }}
+                >
+                  ย้อนกลับ
+                </Button>
+                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={700}
+                  sx={{
+                    display: { xs: "none", sm: "block" },
+                    alignSelf: "center",
+                  }}
+                >
+                  ตัวอย่าง: {headForm.quotationNumber}
+                </Typography>
+              </Stack>
 
-      {/* Global Print Styles */}
-      <style jsx global>{`
-        @media print {
-          body { background: white !important; }
-          .no-print { display: none !important; }
-          #__next, main { margin: 0 !important; padding: 0 !important; }
-        }
-      `}</style>
-    </Box>
+              <Stack direction="row" spacing={1.5}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={handleDownloadPDF}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                  }}
+                >
+                  ดาวน์โหลด PDF
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<PrintIcon />}
+                  onClick={() => window.print()}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    px: 3,
+                  }}
+                >
+                  พิมพ์เอกสาร
+                </Button>
+              </Stack>
+            </Stack>
+          </Container>
+        </Box>
+
+        {/* Preview Area */}
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Box
+            id="invoice-print-area"
+            className={isPrintMode ? "pdf-capture-mode" : ""}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              "@media print": {
+                p: 0,
+                m: 0,
+                display: "block",
+              },
+            }}
+          >
+            <InvoicePrintPage />
+          </Box>
+        </Container>
+
+        {/* Global Print Styles */}
+        <style jsx global>{`
+          @media print {
+            body {
+              background: white !important;
+            }
+            .no-print {
+              display: none !important;
+            }
+            #__next,
+            main {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+          }
+        `}</style>
+      </Box>
+    </PageContainer>
   );
 }

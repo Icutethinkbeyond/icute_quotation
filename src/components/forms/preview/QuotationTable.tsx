@@ -14,15 +14,15 @@ import { formatNum } from "@/utils/utils";
 interface QuotationTableProps {
   pageRows: any[];
   pageIndex: number;
-  hideTableHeader?: boolean; // เพิ่ม prop นี้
-  measureHeaderOnly?: boolean; // ✅ เพิ่ม
+  hideTableHeader?: boolean;
+  measureHeaderOnly?: boolean;
 }
 
 const QuotationTable: React.FC<QuotationTableProps> = ({
   pageRows,
   pageIndex,
-  hideTableHeader = false, // default แสดง header
-  measureHeaderOnly = false, // ✅ เพิ่ม
+  hideTableHeader = false,
+  measureHeaderOnly = false,
 }) => {
   if (pageRows.length === 0) return null;
 
@@ -30,16 +30,46 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
     <TableContainer
       component={Paper}
       elevation={0}
-      sx={{ mb: 3, borderRadius: 0, overflow: "hidden" }}
+      sx={{
+        mb: 3,
+        borderRadius: 0,
+        overflow: "hidden",
+        // Prevent table from breaking across pages
+        pageBreakInside: "avoid",
+        breakInside: "avoid",
+      }}
     >
       <Table sx={{ width: "100%", tableLayout: "fixed" }}>
-        {/* แสดง header เฉพาะเมื่อ hideTableHeader = false */}
+        {/* Table header */}
         {!hideTableHeader && (
-          <TableRow sx={{ backgroundColor: "#eaeaea" }}>
-            <TableCell sx={{ color: "#989898", fontSize: 9, width: "40px" }}>
+          <TableRow
+            sx={{
+              backgroundColor: "#eaeaea",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
+            }}
+          >
+            <TableCell
+              sx={{
+                color: "#989898",
+                fontSize: 9,
+                width: "40px",
+                py: 0.5,
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
+              }}
+            >
               NO.
             </TableCell>
-            <TableCell sx={{ color: "#989898", fontSize: 9 }}>
+            <TableCell
+              sx={{
+                color: "#989898",
+                fontSize: 9,
+                py: 0.5,
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
+              }}
+            >
               สินค้า / รายละเอียด
             </TableCell>
             <TableCell
@@ -48,6 +78,9 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                 fontSize: 9,
                 textAlign: "center",
                 width: "60px",
+                py: 0.5,
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
               }}
             >
               จำนวน
@@ -58,6 +91,9 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                 fontSize: 9,
                 textAlign: "center",
                 width: "60px",
+                py: 0.5,
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
               }}
             >
               หน่วย
@@ -68,6 +104,9 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                 fontSize: 9,
                 textAlign: "right",
                 width: "120px",
+                py: 0.5,
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
               }}
             >
               ราคา/หน่วย
@@ -78,6 +117,9 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                 fontSize: 9,
                 textAlign: "right",
                 width: "120px",
+                py: 0.5,
+                pageBreakInside: "avoid",
+                breakInside: "avoid",
               }}
             >
               จำนวนเงิน (บาท)
@@ -86,23 +128,36 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
         )}
 
         {!measureHeaderOnly && (
-          <TableBody>
+          <TableBody
+            sx={{
+              // Keep tbody content together
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
+            }}
+          >
             {pageRows.map((row, rowIndex) => {
               const key = `${pageIndex}-${rowIndex}`;
 
-              // 1. แถวหัวข้อกลุ่ม (Header Row)
+              // 1. Category header row
               if (row.type === "header") {
                 return (
-                  <TableRow key={`header-${key}`}>
+                  <TableRow
+                    key={`header-${key}`}
+                    sx={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                      backgroundColor: "#42a5f5",
+                    }}
+                  >
                     <TableCell
                       colSpan={6}
                       sx={{
-                        backgroundColor:
-                          "#42a5f5" /* Lighter blue for category header */,
-                        color: "white",
-                        py: 1,
+                        py: 0.5,
                         fontSize: 13,
                         fontWeight: "bold",
+                        color: "white",
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
                       }}
                     >
                       {row.data.index}. {row.data.name}
@@ -111,18 +166,38 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                 );
               }
 
-              // 2. แถวรายการสินค้า (Item Row - combined name, description, remark)
+              // 2. Item row (name + description + remark combined)
               if (row.type === "item_name") {
                 const item = row.data;
                 const itemTotal = item.qty * item.pricePerUnit;
                 return (
-                  <TableRow key={`item-${key}`}>
+                  <TableRow
+                    key={`item-${key}`}
+                    sx={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
                     {" "}
                     {/* Removed bgcolor */}
-                    <TableCell sx={{ fontSize: 12, textAlign: "center" }}>
+                    <TableCell
+                      sx={{
+                        fontSize: 12,
+                        textAlign: "center",
+                        py: 0.5,
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       {item.displayIndex}
                     </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
+                    <TableCell
+                      sx={{
+                        py: 0.5,
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       {" "}
                       {/* Adjusted padding */}
                       <Typography
@@ -139,7 +214,9 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                             fontWeight: "bold",
                             display: "block",
                             mt: 0.5,
-                            fontSize: 10 /* Smaller font for details */,
+                            fontSize: 10,
+                            pageBreakInside: "avoid",
+                            breakInside: "avoid",
                           }}
                         >
                           รายละเอียด:{" "}
@@ -150,7 +227,9 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                             sx={{
                               fontSize: 10,
                               whiteSpace: "pre-wrap",
-                            }} /* Smaller font for details content */
+                              pageBreakInside: "avoid",
+                              breakInside: "avoid",
+                            }}
                           >
                             {item.description}
                           </Typography>
@@ -164,7 +243,9 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                             fontWeight: "bold",
                             display: "block",
                             mt: 0.5,
-                            fontSize: 10 /* Smaller font for remark */,
+                            fontSize: 10,
+                            pageBreakInside: "avoid",
+                            breakInside: "avoid",
                           }}
                         >
                           หมายเหตุ:{" "}
@@ -175,20 +256,43 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                             sx={{
                               fontSize: 10,
                               whiteSpace: "pre-wrap",
-                            }} /* Smaller font for remark content */
+                              pageBreakInside: "avoid",
+                              breakInside: "avoid",
+                            }}
                           >
                             {item.remark}
                           </Typography>
                         </Typography>
                       )}
                     </TableCell>
-                    <TableCell sx={{ textAlign: "center", fontSize: 12 }}>
+                    <TableCell
+                      sx={{
+                        textAlign: "center",
+                        fontSize: 12,
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       {item.qty}
                     </TableCell>
-                    <TableCell sx={{ textAlign: "center", fontSize: 12 }}>
+                    <TableCell
+                      sx={{
+                        textAlign: "center",
+                        fontSize: 12,
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       {item.unit}
                     </TableCell>
-                    <TableCell sx={{ textAlign: "right", fontSize: 12 }}>
+                    <TableCell
+                      sx={{
+                        textAlign: "right",
+                        fontSize: 12,
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
                       {formatNum(item.pricePerUnit)}
                     </TableCell>
                     <TableCell
@@ -196,6 +300,8 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                         textAlign: "right",
                         fontSize: 12,
                         fontWeight: "bold",
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
                       }}
                     >
                       {formatNum(itemTotal)}
@@ -204,18 +310,26 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                 );
               }
 
-              // 3. แถวสรุปยอดในหน้านั้นๆ (Subtotal Row)
+              // 3. Subtotal row
               if (row.type === "subtotal") {
                 return (
-                  <TableRow key={`subtotal-${key}`} >
+                  <TableRow
+                    key={`subtotal-${key}`}
+                    sx={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
                     <TableCell
                       colSpan={5}
                       sx={{
                         textAlign: "right",
                         fontWeight: "bold",
-                        backgroundColor:
-                          "#e0e0e0" /* Slightly darker for subtotal */,
+                        backgroundColor: "#e0e0e0",
                         fontSize: 12,
+                        py: 0.5,
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
                       }}
                     >
                       รวมเป็นเงิน
@@ -224,10 +338,12 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                       sx={{
                         textAlign: "right",
                         fontWeight: "bold",
-                        backgroundColor:
-                          "#e0e0e0" /* Slightly darker for subtotal */,
+                        backgroundColor: "#e0e0e0",
                         fontSize: 14,
                         color: "#1565c0",
+                        py: 0.5,
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
                       }}
                     >
                       {formatNum(row.data.total)}

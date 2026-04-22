@@ -31,10 +31,15 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
     });
 
   return (
-    <Grid2 container spacing={3} sx={{ mb: 3 }}>
+    <Grid2
+      container
+      spacing={2}
+      sx={{ mb: 1 }}
+      className="quotation-summary"
+    >
       {/* ฝั่งซ้าย: หมายเหตุ */}
       <Grid2 size={{ xs: 5 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 1 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
           หมายเหตุ:
         </Typography>
         <Typography
@@ -48,9 +53,9 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
 
       {/* ฝั่งขวา: สรุปยอดเงินและลายเซ็น */}
       <Grid2 size={{ xs: 7 }}>
-        <Box sx={{ backgroundColor: "#f5f5f5", p: 2, borderRadius: 1 }}>
+        <Box sx={{ backgroundColor: "#f5f5f5", p: 1, borderRadius: 1 }}>
           {/* ยอดรวมย่อย */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
             <Typography sx={{ fontSize: 12 }}>ยอดรวมย่อย:</Typography>
             <Typography sx={{ fontSize: 12 }}>
               {formatCurrency(subtotal)} บาท
@@ -58,7 +63,7 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
           </Box>
 
           {/* ส่วนลด */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
             <Typography sx={{ fontSize: 12 }}>ส่วนลด:</Typography>
             <Typography sx={{ fontSize: 12 }}>
               {formatCurrency(discount)} บาท
@@ -66,7 +71,7 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
           </Box>
 
           {/* ภาษีมูลค่าเพิ่ม */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
             <Typography sx={{ fontSize: 12 }}>
               {!vatIncluded && "ไม่มี"}ภาษีมูลค่าเพิ่ม {vatIncluded && "(7%)"}:
             </Typography>
@@ -76,7 +81,7 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
           </Box>
 
           {/* หัก ณ ที่จ่าย */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
             <Typography sx={{ fontSize: 12 }}>
               หัก ฯ ที่จ่าย{" "}
               {withholdingTaxRate ? `(${withholdingTaxRate}%)` : ""}:
@@ -86,7 +91,7 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
             </Typography>
           </Box>
 
-          <Divider sx={{ mb: 2 }} />
+          <Divider sx={{ mb: 1 }} />
 
           {/* ยอดรวมทั้งสิ้น (แถบสีน้ำเงิน) */}
           <Box
@@ -95,7 +100,7 @@ const QuotationSummary: React.FC<QuotationSummaryProps> = ({
               justifyContent: "space-between",
               alignItems: "center",
               backgroundColor: "#1565c0",
-              p: 1,
+              p: 0.5,
               borderRadius: 1,
             }}
           >

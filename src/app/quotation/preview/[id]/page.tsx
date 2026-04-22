@@ -37,37 +37,40 @@ export default function QuotationPreviewPage({
   const isPrintMode = searchParams.get("print") === "true";
   const [loading, setLoading] = useState(true);
 
-  const handleDownloadPDF = async () => {
-    const element = document.getElementById("invoice-print-area");
-    if (!element) return;
+   const handleDownloadPDF = async () => {
+     const element = document.getElementById("invoice-print-area");
+     if (!element) return;
 
-    const html2pdf = (await import("html2pdf.js")).default;
+     const html2pdf = (await import("html2pdf.js")).default;
 
-    const opt = {
-      margin: 0,
-      filename: `${headForm.quotationNumber || "document"}.pdf`,
-      image: { type: "jpeg" as const, quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        scrollY: 0,
-        scrollX: 0,
-      },
-      jsPDF: {
-        unit: "mm" as const,
-        format: "a4" as const,
-        orientation: "portrait" as const,
-      },
-      // pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-    };
+     const opt = {
+       margin: 0,
+       filename: `${headForm.quotationNumber || "document"}.pdf`,
+       image: { type: "jpeg" as const, quality: 0.98 },
+       html2canvas: {
+         scale: 2,
+         useCORS: true,
+         letterRendering: true,
+         scrollY: 0,
+         scrollX: 0,
+         windowHeight: document.documentElement.scrollHeight,
+         // Ensure full content is captured
+         height: document.documentElement.scrollHeight,
+       },
+       jsPDF: {
+         unit: "mm" as const,
+         format: "a4" as const,
+         orientation: "portrait" as const,
+       },
+       pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+     };
 
-    try {
-      await html2pdf().set(opt).from(element).save();
-    } catch (error) {
-      console.error("PDF Generation Error:", error);
-    }
-  };
+     try {
+       await html2pdf().set(opt).from(element).save();
+     } catch (error) {
+       console.error("PDF Generation Error:", error);
+     }
+   };
 
   useEffect(() => {
     if (!loading && isPrintMode) {
@@ -308,17 +311,29 @@ export default function QuotationPreviewPage({
         </Box>
 
         {/* Preview Area */}
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container
+          maxWidth="lg"
+          sx={{
+            py: 4,
+            "@media print": {
+              p: 0,
+              m: 0,
+              maxWidth: "none",
+            },
+          }}
+        >
           <Box
             id="invoice-print-area"
             className={isPrintMode ? "pdf-capture-mode" : ""}
             sx={{
               display: "flex",
               justifyContent: "center",
+              width: "100%",
               "@media print": {
                 p: 0,
                 m: 0,
                 display: "block",
+                justifyContent: "flex-start",
               },
             }}
           >

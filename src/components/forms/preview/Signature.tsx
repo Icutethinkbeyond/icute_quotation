@@ -12,19 +12,23 @@ const Signature: React.FC<SignatureProps> = ({
   // ฟังก์ชันช่วยจัดฟอร์แมตตัวเลข
 
   return (
-    <Grid2 container spacing={3} sx={{ mb: 3 }}>
-
+    <Grid2
+      container
+      spacing={2}
+      sx={{ mb: 0 }}
+      className="signature-section"
+    >
       <Grid2 container flexDirection="row">
         <Grid2 size={{ xs: 4 }}>
-          {/* ส่วนลงลายมือชื่อ */}
+          {/* Section signature */}
           <Box sx={{ textAlign: "center" }}>
             <Box
               sx={{
                 borderBottom: "1px solid black",
-                width: "200px",
+                width: "180px",
                 ml: "auto",
-                mb: 1,
-                height: "20px", // พื้นที่สำหรับลายเซ็น
+                mb: 0.5,
+                height: "20px",
               }}
             />
             <Typography variant="caption">ผู้อนุมัติ / ผู้ว่าจ้าง</Typography>
@@ -37,14 +41,13 @@ const Signature: React.FC<SignatureProps> = ({
           </Box>
         </Grid2>
         <Grid2 size={{ xs: 4 }}>
-          {/* ส่วนลงลายมือชื่อ */}
           <Box sx={{ textAlign: "center" }}>
             <Box
               sx={{
                 borderBottom: "1px solid black",
-                width: "200px",
-                mb: 1,
-                height: "20px", // พื้นที่สำหรับลายเซ็น
+                width: "180px",
+                mb: 0.5,
+                height: "20px",
               }}
             />
             <Typography variant="caption">ผู้เสนอราคา / ผู้รับจ้าง</Typography>
@@ -52,26 +55,16 @@ const Signature: React.FC<SignatureProps> = ({
           </Box>
         </Grid2>
         <Grid2 size={{ xs: 4 }} justifyContent="center">
-          {/* ส่วนลงลายมือชื่อ */}
           <Box sx={{ textAlign: "center" }}>
             <Box
               sx={{
-                borderBottom: "1px solid black",
-                width: "200px",
-                ml: "auto",
-                mb: 1,
-                height: "20px", // พื้นที่สำหรับลายเซ็น
+                borderBottom: "1px dashed black",
+                width: "180px",
+                mb: 0.5,
+                height: "18px",
               }}
             />
             <Typography variant="caption">พยาน</Typography>
-            <Box
-              sx={{
-                borderBottom: "1px dashed black",
-                width: "200px",
-                mb: 1,
-                height: "18px", // พื้นที่สำหรับลายเซ็น
-              }}
-            />
           </Box>
         </Grid2>
       </Grid2>

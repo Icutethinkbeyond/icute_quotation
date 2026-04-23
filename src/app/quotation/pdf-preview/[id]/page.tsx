@@ -8,15 +8,13 @@ import {
   CircularProgress,
   Typography,
   Paper,
-  Divider,
-  Grid,
   Snackbar,
   Alert,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useRouter, useSearchParams } from "next/navigation";
-import ".././../../../../public/fonts/pdf/Prompt-Regular-normal";
+import ".././../../../../public/fonts/pdf/Sarabun-Regular-normal";
 
 // Types
 interface SubItem {
@@ -190,7 +188,7 @@ export default function DirectPDFPreviewPage({
      doc.rect(margin, y, 1.5, 6, "F");
      
      doc.setFontSize(12);
-     doc.setFont("Prompt-Regular", "normal");
+     doc.setFont("Sarabun-Regular", "normal");
      doc.setTextColor("#1976d2");
      doc.text("หมายเหตุ:", margin + 4, y + 4.5);
      
@@ -322,7 +320,8 @@ export default function DirectPDFPreviewPage({
         format: "a4",
       });
 
-      doc.setFont("Prompt-Regular", "normal");
+      // doc.setFont("Sarabun-Regular", "normal");
+      doc.setFont("Sarabun-Regular", "normal");
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -342,7 +341,7 @@ export default function DirectPDFPreviewPage({
         lineHeight: number = 4,
       ) => {
         doc.setFontSize(fontSize);
-        doc.setFont("Prompt-Regular", "normal");
+        doc.setFont("Sarabun-Regular", "normal");
         doc.setTextColor(color);
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, x, y);
@@ -360,7 +359,7 @@ export default function DirectPDFPreviewPage({
       doc.rect(margin, brandingY, 1.5, 10, "F");
       
       doc.setFontSize(22);
-      doc.setFont("Prompt-Regular", "normal");
+      doc.setFont("Sarabun-Regular", "normal");
       doc.setTextColor("#1976d2");
       doc.text(data.companyName, margin + 4, brandingY + 8);
 
@@ -402,7 +401,7 @@ export default function DirectPDFPreviewPage({
       
       // Customer (Left Section)
       doc.setFontSize(12);
-      doc.setFont("Prompt-Regular", "normal");
+      doc.setFont("Sarabun-Regular", "normal");
       doc.setTextColor("#1976d2");
       doc.text("ลูกค้า / ผู้ว่าจ้าง:", margin, row2Y);
       
@@ -462,7 +461,7 @@ export default function DirectPDFPreviewPage({
       // Table header
       doc.setFillColor(234, 234, 234);
       doc.setFontSize(8);
-      doc.setFont("Prompt-Regular", "normal");
+      doc.setFont("Sarabun-Regular", "normal");
       doc.setTextColor(152, 152, 152);
       const headers = [
         "NO.",
@@ -489,7 +488,7 @@ export default function DirectPDFPreviewPage({
         doc.setFillColor(25, 118, 210);
         doc.rect(margin, y, contentWidth, 6, "F");
         doc.setFontSize(10);
-        doc.setFont("Prompt-Regular", "normal");
+        doc.setFont("Sarabun-Regular", "normal");
         doc.setTextColor(255, 255, 255);
         doc.text(`${catIdx + 1}. ${cat.name}`, margin + 2, y + 4.5);
         y += 11; // Move down after category header
@@ -502,7 +501,7 @@ export default function DirectPDFPreviewPage({
           }
 
           doc.setFontSize(9);
-          doc.setFont("Prompt-Regular", "normal");
+          doc.setFont("Sarabun-Regular", "normal");
           doc.setTextColor(0, 0, 0);
 
           const itemTotal = item.qty * item.pricePerUnit;
@@ -556,7 +555,7 @@ export default function DirectPDFPreviewPage({
         doc.setFillColor(224, 224, 224);
         doc.rect(margin, y, contentWidth, 6, "F");
         doc.setFontSize(9);
-        doc.setFont("Prompt-Regular", "normal");
+        doc.setFont("Sarabun-Regular", "normal");
         doc.setTextColor(21, 101, 192);
         doc.text(`รวม ${cat.name}:`, colX[4], y + 4, { align: "right" });
         doc.text(

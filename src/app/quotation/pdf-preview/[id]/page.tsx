@@ -16,7 +16,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useRouter, useSearchParams } from "next/navigation";
-import '.././../../../../public/fonts/pdf/Prompt-Regular-normal';
+import ".././../../../../public/fonts/pdf/Prompt-Regular-normal";
 
 // Types
 interface SubItem {
@@ -72,18 +72,23 @@ export default function DirectPDFPreviewPage({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Detail height controls
+  const [detailSpacing, setDetailSpacing] = useState(1);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [data, setData] = useState<QuotationData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{ open: boolean; message: string; severity: "success" | "error" | "info" }>({
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info";
+  }>({
     open: false,
     message: "",
     severity: "info",
   });
 
-  const printAreaRef = useRef<HTMLDivElement>(null);
   const pdfBlobRef = useRef<Blob | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -115,41 +120,64 @@ export default function DirectPDFPreviewPage({
   }, [pdfUrl]);
 
   // Format number
-  const fmt = (num: number) => num.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (num: number) =>
+    num.toLocaleString("th-TH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   // Calculate totals
   const getSubtotal = useCallback(() => {
     if (!data) return 0;
     return data.categories.reduce((sum, cat) => {
-      return sum + cat.items.reduce((s, item) => s + item.qty * item.pricePerUnit, 0);
+      return (
+        sum + cat.items.reduce((s, item) => s + item.qty * item.pricePerUnit, 0)
+      );
     }, 0);
   }, [data]);
 
   const getTaxAmount = useCallback(() => {
     if (!data) return 0;
-    return data.includeVat ? (getSubtotal() - (data.globalDiscount || 0)) * 0.07 : 0;
+    return data.includeVat
+      ? (getSubtotal() - (data.globalDiscount || 0)) * 0.07
+      : 0;
   }, [data, getSubtotal]);
 
   const getWithholdingTaxAmount = useCallback(() => {
     if (!data) return 0;
-    return ((getSubtotal() - (data.globalDiscount || 0)) * (data.withholdingTax || 0)) / 100;
+    return (
+      ((getSubtotal() - (data.globalDiscount || 0)) *
+        (data.withholdingTax || 0)) /
+      100
+    );
   }, [data, getSubtotal]);
 
   const getGrandTotal = useCallback(() => {
-    return getSubtotal() - (data?.globalDiscount || 0) + getTaxAmount() - getWithholdingTaxAmount();
+    return (
+      getSubtotal() -
+      (data?.globalDiscount || 0) +
+      getTaxAmount() -
+      getWithholdingTaxAmount()
+    );
   }, [data, getSubtotal, getTaxAmount, getWithholdingTaxAmount]);
 
-   const getCategoryTotal = useCallback((cat: Category) => {
-     return cat.items.reduce((sum, item) => sum + item.qty * item.pricePerUnit, 0);
-   }, []);
+  const getCategoryTotal = useCallback((cat: Category) => {
+    return cat.items.reduce(
+      (sum, item) => sum + item.qty * item.pricePerUnit,
+      0,
+    );
+  }, []);
 
    // Professional Bottom Section Function
    const generateProfessionalBottomSection = (doc: any, data: any, startY: number, pageWidth: number, pageHeight: number, margin: number, contentWidth: number, fmt: any, getSubtotal: any, getTaxAmount: any, getWithholdingTaxAmount: any, getGrandTotal: any) => {
-     let y = startY + 3;
+     let y = startY + 5;
 
-     if (y + 100 > pageHeight - margin) {
+     if (y + 110 > pageHeight - margin) {
        doc.addPage();
-       y = margin;
+       // Re-draw top accent on new page
+       doc.setFillColor("#1976d2");
+       doc.rect(0, 0, pageWidth, 5, "F");
+       y = margin + 5;
      }
 
      // 2-column layout: Notes (left) and Summary (right)
@@ -157,140 +185,132 @@ export default function DirectPDFPreviewPage({
      const rightWidth = contentWidth * 0.5;
      const rightX = pageWidth - margin - rightWidth;
 
-     // Left: Notes section
+     // Left: Notes section with graphic accent
+     doc.setFillColor("#1976d2");
+     doc.rect(margin, y, 1.5, 6, "F");
+     
      doc.setFontSize(12);
      doc.setFont("Prompt-Regular", "normal");
-     doc.setTextColor(0, 0, 0);
-     doc.text("หมายเหตุ:", margin, y);
-     y += 8;
+     doc.setTextColor("#1976d2");
+     doc.text("หมายเหตุ:", margin + 4, y + 4.5);
+     
+     y += 10;
      doc.setFontSize(10);
+     doc.setTextColor("#333333");
      const noteLines = doc.splitTextToSize(data.note || "-", leftWidth - 10);
-     doc.text(noteLines, margin + 5, y);
-     const notesHeight = noteLines.length * 5;
+     doc.text(noteLines, margin + 5, y, { lineHeightFactor: 1.5 });
+     const notesHeight = noteLines.length * 6;
 
      // Right: Financial Summary with professional styling
-     const summaryY = y - 8; // Align with notes title
-     // Outer box with subtle border
-     doc.setDrawColor(200, 200, 200);
-     doc.setLineWidth(0.25);
-     doc.roundedRect(rightX, summaryY, rightWidth, 60, 3, 3, "S");
+     const summaryY = y - 10;
+     
+     // Summary Box Background
+     doc.setFillColor("#f8f9fa");
+     doc.roundedRect(rightX, summaryY, rightWidth, 65, 2, 2, "F");
+     doc.setDrawColor("#e0e0e0");
+     doc.setLineWidth(0.2);
+     doc.roundedRect(rightX, summaryY, rightWidth, 65, 2, 2, "S");
 
-     // Summary title
-     doc.setFillColor(230, 240, 250);
-     doc.roundedRect(rightX + 3, summaryY + 3, rightWidth - 6, 10, 2, 2, "F");
-     doc.setFontSize(10);
-     doc.setFont("Prompt-Regular", "normal");
-     doc.setTextColor(0, 0, 0);
-     doc.text("สรุปยอดเงิน", rightX + 8, summaryY + 10);
+     let tableY = summaryY + 8;
 
-     let tableY = summaryY + 18;
+     // Helper for summary rows
+     const addSummaryRow = (label: string, value: string, currentY: number, isBold: boolean = false) => {
+       doc.setFontSize(isBold ? 10 : 9);
+       doc.setTextColor(isBold ? "#000000" : "#555555");
+       doc.text(label, rightX + 8, currentY);
+       doc.text(value, rightX + rightWidth - 8, currentY, { align: "right" });
+       return currentY + 8;
+     };
 
-     // Subtotal
-     doc.setFontSize(9);
-     doc.setTextColor(0, 0, 0);
-     doc.text("ยอดรวมสินค้า:", rightX + 10, tableY + 4);
-     doc.text(fmt(getSubtotal()) + " บาท", rightX + rightWidth - 10, tableY + 4, { align: "right" });
-     tableY += 8;
-
-     // Discount
+     tableY = addSummaryRow("ยอดรวมสินค้า:", fmt(getSubtotal()) + " บาท", tableY);
+     
      if (data.globalDiscount > 0) {
-       doc.text("ส่วนลด:", rightX + 10, tableY + 4);
-       doc.text("-" + fmt(data.globalDiscount) + " บาท", rightX + rightWidth - 10, tableY + 4, { align: "right" });
-       tableY += 8;
+       tableY = addSummaryRow("ส่วนลด:", "-" + fmt(data.globalDiscount) + " บาท", tableY);
      }
 
-     // VAT
-     const vatText = data.includeVat ? "ภาษีมูลค่าเพิ่ม (7%)" : "ภาษีมูลค่าเพิ่ม (0%)";
-     doc.text(vatText, rightX + 10, tableY + 4);
-     doc.text(fmt(getTaxAmount()) + " บาท", rightX + rightWidth - 10, tableY + 4, { align: "right" });
-     tableY += 8;
+     const vatText = data.includeVat ? "ภาษีมูลค่าเพิ่ม (7%):" : "ภาษีมูลค่าเพิ่ม (0%):";
+     tableY = addSummaryRow(vatText, fmt(getTaxAmount()) + " บาท", tableY);
 
-     // Withholding Tax
      if (data.withholdingTax > 0) {
-       const wtText = `หัก ณ ที่จ่าย (${data.withholdingTax}%)`;
-       doc.text(wtText, rightX + 10, tableY + 4);
-       doc.text("-" + fmt(getWithholdingTaxAmount()) + " บาท", rightX + rightWidth - 10, tableY + 4, { align: "right" });
-       tableY += 8;
+       const wtText = `หัก ณ ที่จ่าย (${data.withholdingTax}%):`;
+       tableY = addSummaryRow(wtText, "-" + fmt(getWithholdingTaxAmount()) + " บาท", tableY);
      }
 
-     // Divider line
-     doc.setDrawColor(180, 180, 180);
-     doc.setLineWidth(0.5);
-     doc.line(rightX + 10, tableY + 4, rightX + rightWidth - 10, tableY + 4);
-     tableY += 10;
+     // Divider line before Total
+     doc.setDrawColor("#d0d0d0");
+     doc.setLineWidth(0.3);
+     doc.line(rightX + 8, tableY - 2, rightX + rightWidth - 8, tableY - 2);
+     tableY += 4;
 
-     // Total with highlight
-     doc.setFillColor(25, 118, 210);
-     doc.roundedRect(rightX + 5, tableY - 2, rightWidth - 10, 14, 2, 2, "F");
+     // Grand Total with solid graphic background
+     doc.setFillColor("#1976d2");
+     doc.roundedRect(rightX + 4, tableY - 5, rightWidth - 8, 12, 1, 1, "F");
+     
      doc.setFontSize(11);
-     doc.setFont("Prompt-Regular", "normal");
-     doc.setTextColor(255, 255, 255);
-     doc.text("รวมทั้งสิ้น:", rightX + 15, tableY + 8);
-     doc.text(fmt(getGrandTotal()) + " บาท", rightX + rightWidth - 15, tableY + 8, { align: "right" });
+     doc.setTextColor("#ffffff");
+     doc.text("รวมทั้งสิ้น:", rightX + 10, tableY + 3);
+     doc.text(fmt(getGrandTotal()) + " บาท", rightX + rightWidth - 10, tableY + 3, { align: "right" });
 
      y = Math.max(y + notesHeight + 15, summaryY + 75);
 
-     // Signature Section with professional styling
-     if (y + 50 > pageHeight - margin) {
+     // Signature Section
+     if (y + 55 > pageHeight - margin) {
        doc.addPage();
-       y = margin;
+       doc.setFillColor("#1976d2");
+       doc.rect(0, 0, pageWidth, 5, "F");
+       y = margin + 15;
+     } else {
+       y += 5;
      }
 
-     y += 15;
      const sigY = y;
-     doc.setFontSize(10);
-     doc.setFont("Prompt-Regular", "normal");
-     doc.setTextColor(0, 0, 0);
-
-     // Three signature boxes with labels
      const sigWidth = 55;
-     const sigSpacing = (pageWidth - margin * 2 - sigWidth * 3) / 4;
-     const startX = margin + sigSpacing;
-     const positions = [
-       startX,
-       startX + sigWidth + sigSpacing * 2,
-       startX + (sigWidth + sigSpacing * 2) * 2
-     ];
+     const sigBoxHeight = 35;
+     const sigSpacing = (contentWidth - sigWidth * 3) / 2;
+     const labels = ["ผู้อนุมัติ / ผู้ว่าจ้าง", "ผู้เสนอราคา / ผู้รับจ้าง", "พยาน"];
 
-     positions.forEach((sx, idx) => {
-       // Box
-       doc.setDrawColor(0, 0, 0);
-       doc.setLineWidth(0.5);
-       doc.roundedRect(sx, sigY, sigWidth, 35, 2, 2, "S");
-
-       // Signature line
-       doc.setLineWidth(0.25);
-       doc.line(sx + 8, sigY + 22, sx + sigWidth - 8, sigY + 22);
-
-       // Labels
-       const labels = ["ผู้อนุมัติ / ผู้ว่าจ้าง", "ผู้เสนอราคา / ผู้รับจ้าง", "พยาน"];
-       doc.setFontSize(9);
-       doc.text(labels[idx], sx + sigWidth / 2, sigY + 5, { align: "center" });
+     [0, 1, 2].forEach((idx) => {
+       const sx = margin + idx * (sigWidth + sigSpacing);
        
-       // Line label
+       // Signature Box
+       doc.setDrawColor("#e0e0e0");
+       doc.setLineWidth(0.2);
+       doc.roundedRect(sx, sigY, sigWidth, sigBoxHeight, 2, 2, "S");
+       
+       // Header of sig box
+       doc.setFillColor("#f8f9fa");
+       doc.roundedRect(sx + 0.2, sigY + 0.2, sigWidth - 0.4, 8, 2, 2, "F");
+       
+       doc.setFontSize(9);
+       doc.setTextColor("#1976d2");
+       doc.text(labels[idx], sx + sigWidth / 2, sigY + 5.5, { align: "center" });
+
+       // Signature Line
+       doc.setDrawColor("#333333");
+       doc.setLineWidth(0.2);
+       doc.line(sx + 10, sigY + 24, sx + sigWidth - 10, sigY + 24);
+       
        doc.setFontSize(8);
-       doc.text("(ลงชื่อ)", sx + sigWidth / 2, sigY + 28, { align: "center" });
+       doc.setTextColor("#777777");
+       doc.text("(ลงชื่อ)", sx + sigWidth / 2, sigY + 30, { align: "center" });
      });
 
-     y = sigY + 40;
-
-     // Footer
-     if (y + 20 > pageHeight - margin) {
-       doc.addPage();
-       y = margin;
-     }
+     // Footer Accent & Copyright
+     doc.setFillColor("#1976d2");
+     doc.rect(0, pageHeight - 5, pageWidth, 5, "F");
 
      doc.setFontSize(8);
-     doc.setTextColor(100, 100, 100);
-     const footerText = `เอกสารนี้สร้างขึ้นโดยอัตโนมัติ เมื่อวันที่ ${new Date().toLocaleDateString("th-TH")} เวลา ${new Date().toLocaleTimeString("th-TH")}`;
-     doc.text(footerText, pageWidth / 2, pageHeight - 15, { align: "center" });
-     doc.text("ขอบคุณที่ให้ความไว้วางใจใช้บริการ", pageWidth / 2, pageHeight - 8, { align: "center" });
+     doc.setTextColor("#999999");
+     const now = new Date();
+     const footerInfo = `พิมพ์เมื่อ: ${now.toLocaleDateString("th-TH")} ${now.toLocaleTimeString("th-TH")}`;
+     doc.text(footerInfo, margin, pageHeight - 8);
+     doc.text("ขอบคุณที่ไว้วางใจใช้บริการ", pageWidth - margin, pageHeight - 8, { align: "right" });
 
-     return y;
+     return y + sigBoxHeight;
    };
 
-   // Generate PDF directly using jsPDF (no HTML-to-PDF conversion)
-  const generatePDF = async () => {
+  // Generate PDF directly using jsPDF (no HTML-to-PDF conversion)
+  const generatePDF = useCallback(async () => {
     if (!data) return;
 
     setGenerating(true);
@@ -302,13 +322,6 @@ export default function DirectPDFPreviewPage({
         format: "a4",
       });
 
-      // Load custom Prompt font for Thai/UTF-8 support
-      // const script = document.createElement('script');
-      // script.src = '/fonts/pdf/Prompt-Regular-normal.js';
-      // document.head.appendChild(script);
-      // await new Promise((resolve) => {
-      //   script.onload = resolve;
-      // });
       doc.setFont("Prompt-Regular", "normal");
 
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -318,78 +331,147 @@ export default function DirectPDFPreviewPage({
       let y = margin;
 
       // Helper for wrapped text
-      const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 10, bold: boolean = false, color: string = "#000000", lineHeight: number = 4) => {
+      const addWrappedText = (
+        text: string,
+        x: number,
+        y: number,
+        maxWidth: number,
+        fontSize: number = 10,
+        bold: boolean = false,
+        color: string = "#000000",
+        lineHeight: number = 4,
+      ) => {
         doc.setFontSize(fontSize);
         doc.setFont("Prompt-Regular", "normal");
         doc.setTextColor(color);
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, x, y);
-        return lines.length * lineHeight + (lineHeight * 0.5);
+        return lines.length * lineHeight + lineHeight * 0.5;
       };
 
-      // Page 1: Header
-      y += addWrappedText(data.companyName, margin, y, contentWidth * 0.5, 14, true, "#1976d2", 6);
-      y += addWrappedText(data.companyAddress, margin, y, contentWidth * 0.5, 9, false, "#000000", 4);
-      y += addWrappedText(`โทร: ${data.companyTel}`, margin, y, contentWidth * 0.5, 9, false, "#000000", 4);
-      if (data.companyTaxId) {
-        y += addWrappedText(`Tax ID: ${data.companyTaxId}`, margin, y, contentWidth * 0.5, 9, false, "#000000", 4);
-      }
+      // Header Row 1: Logo/Company Branding (Left) and Quotation Info (Right)
+      const brandingY = y;
+      
+      // Graphic Accent: Top Page Bar
+      doc.setFillColor("#1976d2");
+      doc.rect(0, 0, pageWidth, 5, "F");
 
-      // Quotation title (right-aligned)
-      doc.setFontSize(18);
+      // Graphic Accent: Vertical branding bar
+      doc.rect(margin, brandingY, 1.5, 10, "F");
+      
+      doc.setFontSize(22);
       doc.setFont("Prompt-Regular", "normal");
       doc.setTextColor("#1976d2");
-      doc.text("ใบเสนอราคา", pageWidth - margin, y - 10, { align: "right" });
+      doc.text(data.companyName, margin + 4, brandingY + 8);
 
-      y += 5;
+      // Graphic Accent: Rounded Box for Quotation Info
+      const infoBoxWidth = 75;
+      const infoBoxX = pageWidth - margin - infoBoxWidth;
+      doc.setFillColor("#f0f7ff");
+      doc.roundedRect(infoBoxX, brandingY - 2, infoBoxWidth, 24, 2, 2, "F");
+      doc.setDrawColor("#d0e3ff");
+      doc.setLineWidth(0.1);
+      doc.roundedRect(infoBoxX, brandingY - 2, infoBoxWidth, 24, 2, 2, "S");
+
+      // Quotation title
+      doc.setFontSize(18);
+      doc.setTextColor("#1976d2");
+      doc.text("ใบเสนอราคา", pageWidth - margin - 5, brandingY + 6, { align: "right" });
+
       doc.setFontSize(10);
-      doc.setFont("Prompt-Regular", "normal");
-      doc.setTextColor("#000000");
-      doc.text(`เลขที่: ${data.documentIdNo}`, pageWidth - margin, y, { align: "right" });
-      y += 5;
-      doc.text(`วันที่: ${new Date(data.documentCreateDate).toLocaleDateString("th-TH")}`, pageWidth - margin, y, { align: "right" });
+      doc.setTextColor("#333333");
+      doc.text(`เลขที่: ${data.documentIdNo}`, pageWidth - margin - 5, brandingY + 13, {
+        align: "right",
+      });
+      doc.text(
+        `วันที่: ${new Date(data.documentCreateDate).toLocaleDateString("th-TH")}`,
+        pageWidth - margin - 5,
+        brandingY + 19,
+        { align: "right" },
+      );
 
-      // Customer
-      y += 10;
+      // Decorative Separator Line
+      y = brandingY + 28;
+      doc.setDrawColor("#e0e0e0");
+      doc.setLineWidth(0.3);
+      doc.line(margin, y, pageWidth - margin, y);
+
+      // Header Row 2: Customer (Left) and Company Details (Right)
+      y += 8;
+      const row2Y = y;
+      
+      // Customer (Left Section)
       doc.setFontSize(12);
       doc.setFont("Prompt-Regular", "normal");
-      doc.text("ลูกค้า / ผู้ว่าจ้าง:", margin, y);
-
-      y += 6;
+      doc.setTextColor("#1976d2");
+      doc.text("ลูกค้า / ผู้ว่าจ้าง:", margin, row2Y);
+      
+      let customerY = row2Y + 6;
       doc.setFontSize(10);
-      doc.setFont("Prompt-Regular", "normal");
+      doc.setTextColor("#000000");
       if (data.customerCompany?.taxId) {
-        y += addWrappedText(data.customerCompany.companyName || "", margin, y, contentWidth, 11, true, "#000000", 5);
+        customerY += addWrappedText(data.customerCompany.companyName || "", margin, customerY, contentWidth * 0.45, 11, true, "#000000", 5);
         if (data.customerCompany.taxId) {
-          y += addWrappedText(
+          customerY += addWrappedText(
             `Tax ID: ${data.customerCompany.taxId}${data.customerCompany.branch ? ` (สาขา: ${data.customerCompany.branch})` : ""}`,
             margin,
-            y,
-            contentWidth,
+            customerY,
+            contentWidth * 0.45,
             9
           );
         }
-        y += addWrappedText(data.customerCompany.companyAddress || "", margin, y, contentWidth, 9);
+        customerY += addWrappedText(data.customerCompany.companyAddress || "", margin, customerY, contentWidth * 0.45, 9);
       } else {
-        y += addWrappedText(`คุณ ${data.contactor?.contactorName || ""}`, margin, y, contentWidth, 11, true, "#000000", 5);
-        y += addWrappedText(data.contactor?.contactorAddress || "", margin, y, contentWidth, 9);
-        y += addWrappedText(`โทร: ${data.contactor?.contactorTel || ""}`, margin, y, contentWidth, 9);
+        customerY += addWrappedText(`คุณ ${data.contactor?.contactorName || ""}`, margin, customerY, contentWidth * 0.45, 11, true, "#000000", 5);
+        customerY += addWrappedText(data.contactor?.contactorAddress || "", margin, customerY, contentWidth * 0.45, 9);
+        customerY += addWrappedText(`โทร: ${data.contactor?.contactorTel || ""}`, margin, customerY, contentWidth * 0.45, 9);
       }
 
+      // Company Details (Right Section)
+      const companyX = margin + contentWidth * 0.55;
+      doc.setFontSize(12);
+      doc.setTextColor("#1976d2");
+      doc.text("ผู้เสนอราคา / ผู้รับจ้าง:", companyX, row2Y);
+      
+      let companyDetailY = row2Y + 6;
+      doc.setFontSize(10);
+      doc.setTextColor("#000000");
+      companyDetailY += addWrappedText(data.companyName, companyX, companyDetailY, contentWidth * 0.45, 10, true, "#000000", 5);
+      companyDetailY += addWrappedText(data.companyAddress, companyX, companyDetailY, contentWidth * 0.45, 9, false, "#000000", 4);
+      companyDetailY += addWrappedText(`โทร: ${data.companyTel}`, companyX, companyDetailY, contentWidth * 0.45, 9, false, "#000000", 4);
+      if (data.companyTaxId) {
+        companyDetailY += addWrappedText(`Tax ID: ${data.companyTaxId}`, companyX, companyDetailY, contentWidth * 0.45, 9, false, "#000000", 4);
+      }
+
+      y = Math.max(customerY, companyDetailY) + 5;
+
       // Table setup
-      y += 10;
       const tableTop = y;
 
-        // Column definitions - properly spaced for A4 page with 15mm margins
-        const colX = [margin, margin + 10, margin + 90, margin + 100, margin + 115, margin + 140];
-        const colWidths = [10, 80, 10, 15, 25, 40];
+      // Column definitions - properly spaced for A4 page with 15mm margins
+      const colX = [
+        margin,
+        margin + 10,
+        margin + 90,
+        margin + 100,
+        margin + 115,
+        margin + 140,
+      ];
+      const colWidths = [10, 80, 10, 15, 25, 40];
 
       // Table header
       doc.setFillColor(234, 234, 234);
       doc.setFontSize(8);
       doc.setFont("Prompt-Regular", "normal");
       doc.setTextColor(152, 152, 152);
-      const headers = ["NO.", "สินค้า / รายละเอียด", "จำนวน", "หน่วย", "ราคา/หน่วย", "จำนวนเงิน (บาท)"];
+      const headers = [
+        "NO.",
+        "สินค้า / รายละเอียด",
+        "จำนวน",
+        "หน่วย",
+        "ราคา/หน่วย",
+        "จำนวนเงิน (บาท)",
+      ];
       headers.forEach((h, i) => {
         doc.text(h, colX[i] + 2, y + 5.5);
       });
@@ -410,11 +492,11 @@ export default function DirectPDFPreviewPage({
         doc.setFont("Prompt-Regular", "normal");
         doc.setTextColor(255, 255, 255);
         doc.text(`${catIdx + 1}. ${cat.name}`, margin + 2, y + 4.5);
-        y += 6;
+        y += 11; // Move down after category header
 
         // Category items
         cat.items.forEach((item, itemIdx) => {
-          if (y + 12 > pageHeight - margin) {
+          if (y + 15 > pageHeight - margin) {
             doc.addPage();
             y = margin;
           }
@@ -426,30 +508,44 @@ export default function DirectPDFPreviewPage({
           const itemTotal = item.qty * item.pricePerUnit;
 
           // No.
-          doc.text(`${catIdx + 1}.${itemIdx + 1}`, colX[0] + 2, y + 5);
+          doc.text(`${catIdx + 1}.${itemIdx + 1}`, colX[0] + 2, y + 0.5);
 
           // Details (name, description, remark)
           const detailParts = [item.name];
-          if (item.description) detailParts.push(`รายละเอียด: ${item.description}`);
+          if (item.description)
+            detailParts.push(`รายละเอียด: ${item.description}`);
           if (item.remark) detailParts.push(`หมายเหตุ: ${item.remark}`);
           const detailText = detailParts.join(" ");
           const detailLines = doc.splitTextToSize(detailText, colWidths[1] - 2);
-          doc.text(detailLines, colX[1] + 2, y);
-          const detailHeight = detailLines.length * 4;
+          
+          // Use dynamic detailSpacing
+          doc.text(detailLines, colX[1] + 2, y, { lineHeightFactor: 1.2 + (detailSpacing * 0.05) });
+          const detailHeight = detailLines.length * (4 + detailSpacing);
 
           // Qty
-          doc.text(String(item.qty), colX[2] + colWidths[2] / 2, y + 3.5, { align: "center" });
+          doc.text(String(item.qty), colX[2] + colWidths[2] / 2, y + 3.5, {
+            align: "center",
+          });
 
           // Unit
-          doc.text(item.unit, colX[3] + colWidths[3] / 2, y + 3.5, { align: "center" });
+          doc.text(item.unit, colX[3] + colWidths[3] / 2, y + 3.5, {
+            align: "center",
+          });
 
           // Price
-          doc.text(fmt(item.pricePerUnit), colX[4] + colWidths[4] - 2, y + 3.5, { align: "right" });
+          doc.text(
+            fmt(item.pricePerUnit),
+            colX[4] + colWidths[4] - 2,
+            y + 3.5,
+            { align: "right" },
+          );
 
           // Total
-          doc.text(fmt(itemTotal), colX[5] + colWidths[5] - 2, y + 3.5, { align: "right" });
+          doc.text(fmt(itemTotal), colX[5] + colWidths[5] - 2, y + 3.5, {
+            align: "right",
+          });
 
-          y += Math.max(8, detailHeight);
+          y += Math.max(12, detailHeight + 2);
         });
 
         // Category subtotal
@@ -463,65 +559,105 @@ export default function DirectPDFPreviewPage({
         doc.setFont("Prompt-Regular", "normal");
         doc.setTextColor(21, 101, 192);
         doc.text(`รวม ${cat.name}:`, colX[4], y + 4, { align: "right" });
-        doc.text(fmt(getCategoryTotal(cat)), colX[5] + colWidths[5] - 2, y + 4, { align: "right" });
+        doc.text(
+          fmt(getCategoryTotal(cat)),
+          colX[5] + colWidths[5] - 2,
+          y + 4,
+          { align: "right" },
+        );
         y += 6;
-       });
+      });
 
-       // Professional Bottom Section
-       const finalY = generateProfessionalBottomSection(doc, data, y, pageWidth, pageHeight, margin, contentWidth, fmt, getSubtotal, getTaxAmount, getWithholdingTaxAmount, getGrandTotal);
+      // Professional Bottom Section
+      const finalY = generateProfessionalBottomSection(
+        doc,
+        data,
+        y,
+        pageWidth,
+        pageHeight,
+        margin,
+        contentWidth,
+        fmt,
+        getSubtotal,
+        getTaxAmount,
+        getWithholdingTaxAmount,
+        getGrandTotal,
+      );
 
-       // Generate PDF blob
+      // Generate PDF blob
       const blob = await doc.output("blob");
+      
+      // Cleanup old URL
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+      
       pdfBlobRef.current = blob;
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
-      setNotification({ open: true, message: "PDF generated successfully", severity: "success" });
+      setNotification({
+        open: true,
+        message: "สร้าง PDF สำเร็จ",
+        severity: "success",
+      });
     } catch (err: any) {
       console.error("PDF generation error:", err);
-      setNotification({ open: true, message: `PDF Error: ${err.message}`, severity: "error" });
-     } finally {
-       setGenerating(false);
-     }
-   };
+      setNotification({
+        open: true,
+        message: `PDF Error: ${err.message}`,
+        severity: "error",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  }, [data, detailSpacing, fmt, getCategoryTotal, getGrandTotal, getSubtotal, getTaxAmount, getWithholdingTaxAmount, pdfUrl]);
 
-   // Auto-generate when data is ready
-   useEffect(() => {
-     if (data && !pdfUrl && !generating) {
-       generatePDF();
-     }
-   }, [data, pdfUrl, generating, generatePDF]);
+  // Auto-generate when data or settings change
+  useEffect(() => {
+    if (data && !generating) {
+      generatePDF();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, detailSpacing]);
 
-   // Close and cleanup
-   const handleClose = () => {
-     if (pdfBlobRef.current && pdfUrl) {
-       URL.revokeObjectURL(pdfUrl);
-       pdfBlobRef.current = null;
-     }
-     router.back();
-   };
+  // Close and cleanup
+  const handleClose = () => {
+    if (pdfBlobRef.current && pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      pdfBlobRef.current = null;
+    }
+    router.back();
+  };
 
-   // Handle PDF download
-   const handleDownload = () => {
-     if (pdfBlobRef.current && pdfUrl) {
-       // Create a temporary link to download the blob
-       const downloadLink = document.createElement('a');
-       downloadLink.href = pdfUrl;
-       downloadLink.download = `quotation-${data?.documentIdNo || 'document'}.pdf`;
-       document.body.appendChild(downloadLink);
-       downloadLink.click();
-       document.body.removeChild(downloadLink);
-       
-       setNotification({ 
-         open: true, 
-         message: "PDF downloaded successfully", 
-         severity: "success" 
-       });
-     }
-   };
+  // Handle PDF download
+  const handleDownload = () => {
+    if (pdfBlobRef.current && pdfUrl) {
+      // Create a temporary link to download the blob
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pdfUrl;
+      downloadLink.download = `quotation-${data?.documentIdNo || "document"}.pdf`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      setNotification({
+        open: true,
+        message: "ดาวน์โหลด PDF สำเร็จ",
+        severity: "success",
+      });
+    }
+  };
 
   if (loading) {
     return (
-      <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="100vh" gap={2}>
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        minHeight="100vh"
+        gap={2}
+      >
         <CircularProgress size={40} thickness={4} />
         <Typography>กำลังโหลดข้อมูล...</Typography>
       </Box>
@@ -532,7 +668,11 @@ export default function DirectPDFPreviewPage({
     return (
       <Box p={4}>
         <Typography color="error">เกิดข้อผิดพลาด: {error}</Typography>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()} sx={{ mt: 2 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => router.back()}
+          sx={{ mt: 2 }}
+        >
           ย้อนกลับ
         </Button>
       </Box>
@@ -560,15 +700,64 @@ export default function DirectPDFPreviewPage({
       `}</style>
 
       {/* Toolbar */}
-      <Box className="no-print" sx={{ bgcolor: "grey.100", py: 2, borderBottom: 1, borderColor: "divider" }}>
+      <Box
+        className="no-print"
+        sx={{
+          bgcolor: "white",
+          py: 1.5,
+          borderBottom: 1,
+          borderColor: "divider",
+          boxShadow: 1,
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}
+      >
         <Container maxWidth="lg">
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Button startIcon={<ArrowBackIcon />} onClick={handleClose} variant="outlined">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={handleClose}
+              variant="outlined"
+              size="small"
+            >
               ย้อนกลับ
             </Button>
+            
+            <Box display="flex" gap={1} alignItems="center">
+              <Typography variant="body2" sx={{ mr: 1, fontWeight: 'bold' }}>ระยะห่างรายละเอียด:</Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() =>
+                  setDetailSpacing((prev) => Math.max(0, prev - 0.5))
+                }
+              >
+                ลด
+              </Button>
+              <Typography variant="body2" sx={{ minWidth: 20, textAlign: 'center' }}>{detailSpacing}</Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setDetailSpacing((prev) => prev + 0.5)}
+              >
+                เพิ่ม
+              </Button>
+            </Box>
+
             <Box display="flex" gap={2} alignItems="center">
-              {generating && <CircularProgress size={24} />}
-              <Button startIcon={<FileDownloadIcon />} onClick={handleDownload} variant="outlined" disabled={!pdfUrl}>
+              {generating && <CircularProgress size={20} />}
+              <Button
+                startIcon={<FileDownloadIcon />}
+                onClick={handleDownload}
+                variant="contained"
+                disabled={!pdfUrl}
+                size="small"
+              >
                 ดาวน์โหลด PDF
               </Button>
             </Box>
@@ -610,7 +799,12 @@ export default function DirectPDFPreviewPage({
             />
           </Paper>
         ) : (
-          <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            gap={2}
+          >
             <CircularProgress size={60} thickness={4} />
             <Typography variant="h6" color="text.secondary">
               กำลังสร้าง PDF...
@@ -629,7 +823,10 @@ export default function DirectPDFPreviewPage({
         onClose={() => setNotification({ ...notification, open: false })}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity={notification.severity} onClose={() => setNotification({ ...notification, open: false })}>
+        <Alert
+          severity={notification.severity}
+          onClose={() => setNotification({ ...notification, open: false })}
+        >
           {notification.message}
         </Alert>
       </Snackbar>

@@ -109,7 +109,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
 
     const idToUse = internalId || propQuotationId;
     if (idToUse) {
-      window.open(`/quotation/preview/${idToUse}`, "_blank");
+      window.open(`/quotation/pdf-preview/${idToUse}`, "_blank");
     } else {
       setOnOpen(true);
     }

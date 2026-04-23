@@ -48,7 +48,8 @@ export default function RootLayout({
         <Container
           sx={{
             paddingTop: "20px",
-            maxWidth: "1200px",
+            // maxWidth: "1200px",
+            maxWidth: "100% !important",
           }}
         >
           <Box sx={{ minHeight: "calc(100vh - 170px)" }}>

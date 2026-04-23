@@ -81,7 +81,7 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
     iframe.style.left = "-10000px";
     iframe.style.width = "1024px";
     iframe.style.height = "1000px";
-    iframe.src = `/quotation/preview/${documentId}?print=true`;
+    iframe.src = `/quotation/pdf-preview/${documentId}?print=true`;
     document.body.appendChild(iframe);
 
     setTimeout(() => {
@@ -144,7 +144,7 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
             documentId={params.row.documentId}
             onEdit={(id) => router.push(`/quotation/edit-quotation/${id}`)}
             onPreview={(id) =>
-              window.open(`/quotation/preview/${id}`, "_blank")
+              window.open(`/quotation/pdf-preview/${id}`, "_blank")
             }
             onDownloadPDF={handlePDFDownload}
             onDelete={handleDelete}

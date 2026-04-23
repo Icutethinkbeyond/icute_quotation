@@ -28,7 +28,7 @@ function CustomTabPanel(props: TabPanelProps) {
   return (
     <div
       role="tabpanel"
-      style={{ display: value === index ? 'block' : 'none' }}
+      style={{ display: value === index ? "block" : "none" }}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}
@@ -44,7 +44,7 @@ const EditQuotation = ({ params }: { params: { id: string } }) => {
   const { setHeadForm } = useQuotationListContext();
   const { setBreadcrumbs } = useBreadcrumbContext();
   const router = useRouter();
-  
+
   const [value, setValue] = useState(0); // 0 for Contactor, 1 for Company
   const [loading, setLoading] = useState(true);
 
@@ -97,12 +97,21 @@ const EditQuotation = ({ params }: { params: { id: string } }) => {
         console.log("📦 Transformed categories:", categories);
 
         // คำนวณยอดรวมเพื่อหาอัตราภาษีหัก ณ ที่จ่าย (เนื่องจากใน DB เก็บเป็นยอดเงิน)
-        const subtotal = categories.reduce((sum: number, cat: any) =>
-          sum + cat.subItems.reduce((s: number, item: any) => s + (item.qty * item.pricePerUnit), 0)
-          , 0);
+        const subtotal = categories.reduce(
+          (sum: number, cat: any) =>
+            sum +
+            cat.subItems.reduce(
+              (s: number, item: any) => s + item.qty * item.pricePerUnit,
+              0,
+            ),
+          0,
+        );
         const totalAfterDiscount = subtotal - (quotation.globalDiscount || 0);
         const whtAmount = quotation.withholdingTax || 0;
-        const whtRate = totalAfterDiscount > 0 ? Math.round((whtAmount / totalAfterDiscount) * 100) : 0;
+        const whtRate =
+          totalAfterDiscount > 0
+            ? Math.round((whtAmount / totalAfterDiscount) * 100)
+            : 0;
 
         // โหลดข้อมูลเข้า PricingContext
         setCategories(categories);
@@ -113,7 +122,7 @@ const EditQuotation = ({ params }: { params: { id: string } }) => {
         // โหลดข้อมูลเข้า headForm
         setHeadForm({
           quotationNumber: quotation.documentIdNo || "",
-          
+
           // Issuer Info (Our Company) - Loaded from Snapshot
           companyName: quotation.companyName || "",
           companyTel: quotation.companyTel || "",
@@ -122,10 +131,13 @@ const EditQuotation = ({ params }: { params: { id: string } }) => {
           branch: quotation.companyBranch || "",
 
           // Customer Company Info
-          customerType: quotation.customerCompany?.taxId ? "Corporate" : "Individual",
+          customerType: quotation.customerCompany?.taxId
+            ? "Corporate"
+            : "Individual",
           customerCompanyName: quotation.customerCompany?.companyName || "",
           customerCompanyTel: quotation.customerCompany?.companyTel || "",
-          customerCompanyAddress: quotation.customerCompany?.companyAddress || "",
+          customerCompanyAddress:
+            quotation.customerCompany?.companyAddress || "",
           customerTaxId: quotation.customerCompany?.taxId || "",
           customerBranch: quotation.customerCompany?.branch || "",
 
@@ -159,7 +171,16 @@ const EditQuotation = ({ params }: { params: { id: string } }) => {
     return () => {
       setBreadcrumbs([]);
     };
-  }, [params.id, setCategories, setDiscount, setVatIncluded, setWithholdingTaxRate, setHeadForm, router, setBreadcrumbs]);
+  }, [
+    params.id,
+    setCategories,
+    setDiscount,
+    setVatIncluded,
+    setWithholdingTaxRate,
+    setHeadForm,
+    router,
+    setBreadcrumbs,
+  ]);
 
   const handleChange = (event: SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -179,16 +200,21 @@ const EditQuotation = ({ params }: { params: { id: string } }) => {
   }
 
   return (
-    <PageContainer>
+    <>
+      {/* // <PageContainer> */}
       <PageHeader title="แก้ไขใบเสนอราคา" />
-      
+
       <Grid2 container spacing={3}>
         {/* Main Content: Document Information and Pricing Table */}
         <Grid2 size={{ xs: 12, lg: 8 }}>
           <Stack spacing={3}>
             {/* Section 1: Parties Information with Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+              <Tabs
+                value={value}
+                onChange={handleChange}
+                aria-label="basic tabs example"
+              >
                 <Tab label="ข้อมูลลูกค้า" />
                 <Tab label="ข้อมูลบริษัท" />
               </Tabs>
@@ -209,18 +235,19 @@ const EditQuotation = ({ params }: { params: { id: string } }) => {
 
         {/* Sidebar: Summary and Action Buttons */}
         <Grid2 size={{ xs: 12, lg: 4 }}>
-          <Box 
-            sx={{ 
-              position: { lg: "sticky" }, 
+          <Box
+            sx={{
+              position: { lg: "sticky" },
               top: { lg: 24 },
-              zIndex: 10
+              zIndex: 10,
             }}
           >
             <PricingSummary isEdit={true} quotationId={params.id} />
           </Box>
         </Grid2>
       </Grid2>
-    </PageContainer>
+    </>
+    // </PageContainer>
   );
 };
 

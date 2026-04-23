@@ -26,6 +26,22 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
 }) => {
   if (pageRows.length === 0) return null;
 
+  // If only measuring header, render minimal structure
+  if (measureHeaderOnly) {
+    return (
+      <Table sx={{ width: "100%", tableLayout: "fixed" }}>
+        <TableRow sx={{ backgroundColor: "#eaeaea" }}>
+          <TableCell sx={{ color: "#989898", fontSize: 9, width: "40px", py: 0.5 }}>NO.</TableCell>
+          <TableCell sx={{ color: "#989898", fontSize: 9, py: 0.5 }}>สินค้า / รายละเอียด</TableCell>
+          <TableCell sx={{ color: "#989898", fontSize: 9, textAlign: "center", width: "60px", py: 0.5 }}>จำนวน</TableCell>
+          <TableCell sx={{ color: "#989898", fontSize: 9, textAlign: "center", width: "60px", py: 0.5 }}>หน่วย</TableCell>
+          <TableCell sx={{ color: "#989898", fontSize: 9, textAlign: "right", width: "120px", py: 0.5 }}>ราคา/หน่วย</TableCell>
+          <TableCell sx={{ color: "#989898", fontSize: 9, textAlign: "right", width: "120px", py: 0.5 }}>จำนวนเงิน (บาท)</TableCell>
+        </TableRow>
+      </Table>
+    );
+  }
+
   return (
     <TableContainer
       component={Paper}
@@ -34,13 +50,11 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
         mb: 3,
         borderRadius: 0,
         overflow: "hidden",
-        // Prevent table from breaking across pages
         pageBreakInside: "avoid",
         breakInside: "avoid",
       }}
     >
       <Table sx={{ width: "100%", tableLayout: "fixed" }}>
-        {/* Table header */}
         {!hideTableHeader && (
           <TableRow
             sx={{
@@ -130,7 +144,6 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
         {!measureHeaderOnly && (
           <TableBody
             sx={{
-              // Keep tbody content together
               pageBreakInside: "avoid",
               breakInside: "avoid",
             }}
@@ -138,7 +151,6 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
             {pageRows.map((row, rowIndex) => {
               const key = `${pageIndex}-${rowIndex}`;
 
-              // 1. Category header row
               if (row.type === "header") {
                 return (
                   <TableRow
@@ -166,7 +178,6 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                 );
               }
 
-              // 2. Item row (name + description + remark combined)
               if (row.type === "item_name") {
                 const item = row.data;
                 const itemTotal = item.qty * item.pricePerUnit;
@@ -178,8 +189,6 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                       breakInside: "avoid",
                     }}
                   >
-                    {" "}
-                    {/* Removed bgcolor */}
                     <TableCell
                       sx={{
                         fontSize: 12,
@@ -198,12 +207,7 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                         breakInside: "avoid",
                       }}
                     >
-                      {" "}
-                      {/* Adjusted padding */}
-                      <Typography
-                        variant="body2"
-                        sx={{ fontSize: 12, fontWeight: "medium" }}
-                      >
+                      <Typography variant="body2" sx={{ fontSize: 12, fontWeight: "medium" }}>
                         {item.name}
                       </Typography>
                       {item.description && (
@@ -310,7 +314,6 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
                 );
               }
 
-              // 3. Subtotal row
               if (row.type === "subtotal") {
                 return (
                   <TableRow
@@ -362,3 +365,4 @@ const QuotationTable: React.FC<QuotationTableProps> = ({
 };
 
 export default QuotationTable;
+

@@ -342,7 +342,7 @@ export async function DELETE(
 export async function PUT(
     req: NextRequest,
     { params }: { params: { id: string } }
-) {
+  ) {
     try {
         const documentId = params.id;
         // Restore from trash
@@ -360,4 +360,112 @@ export async function PUT(
     } finally {
         await prisma.$disconnect();
     }
-}
+  }
+
+  export async function POST(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+  ) {
+    try {
+        const documentId = params.id;
+        const body = await req.json();
+        const duplicateType = body.duplicateType || 'full'; // 'full' or 'items_only'
+
+        // Fetch the original quotation
+        const originalQuotation = await prisma.documentPaper.findUnique({
+            where: { documentId },
+            include: {
+                customerCompany: true,
+                contactor: true,
+                categories: {
+                    include: {
+                        items: {
+                            orderBy: { orderIndex: 'asc' }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!originalQuotation) {
+            return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
+        }
+
+        // Generate new quotation number
+        const newQuotationNumber = `QT-${Date.now()}`;
+
+        // Create new quotation data
+        const newQuotationData: any = {
+            documentIdNo: newQuotationNumber,
+            docType: 'Quotation',
+            documentDetials: 'Duplicated from ' + originalQuotation.documentIdNo,
+            
+            // Copy issuer info from original
+            companyName: originalQuotation.companyName,
+            companyTel: originalQuotation.companyTel,
+            companyAddress: originalQuotation.companyAddress,
+            companyTaxId: originalQuotation.companyTaxId,
+            companyBranch: originalQuotation.companyBranch,
+            
+            // Copy customer and contactor relations
+            customerCompanyId: originalQuotation.customerCompanyId,
+            contactorId: originalQuotation.contactorId,
+            
+            // Copy pricing settings
+            includeVat: originalQuotation.includeVat,
+            taxRate: originalQuotation.taxRate,
+            globalDiscount: duplicateType === 'full' ? originalQuotation.globalDiscount : 0,
+            withholdingTax: duplicateType === 'full' ? originalQuotation.withholdingTax : 0,
+            note: duplicateType === 'full' ? originalQuotation.note : 'Duplicated from ' + originalQuotation.documentIdNo,
+            
+            documentStatus: 'Draft',
+            isDeleted: false,
+            
+            // Copy categories and items
+            categories: {
+                create: originalQuotation.categories.map((cat, catIndex) => ({
+                    name: cat.name,
+                    orderIndex: catIndex,
+                    items: {
+                        create: cat.items.map((item, itemIndex) => ({
+                            name: item.name,
+                            description: item.description,
+                            unit: item.unit,
+                            qty: item.qty,
+                            pricePerUnit: item.pricePerUnit,
+                            remark: item.remark,
+                            totalPrice: item.qty * item.pricePerUnit,
+                            orderIndex: itemIndex
+                        }))
+                    }
+                }))
+            }
+        };
+
+        // Create the duplicated quotation
+        const duplicatedQuotation = await prisma.documentPaper.create({
+            data: newQuotationData,
+            include: {
+                customerCompany: true,
+                contactor: true,
+                categories: {
+                    include: {
+                        items: true
+                    }
+                }
+            }
+        });
+
+        return NextResponse.json({
+            success: true,
+            message: 'Quotation duplicated successfully',
+            document: duplicatedQuotation
+        });
+
+    } catch (error) {
+        console.error("Error duplicating quotation:", error);
+        return NextResponse.json({ error: 'Failed to duplicate quotation', details: String(error) }, { status: 500 });
+    } finally {
+        await prisma.$disconnect();
+    }
+  }

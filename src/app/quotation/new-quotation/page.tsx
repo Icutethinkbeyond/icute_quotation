@@ -54,7 +54,7 @@ function CustomTabPanel(props: TabPanelProps) {
 const NewQuotation = () => {
   const { setCategories, setDiscount, setVatIncluded, setWithholdingTaxRate } =
     usePricingContext();
-  const { setHeadForm } = useQuotationListContext();
+  const { setHeadForm, loadHeadForm } = useQuotationListContext();
   const { setBreadcrumbs } = useBreadcrumbContext();
 
   const [value, setValue] = useState(0); // 0 for Contactor, 1 for Company

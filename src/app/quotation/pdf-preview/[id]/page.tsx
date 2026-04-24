@@ -698,25 +698,22 @@ export default function DirectPDFPreviewPage({
           const detailHeight = detailLines.length * (4 + detailSpacing);
 
           // Qty
-          doc.text(String(item.qty), colX[2] + colWidths[2] / 2, y + 3.5, {
+          doc.text(String(item.qty), colX[2] + colWidths[2] / 2, y, {
             align: "center",
           });
 
           // Unit
-          doc.text(item.unit, colX[3] + colWidths[3] / 2, y + 3.5, {
+          doc.text(item.unit, colX[3] + colWidths[3] / 2, y, {
             align: "center",
           });
 
           // Price
-          doc.text(
-            fmt(item.pricePerUnit),
-            colX[4] + colWidths[4] - 2,
-            y + 3.5,
-            { align: "right" },
-          );
+          doc.text(fmt(item.pricePerUnit), colX[4] + colWidths[4] - 2, y, {
+            align: "right",
+          });
 
           // Total
-          doc.text(fmt(itemTotal), colX[5] + colWidths[5] - 2, y + 3.5, {
+          doc.text(fmt(itemTotal), colX[5] + colWidths[5] - 2, y, {
             align: "right",
           });
 

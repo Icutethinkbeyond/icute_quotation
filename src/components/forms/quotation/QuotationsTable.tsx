@@ -22,6 +22,7 @@ import {
   QuotationsTableProps,
 } from "@/contexts/QuotationContext";
 import { min } from "lodash";
+import { downloadQuotationPDF } from "@/services/pdf/quotationPDF";
 
 const QuotationsTable: React.FC<QuotationsTableProps> = () => {
   const router = useRouter();
@@ -56,130 +57,132 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
     debounceMs: 1000,
   });
 
-    const handleDelete = async (documentId: string) => {
+  const handleDelete = async (documentId: string) => {
     try {
-        const response = await fetch(`/api/income/quotation/${documentId}`, {
-            method: "DELETE",
-        });
+      const response = await fetch(`/api/income/quotation/${documentId}`, {
+        method: "DELETE",
+      });
 
-        if (response.ok) {
-            refresh();
-        } else {
-            console.error("Failed to delete quotation");
-        }
+      if (response.ok) {
+        refresh();
+      } else {
+        console.error("Failed to delete quotation");
+      }
     } catch (error) {
-        console.error("Error deleting quotation:", error);
+      console.error("Error deleting quotation:", error);
     }
-};
+  };
 
-    const handlePDFDownload = (documentId: string) => {
-    setDownloadingId(documentId);
-
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.top = "-10000px";
-    iframe.style.left = "-10000px";
-    iframe.style.width = "1024px";
-    iframe.style.height = "1000px";
-    iframe.src = `/quotation/pdf-preview/${documentId}?print=true`;
-    document.body.appendChild(iframe);
-
-    setTimeout(() => {
-        if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-        }
-        setDownloadingId(null);
-    }, 10000);
-};
-
-    const handleDuplicate = async (documentId: string) => {
+  const handlePDFDownload = async (documentId: string) => {
     try {
-        const response = await fetch(`/api/income/quotation/${documentId}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                duplicateType: "full",
-            }),
-        });
+      setDownloadingId(documentId);
 
-        if (response.ok) {
-            const result = await response.json();
-            console.log("Quotation duplicated:", result);
-            refresh();
-        } else {
-            const error = await response.json();
-            console.error("Failed to duplicate quotation:", error);
-        }
+      // Fetch the quotation data
+      const response = await fetch(`/api/income/quotation/${documentId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch quotation data");
+      }
+
+      const result = await response.json();
+      const quotationData = result.data || result;
+
+      // Generate and download PDF
+      await downloadQuotationPDF(quotationData);
     } catch (error) {
-        console.error("Error duplicating quotation:", error);
+      console.error("Error downloading PDF:", error);
+    } finally {
+      setDownloadingId(null);
     }
-};
+  };
 
-    const columns: GridColDef[] = [
-        documentIdColumn,
-        creationDateColumn,
-        customerNameColumn,
-        grandTotalColumn,
-        {
-            field: "status",
-            headerName: "สถานะ",
-            headerAlign: "center",
-            align: "center",
-            disableColumnMenu: true,
-            width: 150,
-            sortable: false,
-            renderCell: (params: GridRenderCellParams) => (
-                <Chip
-                    label={params.row.documentStatus}
-                    size="small"
-                    color={
-                        params.row.documentStatus === "Approve"
-                            ? "success"
-                            : params.row.documentStatus === "Draft"
-                              ? "default"
-                              : params.row.documentStatus === "Waiting"
-                                ? "warning"
-                                : "error"
-                    }
-                    sx={{ fontWeight: 600 }}
-                />
-            ),
+  const handleDuplicate = async (documentId: string) => {
+    try {
+      const response = await fetch(`/api/income/quotation/${documentId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-            field: "Actions",
-            headerName: "การจัดการ",
-            headerAlign: "center",
-            align: "center",
-            disableColumnMenu: true,
-            width: 180,
-            sortable: false,
-            renderCell: (params: GridRenderCellParams) => (
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        width: "100%",
-                        height: "100%",
-                    }}
-                >
-                    <QuotationActionButtons
-                        documentId={params.row.documentId}
-                        onEdit={(id) => router.push(`/quotation/edit-quotation/${id}`)}
-                        onPreview={(id) =>
-                            window.open(`/quotation/pdf-preview/${id}`, "_blank")
-                        }
-                        onDownloadPDF={handlePDFDownload}
-                        onDelete={handleDelete}
-                        onDuplicate={handleDuplicate}
-                        isDownloading={downloadingId === params.row.documentId}
-                    />
-                </Box>
-            ),
-        },
-    ];
+        body: JSON.stringify({
+          duplicateType: "full",
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Quotation duplicated:", result);
+        refresh();
+      } else {
+        const error = await response.json();
+        console.error("Failed to duplicate quotation:", error);
+      }
+    } catch (error) {
+      console.error("Error duplicating quotation:", error);
+    }
+  };
+
+  const columns: GridColDef[] = [
+    documentIdColumn,
+    creationDateColumn,
+    customerNameColumn,
+    grandTotalColumn,
+    {
+      field: "status",
+      headerName: "สถานะ",
+      headerAlign: "center",
+      align: "center",
+      disableColumnMenu: true,
+      width: 150,
+      sortable: false,
+      renderCell: (params: GridRenderCellParams) => (
+        <Chip
+          label={params.row.documentStatus}
+          size="small"
+          color={
+            params.row.documentStatus === "Approve"
+              ? "success"
+              : params.row.documentStatus === "Draft"
+                ? "default"
+                : params.row.documentStatus === "Waiting"
+                  ? "warning"
+                  : "error"
+          }
+          sx={{ fontWeight: 600 }}
+        />
+      ),
+    },
+    {
+      field: "Actions",
+      headerName: "การจัดการ",
+      headerAlign: "center",
+      align: "center",
+      disableColumnMenu: true,
+      width: 180,
+      sortable: false,
+      renderCell: (params: GridRenderCellParams) => (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <QuotationActionButtons
+            documentId={params.row.documentId}
+            onEdit={(id) => router.push(`/quotation/edit-quotation/${id}`)}
+            onPreview={(id) =>
+              window.open(`/quotation/pdf-preview/${id}`, "_blank")
+            }
+            onDownloadPDF={handlePDFDownload}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            isDownloading={downloadingId === params.row.documentId}
+          />
+        </Box>
+      ),
+    },
+  ];
 
   const headerActions = (
     <>

@@ -27,8 +27,12 @@ const QuotationHeader: React.FC<QuotationHeaderProps> = ({
           <Grid item xs={6}>
             <Box sx={{ width: "150px", height: "auto" }}>
               <img
-                src="/images/logos/logo-dark.svg" // Assuming dark logo for print
+                src={headForm.companyLogo || "/images/logos/logo-dark.svg"}
                 alt="Company Logo"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/images/logos/logo-dark.svg";
+                }}
                 style={{ maxWidth: "100%", height: "auto" }}
               />
             </Box>

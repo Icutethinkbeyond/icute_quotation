@@ -103,6 +103,8 @@ model CompanyProfile {
   companyWebsite          String?
   companyRegistrationDate DateTime?
   companyBusinessType     String?
+  companyImage            String?
+  companyImagePublicId    String?
   user                    User?      @relation(fields: [userId], references: [userId])
   userId                  String?
 

@@ -116,6 +116,8 @@ export interface IHeadForm {
   companyAddress: string;
   taxId: string;
   branch: string;
+  companyLogo?: string;       // Company logo URL from Cloudinary
+  companyLogoPublicId?: string; // Public ID for Cloudinary delete
 
   // Customer Type
   customerType: "Individual" | "Corporate"; // Added field
@@ -243,6 +245,8 @@ export const headerClean: IHeadForm = {
   companyAddress: "",
   taxId: "",
   branch: "",
+  companyLogo: "",
+  companyLogoPublicId: "",
   
   customerType: "Individual",
   customerCompanyName: "",

@@ -11,6 +11,8 @@ export interface CompanyProfile {
     companyWebsite?: string | null;
     companyRegistrationDate?: string | Date | null;
     companyBusinessType?: string | null;
+    companyImage?: string | null;
+    companyImagePublicId?: string | null;
     isFavorite?: boolean;
     createdAt?: string | Date;
     updatedAt?: string | Date;
@@ -40,6 +42,8 @@ export const initialCompany: CompanyProfile = {
     companyWebsite: '',
     companyBusinessType: '',
     companyRegistrationDate: '',
+    companyImage: '',
+    companyImagePublicId: '',
     isFavorite: false,
 };
 

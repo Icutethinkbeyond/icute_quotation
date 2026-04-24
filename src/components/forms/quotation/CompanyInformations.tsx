@@ -118,6 +118,8 @@ const CompanyInformation: React.FC = () => {
       setFieldValue("taxId", profile.companyTaxId || "");
       setFieldValue("branch", profile.branch || "");
       setFieldValue("companyAddress", profile.companyAddress || "");
+      setFieldValue("companyLogo", profile.companyImage || "");
+      setFieldValue("companyLogoPublicId", profile.companyImagePublicId || "");
     }
   };
 
@@ -135,6 +137,8 @@ const CompanyInformation: React.FC = () => {
             taxId: data.companyTaxId || "",
             branch: data.branch || "",
             companyAddress: data.companyAddress || "",
+            companyLogo: data.companyImage || "",
+            companyLogoPublicId: data.companyImagePublicId || "",
           }));
         }
       }
@@ -144,6 +148,7 @@ const CompanyInformation: React.FC = () => {
       setLoadingFavorite(false);
     }
   };
+
 
   useEffect(() => {
     // Only fetch if companyName is not already set (e.g. during an edit or if already auto-filled)

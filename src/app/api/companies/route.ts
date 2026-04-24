@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 // Create a NEW company profile.
 export async function POST(req: NextRequest) {
     try {
-        const body: CompanyProfile = await req.json();
+        const body: CompanyProfile & { companyImage?: string; companyImagePublicId?: string } = await req.json();
         const {
             companyName,
             companyAddress,
@@ -62,6 +62,8 @@ export async function POST(req: NextRequest) {
             companyWebsite,
             companyBusinessType,
             companyRegistrationDate,
+            companyImage,
+            companyImagePublicId,
         } = body;
 
         // Validation
@@ -71,10 +73,6 @@ export async function POST(req: NextRequest) {
 
         // We try to link to a fallback user if available, but it is no longer mandatory.
         const firstUser = await prisma.user.findFirst();
-
-        // if (!firstUser) {
-        //     return NextResponse.json({ error: 'No users found in system to link company profile to.' }, { status: 400 });
-        // }
 
         // Note: The schema has `userId String?`, so we can leave it null.
 
@@ -90,6 +88,8 @@ export async function POST(req: NextRequest) {
                 companyWebsite,
                 companyBusinessType,
                 companyRegistrationDate: companyRegistrationDate ? new Date(companyRegistrationDate) : null,
+                companyImage: companyImage || null,
+                companyImagePublicId: companyImagePublicId || null,
                 isDeleted: false,
                 isFavorite: body.isFavorite || false,
                 userId: firstUser?.userId ?? undefined,
@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json(newProfile);
+
 
     } catch (error) {
         console.error("Error saving company profile:", error);

@@ -121,7 +121,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
     }
 
     // บันทึกข้อมูลก่อนแสดง preview (ไม่เปลี่ยนสถานะ dla existing documents)
-    const savedDocId = await handleSaveQuotation(undefined, false);
+    const savedDocId = await handleSaveQuotation(undefined, false, false);
 
     if (savedDocId) {
       // เปิด PDF preview ด้วย documentId ที่เพิ่งบันทึก
@@ -145,6 +145,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
   const handleSaveQuotation = async (
     status?: "draft" | "approve",
     isAutoSave = false,
+    showalert = true,
   ): Promise<string | null> => {
     try {
       // ตรวจสอบว่ามีสินค้าหรือไม่
@@ -262,11 +263,13 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
         setLastSaved(new Date());
 
         if (!isAutoSave) {
-          alert(
-            status === "draft"
-              ? "บันทึกร่างสำเร็จ!"
-              : "บันทึกใบเสนอราคาสำเร็จ!",
-          );
+          if (showalert) {
+            alert(
+              status === "draft"
+                ? "บันทึกร่างสำเร็จ!"
+                : "บันทึกใบเสนอราคาสำเร็จ!",
+            );
+          }
           if (status === "approve") {
             router.push(`/quotation`);
             setCategories([]);
@@ -610,7 +613,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
             />
           </Box>
 
-           {/* Action Buttons */}
+          {/* Action Buttons */}
           <Stack spacing={2}>
             <Button
               variant="contained"
@@ -629,7 +632,11 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
                 boxShadow: theme.shadows[4],
               }}
             >
-              {isEdit ? "อัพเดทใบเสนอราคา" : autoSaveEnabled ? "อนุมัติและออกใบเสนอราคา" : "บันทึกและอนุมัติ"}
+              {isEdit
+                ? "อัพเดทใบเสนอราคา"
+                : autoSaveEnabled
+                  ? "อนุมัติและออกใบเสนอราคา"
+                  : "บันทึกและอนุมัติ"}
             </Button>
 
             <Button

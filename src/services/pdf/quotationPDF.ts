@@ -201,15 +201,15 @@ const generateProfessionalBottomSection = (
 
   // Grand Total
   doc.setFillColor("#1565c0");
-  doc.roundedRect(rightX + 4, tableY - 5, rightWidth - 8, 12, 1, 1, "F");
+  doc.roundedRect(rightX + 4, tableY - 5, rightWidth - 8, 8, 1, 1, "F");
 
   doc.setFontSize(11);
   doc.setTextColor("#ffffff");
-  doc.text("รวมทั้งสิ้น:", rightX + 10, tableY + 3);
+  doc.text("รวมทั้งสิ้น:", rightX + 10, tableY);
   doc.text(
     fmt(grandTotal) + " บาท",
     rightX + rightWidth - 10,
-    tableY + 3,
+    tableY,
     { align: "right" }
   );
 
@@ -554,7 +554,14 @@ export const generateQuotationPDF = async (
     "จำนวนเงิน (บาท)",
   ];
   headers.forEach((h, i) => {
-    doc.text(h, colX[i] + 2, y + 5.5);
+    // Align right for number/price columns, left for text columns
+    if ( i === 2 || i === 3 || i === 4 || i === 5) {
+      // Right align for NO., จำนวน, หน่วย, ราคา/หน่วย, จำนวนเงิน
+      doc.text(h, colX[i] + colWidths[i] - 2, y + 5.5, { align: "right" });
+    } else {
+      // Left align for description column
+      doc.text(h, colX[i] + 2, y + 5.5);
+    }
   });
   doc.setFillColor(255, 255, 255);
   y += 8;
@@ -620,9 +627,9 @@ export const generateQuotationPDF = async (
       // Unit
       doc.text(
         item.unit,
-        colX[3] + colWidths[3] / 2,
+        colX[3] + colWidths[3] - 2,
         y,
-        { align: "center" }
+        { align: "right" }
       );
 
       // Price

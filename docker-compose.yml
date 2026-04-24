@@ -12,7 +12,7 @@ services:
         max-file: "3"
     container_name: icute-quotation
     ports:
-      - "3002:3000"  # เชื่อมต่อพอร์ต 3001 ของเครื่องโฮสต์กับพอร์ต 3000 ในคอนเทนเนอร์
+      - "3004:3000"  # เชื่อมต่อพอร์ต 3003 ของเครื่องโฮสต์กับพอร์ต 3000 ในคอนเทนเนอร์
     networks:
       - icute-quotation
     # depends_on:

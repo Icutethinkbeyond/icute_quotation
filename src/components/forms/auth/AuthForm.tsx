@@ -1,0 +1,287 @@
+import React, { useEffect, useState } from "react";
+import {
+  Typography,
+  Button,
+  Grid2,
+  InputAdornment,
+  IconButton,
+  TextField,
+  Box,
+  Card,
+  Avatar,
+  Divider,
+} from "@mui/material";
+import { LoadingButton } from "@mui/lab";
+import { initialLogin, Login } from "@/interfaces/User";
+import { Field, Form, Formik } from "formik";
+import * as Yup from "yup";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useNotifyContext } from "@/contexts/NotifyContext";
+import { useLocale } from "next-intl";
+import { LogIn, KeyRound, UserCircle } from "lucide-react";
+
+const validationSchema = Yup.object().shape({
+  email: Yup.string().required("กรุณากรอกอีเมล").email("รูปแบบอีเมลไม่ถูกต้อง"),
+  password: Yup.string().required("กรุณากรอกรหัสผ่าน"),
+});
+
+interface loginType {
+  title?: string;
+  subtitle?: JSX.Element | JSX.Element[] | string;
+  subtext?: JSX.Element | JSX.Element[];
+  successPath?: string;
+}
+
+const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [credentail] = useState<Login>(initialLogin);
+  const [disableLogin, setDisableLogin] = useState<boolean>(false);
+
+  const localActive = useLocale();
+  const router = useRouter();
+  const { setNotify, notify } = useNotifyContext();
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+
+  const onLoginPress = (value: Login, { validateForm }: any) => {
+    validateForm();
+    onLogin(value);
+  };
+
+  const onLogin = async (credential: Login) => {
+    setDisableLogin(true);
+    const { email, password } = credential;
+
+    if (email && password) {
+      const result = await signIn("credentials", {
+        email: email,
+        password: password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setNotify({
+          ...notify,
+          open: true,
+          color: "error",
+          message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+        });
+        setDisableLogin(false);
+      } else {
+        router.push(`/${localActive}/store/protected/dashboard`);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      setDisableLogin(false);
+    };
+  }, []);
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: { xs: 2, md: 4 },
+        backgroundColor: "#f5f7f9",
+      }}
+    >
+      <Card
+        sx={{
+          width: "100%",
+          maxWidth: "1100px",
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          borderRadius: "24px",
+          overflow: "hidden",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+          minHeight: "650px",
+        }}
+      >
+        {/* Left Section - Hero/Branding */}
+        <Box
+          sx={{
+            bgcolor: "primary.main",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: { xs: "100%", md: "40%" },
+            flexDirection: "column",
+            padding: 6,
+            color: "white",
+            textAlign: "center",
+            background: "linear-gradient(135deg, #182E4E 0%, #3BB173 100%)",
+          }}
+        >
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: "20px",
+              bgcolor: "rgba(255,255,255,0.2)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              mb: 4,
+            }}
+          >
+            <LogIn size={40} color="white" />
+          </Box>
+          <Typography variant="h3" fontWeight="800" mb={2}>
+            iCute Booking
+          </Typography>
+          <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400, mb: 4 }}>
+            ยินดีต้อนรับกลับมา!<br />เข้าสู่ระบบเพื่อจัดการร้านค้าของคุณ
+          </Typography>
+          
+          <Box sx={{ mt: "auto", width: "100%" }}>
+            <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", mb: 3 }} />
+            <Typography variant="body2" sx={{ opacity: 0.7 }}>
+              ยังไม่มีบัญชีร้านค้า? 
+            </Typography>
+            <Button 
+              color="inherit" 
+              variant="outlined" 
+              sx={{ 
+                mt: 2, 
+                borderColor: "rgba(255,255,255,0.5)",
+                borderRadius: "12px",
+                px: 4,
+                "&:hover": { borderColor: "white", bgcolor: "rgba(255,255,255,0.1)" }
+              }}
+              onClick={() => router.push(`/${localActive}/store/auth/sign-up`)}
+            >
+              สมัครสมาชิกที่นี่
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Right Section - Form */}
+        <Box
+          sx={{
+            flex: 1,
+            padding: { xs: 4, md: 8 },
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            bgcolor: "white",
+          }}
+        >
+          <Typography variant="h4" fontWeight="700" mb={1} color="text.primary">
+            เข้าสู่ระบบ
+          </Typography>
+          <Typography variant="body1" color="text.secondary" mb={5}>
+            กรุณาระบุอีเมลและรหัสผ่านเพื่อเข้าใช้งานระบบ
+          </Typography>
+
+          {subtext}
+
+          <Formik
+            initialValues={credentail}
+            validationSchema={validationSchema}
+            onSubmit={onLoginPress}
+            enableReinitialize
+          >
+            {({ errors, touched, values, setFieldValue }) => (
+              <Form>
+                <Grid2 container spacing={3}>
+                  <Grid2 size={{ xs: 12 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                      <Avatar sx={{ bgcolor: "primary.light", width: 32, height: 32 }}>
+                        <UserCircle size={16} />
+                      </Avatar>
+                      <Typography variant="subtitle1" fontWeight="600">
+                        อีเมลผู้ใช้งาน
+                      </Typography>
+                    </Box>
+                    <Field name="email">
+                      {({ field }: any) => (
+                        <TextField
+                          {...field}
+                          fullWidth
+                          placeholder="example@email.com"
+                          variant="outlined"
+                          error={touched.email && Boolean(errors.email)}
+                          helperText={touched.email && errors.email}
+                        />
+                      )}
+                    </Field>
+                  </Grid2>
+
+                  <Grid2 size={{ xs: 12 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Avatar sx={{ bgcolor: "primary.light", width: 32, height: 32 }}>
+                          <KeyRound size={16} />
+                        </Avatar>
+                        <Typography variant="subtitle1" fontWeight="600">
+                          รหัสผ่าน
+                        </Typography>
+                      </Box>
+                      <Button
+                        variant="text"
+                        size="small"
+                        sx={{ textTransform: "none", fontWeight: 500 }}
+                        onClick={() => router.push(`/${localActive}/store/auth/forgot-password`)}
+                      >
+                        ลืมรหัสผ่าน?
+                      </Button>
+                    </Box>
+                    <Field name="password">
+                      {({ field }: any) => (
+                        <TextField
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                          fullWidth
+                          placeholder="••••••••"
+                          error={touched.password && Boolean(errors.password)}
+                          helperText={touched.password && errors.password}
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton onClick={handleClickShowPassword} edge="end">
+                                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    </Field>
+                  </Grid2>
+
+                  <Grid2 size={{ xs: 12 }} sx={{ mt: 2 }}>
+                    <LoadingButton
+                      type="submit"
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      loading={disableLogin}
+                      sx={{
+                        borderRadius: "12px",
+                        py: 1.5,
+                        fontSize: "1.1rem",
+                        fontWeight: "600",
+                        boxShadow: "0 8px 20px rgba(24, 46, 78, 0.2)",
+                      }}
+                    >
+                      เข้าสู่ระบบ
+                    </LoadingButton>
+                  </Grid2>
+                </Grid2>
+              </Form>
+            )}
+          </Formik>
+        </Box>
+      </Card>
+    </Box>
+  );
+};
+
+export default AuthForm;

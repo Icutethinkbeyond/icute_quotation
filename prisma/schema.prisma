@@ -7,92 +7,109 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --------------------------------------
-// User & Auth
-// --------------------------------------
+// ======================================================
+// Accounting System - Prisma Schema Design
+// รองรับ:
+// - Multi Company
+// - ผู้ใช้งานหลาย Role
+// - ผังบัญชี (Chart of Accounts)
+// - สมุดรายวัน (Journal Entry)
+// - เดบิต / เครดิต
+// - ลูกหนี้ / เจ้าหนี้
+// - รายรับ / รายจ่าย
+// - ใบแจ้งหนี้ / ใบเสร็จ
+// - งบดุล / งบกำไรขาดทุน
+// ======================================================
 
 model User {
-  userId       String     @id @default(uuid())
-  username     String?
-  userEmail    String     @unique
-  userPassword String
-  userStatus   UserStatus @default(Active)
-  name         String?
-  phone        String?
+  userId   String  @id @default(uuid()) // Changed to uuid
+  email    String  @unique
+  password String?
+  name     String?
 
-  // Relations
-  account Account?
-  role    Role?    @relation(fields: [roleId], references: [roleId])
-  roleId  String?
+  userStatus      UserStatus @default(ACTIVE)
+  isEmailVerified Boolean    @default(false)
 
-  profile         Profile?
-  companyProfiles CompanyProfile[]
-  address         String?
-  resetTokens     ResetToken[]
+  imageId  String?
+  imageUrl String?
+
+  role   Role?   @relation(fields: [roleId], references: [roleId])
+  roleId String?
+
+  companies CompanyUser[]
+
+  verificationTokens VerificationToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([userEmail, username])
 }
 
-model Profile {
-  profileId      String  @id @default(uuid())
-  profileName    String?
-  profileSurname String?
-  profileimage   String?
-  profilePhone   String?
+model CompanyUser {
+  id String @id @default(cuid())
 
-  user   User?   @relation(fields: [userId], references: [userId])
-  userId String? @unique
+  userId String
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+}
+
+model VerificationToken {
+  id        String       @id @default(uuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  token     String       @unique
+  purpose   TokenPurpose
+  expiresAt DateTime
+  used      Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Role {
+  roleId      String   @id @default(uuid())
+  name        RoleName @unique
+  description String?
+
+  // Permissions - stored as JSON string array for flexibility
+  permissions String @default("[]") // JSON array of permission names
+
+  // Relations
+  users User[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Account {
-  id                String         @id @default(uuid())
-  provider          String
-  providerAccountId String?
-  accessToken       String?
-  refreshToken      String?
-  expiresAt         Int?
-  user              User           @relation(fields: [userId], references: [userId])
-  userId            String         @unique
-  verified          VerifiedStatus @default(UnVerified)
+  id         String      @id @default(cuid())
+  companyId  String
+  code       String
+  name       String
+  type       AccountType
+  normalSide NormalSide
+  isActive   Boolean     @default(true)
+  parentId   String?
+
+  company  Company   @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+  parent   Account?  @relation("AccountParent", fields: [parentId], references: [id])
+  children Account[] @relation("AccountParent")
+
+  journalLines JournalLine[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([provider, providerAccountId])
-}
-
-model ResetToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  expires   DateTime
-  userId    String
-  user      User     @relation(fields: [userId], references: [userId])
-  createdAt DateTime @default(now())
-}
-
-model Role {
-  roleId      String   @id @default(uuid())
-  name        RoleName
-  description String?
-  users       User[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([name])
+  @@unique([companyId, code])
 }
 
 // --------------------------------------
 // Company & Business
 // --------------------------------------
 
-model CompanyProfile {
+model Company {
   companyId               String    @id @default(uuid())
   companyName             String
   companyAddress          String?
@@ -103,37 +120,85 @@ model CompanyProfile {
   companyWebsite          String?
   companyRegistrationDate DateTime?
   companyBusinessType     String?
-  user                    User?      @relation(fields: [userId], references: [userId])
-  userId                  String?
 
-  customerCompanies CustomerCompany[]
+  customer       Customer[]
+  companyUsers   CompanyUser[]
+  accounts       Account[]
+  journalEntries JournalEntry[]
+  vendors        Vendor[]
+  contactors     Contactor[]
 
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
   isFavorite Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model CustomerCompany {
-  customerCompanyId    String  @id @default(uuid())
-  companyName          String
-  companyTel           String?
-  customerCompanyEmail String?
-  taxId                String?
-  branch               String?
-  companyAddress       String?
-  isFavorite           Boolean @default(false)
+// ======================================================
+// JOURNAL ENTRY
+// ======================================================
 
-  companyProfile CompanyProfile? @relation(fields: [companyId], references: [companyId])
-  companyId      String?
+model JournalEntry {
+  id          String        @id @default(cuid())
+  companyId   String
+  journalNo   String
+  date        DateTime
+  description String?
+  status      JournalStatus @default(DRAFT)
 
-  documentPapers DocumentPaper[]
-  contactors     Contactor[]
+  company Company       @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+  lines   JournalLine[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([companyId, journalNo])
+}
+
+model JournalLine {
+  id          String  @id @default(cuid())
+  journalId   String
+  accountId   String
+  description String?
+  debit       Decimal @default(0) @db.Decimal(18, 2)
+  credit      Decimal @default(0) @db.Decimal(18, 2)
+
+  journal JournalEntry @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  account Account      @relation(fields: [accountId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Customer {
+  id        String  @id @default(cuid())
+  companyId String
+  name      String
+  taxId     String?
+  phone     String?
+  email     String?
+  address   String?
+
+  company        Company         @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+  documentPapers DocumentPaper[]
+
+  createdAt DateTime @default(now())
+}
+
+model Vendor {
+  id        String  @id @default(cuid())
+  companyId String
+  name      String
+  taxId     String?
+  phone     String?
+  email     String?
+  address   String?
+
+  company        Company         @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+  documentPapers DocumentPaper[]
+
+  createdAt DateTime @default(now())
 }
 
 model Contactor {
@@ -143,8 +208,8 @@ model Contactor {
   contactorTel     String?
   contactorAddress String?
 
-  customerCompany   CustomerCompany? @relation(fields: [customerCompanyId], references: [customerCompanyId])
-  customerCompanyId String?
+  company   Company? @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+  companyId String?
 
   documentPapers DocumentPaper[]
 
@@ -153,54 +218,6 @@ model Contactor {
 
   // true = สร้างจากหน้า customer management, false = สร้างจาก quotation
   isStandalone Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// --------------------------------------
-// Products Inventory
-// --------------------------------------
-
-model Category {
-  categoryId   String    @id @default(uuid())
-  categoryName String
-  categoryDesc String?
-  products     Product[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Product {
-  productId          String  @id @default(uuid())
-  productName        String
-  productSKU         String?
-  productDescription String?
-  productImage       String?
-
-  aboutProduct AboutProduct?
-  category     Category?     @relation(fields: [categoryId], references: [categoryId])
-  categoryId   String?
-
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AboutProduct {
-  aboutProductId String @id @default(uuid())
-
-  product   Product @relation(fields: [productId], references: [productId], onDelete: Cascade)
-  productId String  @unique
-
-  productPrice         Float?  @default(0)
-  productDiscountPrice Float?  @default(0)
-  productStock         Int?    @default(0)
-  productBrand         String?
-  unitName             String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -228,8 +245,8 @@ model DocumentPaper {
   documentDetials String? // Keeping typo as requested
 
   // Relations
-  customerCompany   CustomerCompany? @relation(fields: [customerCompanyId], references: [customerCompanyId])
-  customerCompanyId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
 
   contactor   Contactor? @relation(fields: [contactorId], references: [contactorId])
   contactorId String?
@@ -252,6 +269,11 @@ model DocumentPaper {
   // Notes field
   note String?
 
+  // For Payment || RECEIPT
+  paymentDate DateTime
+  method      PaymentMethod
+  referenceNo String?
+
   // Relation to Categories
   categories DocumentCategory[]
 
@@ -260,6 +282,8 @@ model DocumentPaper {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  vendor    Vendor?  @relation(fields: [vendorId], references: [id])
+  vendorId  String?
 }
 
 model DocumentCategory {
@@ -305,6 +329,54 @@ model DocumentItem {
 }
 
 // --------------------------------------
+// Itemss Inventory
+// --------------------------------------
+
+model Category {
+  categoryId   String  @id @default(uuid())
+  categoryName String
+  categoryDesc String?
+  itemss       Items[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Items {
+  itemsId          String  @id @default(uuid())
+  itemsName        String
+  itemsSKU         String?
+  itemsDescription String?
+  itemsImage       String?
+
+  aboutItems AboutItem?
+  category   Category?  @relation(fields: [categoryId], references: [categoryId])
+  categoryId String?
+
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AboutItem {
+  aboutItemsId String @id @default(uuid())
+
+  items   Items  @relation(fields: [itemsId], references: [itemsId], onDelete: Cascade)
+  itemsId String @unique
+
+  itemsPrice         Float?  @default(0)
+  itemsDiscountPrice Float?  @default(0)
+  itemsStock         Int?    @default(0)
+  itemsBrand         String?
+  unitName           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --------------------------------------
 // Units Management
 // --------------------------------------
 
@@ -317,12 +389,45 @@ model Unit {
   updatedAt DateTime @updatedAt
 }
 
+// ======================================================
+// PAYMENT / RECEIPT
+// ======================================================
+
+// model Payment {
+//   id          String        @id @default(cuid())
+//   invoiceId   String?
+//   amount      Decimal       @db.Decimal(18, 2)
+//   paymentDate DateTime
+//   method      PaymentMethod
+//   referenceNo String?
+
+//   companyId String
+//   company   Company @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+
+//   invoice Invoice? @relation(fields: [invoiceId], references: [id])
+
+//   createdAt DateTime @default(now())
+// }
+
 // --------------------------------------
 // Enums
 // --------------------------------------
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
 enum eDocumentType {
-  Quotation
+  Quotation // ใบเสนอราคา
+  Bill // ใบเรียกเก็บเงิน
+  Invoice //ใบเเจ้งหนี
+  RECEIPT //PAYMENT / RECEIPT
 }
 
 enum DocumentStatus {
@@ -337,16 +442,45 @@ enum VerifiedStatus {
   UnVerified
 }
 
-enum UserStatus {
-  Active
-  InActice
+enum RoleName {
+  SUPERADMIN
+  ADMIN
+  ACCOUNTANT
+  STAFF
 }
 
-enum RoleName {
-  Developer
-  Administrator
-  User
-  Customer
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum NormalSide {
+  DEBIT
+  CREDIT
+}
+
+enum JournalStatus {
+  DRAFT
+  POSTED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+  CHEQUE
 }
 
 enum ProviderAccount {
@@ -354,4 +488,3 @@ enum ProviderAccount {
   Facebook
   Email
 }
-

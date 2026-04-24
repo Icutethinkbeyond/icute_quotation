@@ -33,7 +33,7 @@ import { Visibility, Save, FileDownload, Description } from "@mui/icons-material
 import { useRouter } from "next/navigation";
 import PreviewDialog from "../preview/DialogPreview";
 import { useEffect, useState } from "react";
-import { calculateQuotationTotals, formatCurrency } from "@/utils/quotationCalculations";
+import { calculateQuotationTotals, formatCurrency } from "@/services/utils/quotationCalculations";
 
 interface PricingSummaryProps {
   isEdit?: boolean;

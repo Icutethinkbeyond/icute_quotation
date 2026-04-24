@@ -6,7 +6,7 @@ import path from 'path';
 import { exec as execCallback } from 'child_process';
 import { promisify } from 'util';
 import { IQuotation } from '@/contexts/QuotationContext';
-import { calculateQuotationTotals } from '@/utils/quotationCalculations';
+import { calculateQuotationTotals } from '@/services/utils/quotationCalculations';
 
 // แปลง exec ให้รองรับ Promises
 const exec = promisify(execCallback);

@@ -141,14 +141,10 @@ const generateProfessionalBottomSection = (
   doc.text(noteLines, margin + 5, y, { lineHeightFactor: 1.5 });
   const notesHeight = noteLines.length * 6;
 
-  // Right: Financial Summary
+  // Right: Financial Summary - draw border after calculating content height
   const summaryY = y - 10;
-
-  doc.setFillColor("#f8f9fa");
-  doc.roundedRect(rightX, summaryY, rightWidth, 65, 2, 2, "F");
-  doc.setDrawColor("#e0e0e0");
-  doc.setLineWidth(0.2);
-  doc.roundedRect(rightX, summaryY, rightWidth, 65, 2, 2, "S");
+  const summaryStartY = summaryY;
+  const summaryStartX = rightX;
 
   let tableY = summaryY + 8;
 
@@ -193,10 +189,10 @@ const generateProfessionalBottomSection = (
     );
   }
 
-  // Divider
+  // Divider - adjusted to fit content width
   doc.setDrawColor("#d0d0d0");
   doc.setLineWidth(0.3);
-  doc.line(rightX + 8, tableY - 2, rightX + rightWidth - 8, tableY - 2);
+  doc.line(rightX + 10, tableY - 2, rightX + rightWidth - 10, tableY - 2);
   tableY += 4;
 
   // Grand Total
@@ -213,7 +209,64 @@ const generateProfessionalBottomSection = (
     { align: "right" }
   );
 
-  y = Math.max(y + notesHeight + 15, summaryY + 75);
+  const summaryEndY = tableY + 5;
+  const actualSummaryHeight = summaryEndY - summaryStartY;
+
+  // Now draw the border background to fit the actual content
+  doc.setFillColor("#f8f9fa");
+  doc.roundedRect(summaryStartX, summaryStartY, rightWidth, actualSummaryHeight, 2, 2, "F");
+  doc.setDrawColor("#e0e0e0");
+  doc.setLineWidth(0.2);
+  doc.roundedRect(summaryStartX, summaryStartY, rightWidth, actualSummaryHeight, 2, 2, "S");
+
+  // Redraw text on top (since border was drawn after)
+  tableY = summaryStartY + 8;
+  tableY = addSummaryRow(
+    "ยอดรวมสินค้า:",
+    fmt(subtotal) + " บาท",
+    tableY
+  );
+
+  if (data.globalDiscount > 0) {
+    tableY = addSummaryRow(
+      "ส่วนลด:",
+      "-" + fmt(data.globalDiscount) + " บาท",
+      tableY
+    );
+  }
+
+  tableY = addSummaryRow(vatText, fmt(taxAmount) + " บาท", tableY);
+
+  if (data.withholdingTax > 0) {
+    const wtText = `หัก ณ ที่จ่าย (${data.withholdingTax}%):`;
+    tableY = addSummaryRow(
+      wtText,
+      "-" + fmt(withholdingTaxAmount) + " บาท",
+      tableY
+    );
+  }
+
+  // Divider
+  doc.setDrawColor("#d0d0d0");
+  doc.setLineWidth(0.3);
+  doc.line(rightX + 10, tableY - 2, rightX + rightWidth - 10, tableY - 2);
+  tableY += 4;
+
+  // Grand Total (redraw)
+  doc.setFillColor("#1565c0");
+  doc.roundedRect(rightX + 4, tableY - 5, rightWidth - 8, 8, 1, 1, "F");
+
+  doc.setFontSize(11);
+  doc.setTextColor("#ffffff");
+  doc.text("รวมทั้งสิ้น:", rightX + 10, tableY);
+  doc.text(
+    fmt(grandTotal) + " บาท",
+    rightX + rightWidth - 10,
+    tableY,
+    { align: "right" }
+  );
+
+  y = Math.max(y + notesHeight + 15, summaryEndY + 10);
 
   // Signature Section
   if (y + 55 > pageHeight - margin) {
@@ -274,7 +327,7 @@ const generateProfessionalBottomSection = (
     { align: "right" }
   );
 
-  return y + sigBoxHeight;
+  return summaryEndY + sigBoxHeight;
 };
 
 /**

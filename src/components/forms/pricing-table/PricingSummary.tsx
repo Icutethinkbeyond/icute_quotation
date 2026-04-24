@@ -29,11 +29,19 @@ import {
   useQuotationListContext,
 } from "@/contexts/QuotationContext";
 
-import { Visibility, Save, FileDownload, Description } from "@mui/icons-material";
+import {
+  Visibility,
+  Save,
+  FileDownload,
+  Description,
+} from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import PreviewDialog from "../preview/DialogPreview";
 import { useEffect, useState } from "react";
-import { calculateQuotationTotals, formatCurrency } from "@/utils/quotationCalculations";
+import {
+  calculateQuotationTotals,
+  formatCurrency,
+} from "@/utils/quotationCalculations";
 
 interface PricingSummaryProps {
   isEdit?: boolean;
@@ -48,9 +56,12 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
   const router = useRouter();
 
   const [onOpen, setOnOpen] = useState<boolean>(false);
-  const [internalId, setInternalId] = useState<string | undefined>(propQuotationId);
+  const [internalId, setInternalId] = useState<string | undefined>(
+    propQuotationId,
+  );
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState<boolean>(true);
 
   // ดึงข้อมูลและฟังก์ชันที่เกี่ยวกับการคำนวณราคาจาก PricingContext
   const {
@@ -86,7 +97,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
     vatIncluded,
     taxRate,
     0, // ให้ฟังก์ชันคำนวณจาก rate แทน
-    withholdingTaxRate
+    withholdingTaxRate,
   );
 
   // สำหรับความเข้ากันได้กับโค้ดเดิม (backward compatibility)
@@ -97,48 +108,66 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
   const finalTotal = calculations.grandTotal;
 
   /**
-   * เปิดหน้า Preview ใบเสนอราคา
+   * เปิดหน้า Preview ใบเสนอราคา - บันทึกข้อมูลก่อนแสดงผล
    */
-  const handlePreviewInvoice = () => {
+  const handlePreviewInvoice = async () => {
     // ตรวจสอบว่ามีสินค้าอย่างน้อย 1 รายการหรือไม่
-    const hasItems = categories.some(cat => cat.subItems && cat.subItems.length > 0);
+    const hasItems = categories.some(
+      (cat) => cat.subItems && cat.subItems.length > 0,
+    );
     if (!hasItems) {
       alert("กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการก่อนดูตัวอย่าง");
       return;
     }
 
-    const idToUse = internalId || propQuotationId;
-    if (idToUse) {
-      window.open(`/quotation/pdf-preview/${idToUse}`, "_blank");
+    // บันทึกข้อมูลก่อนแสดง preview (ไม่เปลี่ยนสถานะ dla existing documents)
+    const savedDocId = await handleSaveQuotation(undefined, false);
+
+    if (savedDocId) {
+      // เปิด PDF preview ด้วย documentId ที่เพิ่งบันทึก
+      window.open(`/quotation/pdf-preview/${savedDocId}`, "_blank");
     } else {
-      setOnOpen(true);
+      // ถ้าบันทึกล้มเหลว หรือ user ยกเลิก (เช่น edit mode) ให้แสดง dialog preview โดยใช้ internalId
+      const idToUse = internalId || propQuotationId;
+      if (idToUse) {
+        window.open(`/quotation/pdf-preview/${idToUse}`, "_blank");
+      } else {
+        setOnOpen(true);
+      }
     }
   };
 
   /**
    * บันทึกใบเสนอราคา
+   * @param status - "draft" | "approve" | undefined (undefined = keep current status for edits)
+   * @returns documentId if save successful, null otherwise
    */
-  const handleSaveQuotation = async (status: "draft" | "approve" = "approve", isAutoSave = false) => {
+  const handleSaveQuotation = async (
+    status?: "draft" | "approve",
+    isAutoSave = false,
+  ): Promise<string | null> => {
     try {
       // ตรวจสอบว่ามีสินค้าหรือไม่
-      const hasItems = categories.some(cat => cat.subItems && cat.subItems.length > 0);
+      const hasItems = categories.some(
+        (cat) => cat.subItems && cat.subItems.length > 0,
+      );
 
       // สำหรับ Auto Save จะไม่เช็คข้อมูลครบถ้วน และไม่แสดง alert
       if (!isAutoSave) {
         if (!headForm.companyName || !headForm.contactorName) {
           alert("กรุณากรอกข้อมูลบริษัทและผู้ติดต่อให้ครบถ้วน");
-          return;
+          return null;
         }
 
         // ถ้าจะ Approve ต้องมีสินค้า
         if (status === "approve" && !hasItems) {
           alert("ไม่สามารถบันทึกอนุมัติได้เนื่องจากยังไม่มีรายการสินค้า");
-          return;
+          return null;
         }
       } else {
-        // ถ้าเป็น auto save แต่ไม่มีชื่อบริษัทหรือชื่อผู้ติดต่อ ก็ไม่ต้องเซฟ
+        // ถ้าเป็น auto save แต่ไม่มีชื่อบริษัทหรือชื่อผู้ติดต่อ และไม่มีสินค้า ก็ไม่ต้องเซฟ
         if (!headForm.companyName && !headForm.contactorName && !hasItems) {
-          return;
+          return null;
         }
       }
 
@@ -147,7 +176,7 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
       /**
        * เตรียมข้อมูลสำหรับส่งไป Backend
        */
-      const quotationData = {
+      const quotationData: any = {
         // เลขที่ใบเสนอราคา
         quotationNumber: headForm.quotationNumber,
 
@@ -170,12 +199,12 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
         contactorTel: headForm.contactorTel,
         contactorEmail: headForm.contactorEmail,
         contactorAddress: headForm.contactorAddress,
-        
+
         dateCreate: headForm.dateCreate,
         note: headForm.note,
 
-        // สถานะ
-        status: status,
+        // สถานะ - include only if explicitly provided
+        ...(status !== undefined ? { status } : {}),
 
         // ข้อมูลการเงิน
         includeVat: vatIncluded,
@@ -221,16 +250,23 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
       const result = await res.json();
 
       if (result.success) {
+        let savedDocId: string | null = null;
         if (result.documentId) {
           setInternalId(result.documentId);
+          savedDocId = result.documentId;
         } else if (result.document?.documentId) {
           setInternalId(result.document.documentId);
+          savedDocId = result.document.documentId;
         }
 
         setLastSaved(new Date());
 
         if (!isAutoSave) {
-          alert(status === "draft" ? "บันทึกร่างสำเร็จ!" : "บันทึกใบเสนอราคาสำเร็จ!");
+          alert(
+            status === "draft"
+              ? "บันทึกร่างสำเร็จ!"
+              : "บันทึกใบเสนอราคาสำเร็จ!",
+          );
           if (status === "approve") {
             router.push(`/quotation`);
             setCategories([]);
@@ -240,34 +276,72 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
             setHeadForm(headerClean);
           }
         }
+        return savedDocId;
       } else {
         if (!isAutoSave) alert("เกิดข้อผิดพลาด: " + result.error);
+        return null;
       }
     } catch (e) {
       console.error(e);
       if (!isAutoSave) alert("เกิดข้อผิดพลาดในการบันทึก");
+      return null;
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Auto Save Logic
+  // Auto Save Logic with 1-second debounce
   useEffect(() => {
-    if (isEdit) return; // ถ้าเป็นหน้า Edit ไม่ต้อง Auto save ทับของเก่าที่เป็น Approve แล้ว (นอกจาก user จะกดเอง)
-    
+    // if (isEdit || !autoSaveEnabled) return; // ถ้าเป็นหน้า Edit หรือปิด auto-save ไม่ต้อง Auto save
+    if (!autoSaveEnabled) return; // ถ้าเป็นหน้า Edit หรือปิด auto-save ไม่ต้อง Auto save
+
     const timer = setTimeout(() => {
       // Auto save เฉพาะเมื่อมีข้อมูลเบื้องต้น
-      if (headForm.companyName || headForm.contactorName || categories.length > 0) {
+      if (
+        headForm.companyName ||
+        headForm.contactorName ||
+        categories.length > 0
+      ) {
         handleSaveQuotation("draft", true);
       }
-    }, 3000); // Auto save ทุกๆ 3 วินาทีหลังจากมีการเปลี่ยนแปลง
+    }, 1000); // Auto save 1 วินาทีหลังจากหยุดพิมพ์
 
     return () => clearTimeout(timer);
-  }, [headForm, categories, discount, vatIncluded, withholdingTaxRate]);
+  }, [
+    headForm,
+    categories,
+    discount,
+    vatIncluded,
+    withholdingTaxRate,
+    autoSaveEnabled,
+  ]);
 
-  const SummaryItem = ({ label, value, color = "text.primary", fontWeight = 500, secondary = false }: { label: string, value: string | number, color?: string, fontWeight?: number, secondary?: boolean }) => (
-    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-      <Typography variant="body2" color={secondary ? "text.secondary" : "text.primary"} fontWeight={secondary ? 400 : 500}>
+  const SummaryItem = ({
+    label,
+    value,
+    color = "text.primary",
+    fontWeight = 500,
+    secondary = false,
+  }: {
+    label: string;
+    value: string | number;
+    color?: string;
+    fontWeight?: number;
+    secondary?: boolean;
+  }) => (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        mb: 1.5,
+      }}
+    >
+      <Typography
+        variant="body2"
+        color={secondary ? "text.secondary" : "text.primary"}
+        fontWeight={secondary ? 400 : 500}
+      >
         {label}
       </Typography>
       <Typography variant="body1" color={color} fontWeight={fontWeight}>
@@ -291,8 +365,19 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
         }}
       >
         {/* Card Header */}
-        <Box sx={{ p: 3, bgcolor: "grey.50", borderBottom: "1px solid", borderColor: "divider" }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Box
+          sx={{
+            p: 3,
+            bgcolor: "grey.50",
+            borderBottom: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Box>
               <Typography variant="h5" fontWeight={700} color="text.primary">
                 สรุปรายการชำระเงิน
@@ -301,14 +386,56 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
                 ข้อมูลการคำนวณทั้งหมดอ้างอิงตามรายการสินค้า
               </Typography>
             </Box>
-            <Box sx={{ textAlign: "right" }}>
+            <Box
+              sx={{
+                textAlign: "right",
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={autoSaveEnabled}
+                    onChange={(e) => setAutoSaveEnabled(e.target.checked)}
+                    size="small"
+                    sx={{
+                      color: "primary.main",
+                      "&.Mui-checked": { color: "primary.main" },
+                      p: 0.5,
+                    }}
+                  />
+                }
+                label={
+                  <Typography variant="caption" fontWeight={500}>
+                    Auto-save
+                  </Typography>
+                }
+                sx={{ m: 0 }}
+              />
               {isSaving ? (
-                <Typography variant="caption" sx={{ color: "primary.main", fontStyle: "italic", fontWeight: 600 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "primary.main",
+                    fontStyle: "italic",
+                    fontWeight: 600,
+                  }}
+                >
                   กำลังบันทึกร่าง...
                 </Typography>
               ) : lastSaved ? (
-                <Typography variant="caption" sx={{ color: "success.main", fontStyle: "italic" }}>
-                  บันทึกร่างเมื่อ {lastSaved.toLocaleTimeString("th-TH", { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                <Typography
+                  variant="caption"
+                  sx={{ color: "success.main", fontStyle: "italic" }}
+                >
+                  บันทึกร่างเมื่อ{" "}
+                  {lastSaved.toLocaleTimeString("th-TH", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
                 </Typography>
               ) : null}
             </Box>
@@ -317,9 +444,21 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
 
         <Box sx={{ p: 3 }}>
           {/* Main Totals Section */}
-          <SummaryItem label="รวมเป็นเงิน (Subtotal)" value={subtotal} secondary />
-          
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, mt: 1 }}>
+          <SummaryItem
+            label="รวมเป็นเงิน (Subtotal)"
+            value={subtotal}
+            secondary
+          />
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+              mt: 1,
+            }}
+          >
             <Typography variant="body2" color="text.secondary">
               ส่วนลดรวม (Discount)
             </Typography>
@@ -329,29 +468,41 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               onChange={(e) => setDiscount(Number(e.target.value))}
               size="small"
               InputProps={{
-                startAdornment: <InputAdornment position="start">฿</InputAdornment>,
-                sx: { borderRadius: "8px", width: 140, fontWeight: 600 }
+                startAdornment: (
+                  <InputAdornment position="start">฿</InputAdornment>
+                ),
+                sx: { borderRadius: "8px", width: 140, fontWeight: 600 },
               }}
             />
           </Box>
 
-          <SummaryItem 
-            label="ราคาหลังหักส่วนลด" 
-            value={priceAfterDiscount} 
-            color="primary.main" 
-            fontWeight={700} 
+          <SummaryItem
+            label="ราคาหลังหักส่วนลด"
+            value={priceAfterDiscount}
+            color="primary.main"
+            fontWeight={700}
           />
 
           <Divider sx={{ my: 2.5, borderStyle: "dashed" }} />
 
           {/* Taxes Section */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
             <FormControlLabel
               control={
                 <Checkbox
                   checked={vatIncluded}
                   onChange={(e) => setVatIncluded(e.target.checked)}
-                  sx={{ color: "primary.main", "&.Mui-checked": { color: "primary.main" } }}
+                  sx={{
+                    color: "primary.main",
+                    "&.Mui-checked": { color: "primary.main" },
+                  }}
                 />
               }
               label={
@@ -362,11 +513,18 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               sx={{ m: 0 }}
             />
             <Typography variant="body1" fontWeight={600}>
-               {formatCurrency(vat)} บาท
+              {formatCurrency(vat)} บาท
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
             <FormControl size="small" sx={{ width: 160 }}>
               <InputLabel id="withholding-tax-label">หัก ณ ที่จ่าย</InputLabel>
               <Select
@@ -378,7 +536,9 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               >
                 <MenuItem value={0}>ไม่หัก (0%)</MenuItem>
                 {[1, 2, 3, 5, 10].map((rate) => (
-                  <MenuItem key={rate} value={rate}>หัก {rate}%</MenuItem>
+                  <MenuItem key={rate} value={rate}>
+                    หัก {rate}%
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -397,10 +557,14 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               bgcolor: "primary.main",
               color: "white",
               mb: 3,
-              boxShadow: "0 8px 16px -4px rgba(theme.palette.primary.main, 0.3)",
+              boxShadow:
+                "0 8px 16px -4px rgba(theme.palette.primary.main, 0.3)",
             }}
           >
-            <Typography variant="subtitle2" sx={{ opacity: 0.9, fontWeight: 600, mb: 0.5 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ opacity: 0.9, fontWeight: 600, mb: 0.5 }}
+            >
               ยอดชำระสุทธิ (Grand Total)
             </Typography>
             <Typography variant="h3" fontWeight={800}>
@@ -410,9 +574,18 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
 
           {/* Notes Section */}
           <Box sx={{ mb: 4 }}>
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ mb: 1 }}
+            >
               <Description fontSize="small" color="action" />
-              <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
+              <Typography
+                variant="subtitle2"
+                fontWeight={700}
+                color="text.secondary"
+              >
                 หมายเหตุท้ายเอกสาร
               </Typography>
             </Stack>
@@ -422,20 +595,22 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               minRows={3}
               placeholder="ข้อความที่จะแสดงในใบเสนอราคา..."
               value={headForm.note || ""}
-              onChange={(e) => setHeadForm({ ...headForm, note: e.target.value })}
+              onChange={(e) =>
+                setHeadForm({ ...headForm, note: e.target.value })
+              }
               variant="outlined"
               size="small"
-              sx={{ 
-                "& .MuiOutlinedInput-root": { 
+              sx={{
+                "& .MuiOutlinedInput-root": {
                   borderRadius: "10px",
                   bgcolor: "grey.50",
-                  fontSize: "0.875rem"
-                } 
+                  fontSize: "0.875rem",
+                },
               }}
             />
           </Box>
 
-          {/* Action Buttons */}
+           {/* Action Buttons */}
           <Stack spacing={2}>
             <Button
               variant="contained"
@@ -445,31 +620,55 @@ const PricingSummary: React.FC<PricingSummaryProps> = ({
               onClick={() => handleSaveQuotation("approve")}
               disabled={isSaving}
               fullWidth
-              sx={{ 
-                py: 1.5, 
-                borderRadius: "10px", 
-                textTransform: "none", 
+              sx={{
+                py: 1.5,
+                borderRadius: "10px",
+                textTransform: "none",
                 fontWeight: 700,
                 fontSize: "1.1rem",
-                boxShadow: theme.shadows[4]
+                boxShadow: theme.shadows[4],
               }}
             >
-              {isEdit ? "อัพเดทใบเสนอราคา" : "บันทึกและอนุมัติ"}
+              {isEdit ? "อัพเดทใบเสนอราคา" : autoSaveEnabled ? "อนุมัติและออกใบเสนอราคา" : "บันทึกและอนุมัติ"}
             </Button>
-            
+
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<Save />}
+              onClick={() => handleSaveQuotation("draft", false)}
+              disabled={isSaving}
+              fullWidth
+              sx={{
+                py: 1.2,
+                borderRadius: "10px",
+                textTransform: "none",
+                fontWeight: 600,
+                borderWidth: "2px",
+                "&:hover": { borderWidth: "2px" },
+              }}
+            >
+              {autoSaveEnabled
+                ? isSaving
+                  ? "กำลังบันทึก"
+                  : "บันทึกดราฟท์เท่านั้น"
+                : "บันทึกร่าง"}
+            </Button>
+
             <Button
               variant="outlined"
               size="large"
               startIcon={<Visibility />}
               onClick={handlePreviewInvoice}
+              disabled={isSaving}
               fullWidth
-              sx={{ 
-                py: 1.2, 
-                borderRadius: "10px", 
-                textTransform: "none", 
+              sx={{
+                py: 1.2,
+                borderRadius: "10px",
+                textTransform: "none",
                 fontWeight: 600,
                 borderWidth: "2px",
-                "&:hover": { borderWidth: "2px" }
+                "&:hover": { borderWidth: "2px" },
               }}
             >
               ดูตัวอย่างเอกสาร

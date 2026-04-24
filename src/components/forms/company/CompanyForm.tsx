@@ -9,6 +9,10 @@ import {
     Button,
     Box,
     CircularProgress,
+    IconButton,
+    Typography,
+    Avatar,
+    FormHelperText,
 } from "@mui/material";
 import PageContainer from "@/components/shared/PageContainer";
 import PageHeader from "@/components/shared/PageHeader";
@@ -32,12 +36,16 @@ interface CompanyFormData {
     companyWebsite: string;
     companyBusinessType: string;
     companyRegistrationDate: string;
+    companyImage: string;
+    companyImagePublicId: string;
 }
 
 export default function CompanyForm({ title = "ข้อมูลบริษัท", onSuccess, companyId }: CompanyFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [data, setData] = useState<CompanyProfile | null>(null);
     const [formData, setFormData] = useState<CompanyFormData>({
         companyName: "",
         companyTaxId: "",
@@ -48,7 +56,10 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
         companyWebsite: "",
         companyBusinessType: "",
         companyRegistrationDate: "",
+        companyImage: "",
+        companyImagePublicId: "",
     });
+    const [imageError, setImageError] = useState<string>("");
 
     useEffect(() => {
         if (companyId) {
@@ -65,6 +76,7 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
             if (res.ok) {
                 const data: CompanyProfile = await res.json();
                 if (data) {
+                    setData(data);
                     setFormData({
                         companyName: data.companyName || "",
                         companyTaxId: data.companyTaxId || "",
@@ -77,6 +89,8 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
                         companyRegistrationDate: data.companyRegistrationDate
                             ? new Date(data.companyRegistrationDate).toISOString().split('T')[0]
                             : "",
+                        companyImage: data.companyImage || "",
+                        companyImagePublicId: data.companyImagePublicId || "",
                     });
                 }
             }
@@ -96,18 +110,83 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
         }));
     };
 
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImageError("");
+        setUploading(true);
+
+        try {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                setImageError("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setImageError("ขนาดไฟล์ไม่ควรเกิน 5MB");
+                return;
+            }
+
+            // Upload to server
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+            uploadFormData.append('publicId', formData.companyImagePublicId || '');
+            if (companyId) {
+                uploadFormData.append('companyId', companyId);
+            }
+
+            const res = await fetch('/api/companies/upload-image', {
+                method: 'POST',
+                body: uploadFormData,
+            });
+
+            if (!res.ok) {
+                throw new Error('Upload failed');
+            }
+
+            const result = await res.json();
+
+            setFormData((prev) => ({
+                ...prev,
+                companyImage: result.url,
+                companyImagePublicId: result.publicId,
+            }));
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            setImageError("ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่อีกครั้ง");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setFormData((prev) => ({
+            ...prev,
+            companyImage: "",
+            companyImagePublicId: "",
+        }));
+    };
+
     const handleSave = async () => {
         try {
             setSaving(true);
             const method = companyId ? "PUT" : "POST";
             const endpoint = companyId ? `/api/companies/${companyId}` : "/api/companies";
 
+            const payload = {
+                ...formData,
+                companyRegistrationDate: formData.companyRegistrationDate || null,
+            };
+
             const res = await fetch(endpoint, {
                 method: method,
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
 
             if (res.ok) {
@@ -246,6 +325,77 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
                                         variant="outlined"
                                         size="small"
                                     />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <input
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        id="company-image-upload"
+                                        type="file"
+                                        onChange={handleImageChange}
+                                    />
+                                    <label htmlFor="company-image-upload">
+                                        <Button
+                                            variant="outlined"
+                                            component="span"
+                                            startIcon={uploading ? <CircularProgress size={20} /> : null}
+                                            disabled={loading || saving || uploading}
+                                            sx={{
+                                                mb: 2,
+                                                borderStyle: 'dashed',
+                                                borderColor: 'primary.main',
+                                                color: 'primary.main',
+                                                '&:hover': {
+                                                    borderColor: 'primary.dark',
+                                                    backgroundColor: 'rgba(3, 194, 215, 0.04)'
+                                                }
+                                            }}
+                                        >
+                                            {uploading ? 'กำลังอัปโหลด...' : 'เลือกรูปภาพบริษัท'}
+                                        </Button>
+                                    </label>
+                                    {imageError && (
+                                        <FormHelperText error>{imageError}</FormHelperText>
+                                    )}
+                                    {(formData.companyImage || (companyId && data?.companyImage)) && (
+                                        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Box
+                                                component="img"
+                                                src={formData.companyImage || (data && data.companyImage) || undefined}
+                                                alt="Company Logo"
+                                                sx={{
+                                                    maxWidth: 200,
+                                                    maxHeight: 120,
+                                                    width: 'auto',
+                                                    height: 'auto',
+                                                    objectFit: 'contain',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid',
+                                                    borderColor: 'divider',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                }}
+                                            />
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    รูปภาพปัจจุบัน
+                                                </Typography>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleRemoveImage}
+                                                    disabled={saving || uploading}
+                                                    sx={{
+                                                        backgroundColor: 'error.light',
+                                                        color: 'white',
+                                                        '&:hover': {
+                                                            backgroundColor: 'error.main'
+                                                        }
+                                                    }}
+                                                >
+                                                    <span>ลบ</span>
+                                                </IconButton>
+                                            </Box>
+                                        </Box>
+                                    )}
                                 </Grid>
                             </Grid>
                         </FormSection>

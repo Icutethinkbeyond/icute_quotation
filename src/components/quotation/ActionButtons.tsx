@@ -7,6 +7,7 @@ import {
     Delete,
     Restore,
     DeleteForever,
+    FileCopy,
 } from "@mui/icons-material";
 
 interface QuotationActionButtonsProps {
@@ -15,6 +16,7 @@ interface QuotationActionButtonsProps {
     onPreview: (id: string) => void;
     onDownloadPDF: (id: string) => void;
     onDelete: (id: string) => void;
+    onDuplicate?: (id: string) => void;
     isDownloading?: boolean;
 }
 
@@ -24,10 +26,30 @@ export const QuotationActionButtons: React.FC<QuotationActionButtonsProps> = ({
     onPreview,
     onDownloadPDF,
     onDelete,
+    onDuplicate,
     isDownloading = false,
 }) => {
+    const handleDuplicate = async () => {
+        if (!onDuplicate) return;
+        try {
+            await onDuplicate(documentId);
+        } catch (error) {
+            console.error("Error duplicating quotation:", error);
+        }
+    };
+
     return (
         <>
+            <Tooltip title="คัดลอก">
+                <IconButton
+                    size="small"
+                    color="success"
+                    onClick={handleDuplicate}
+                >
+                    <FileCopy />
+                </IconButton>
+            </Tooltip>
+
             <Tooltip title="แก้ไข">
                 <IconButton
                     size="small"

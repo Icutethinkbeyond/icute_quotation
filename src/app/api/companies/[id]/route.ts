@@ -82,6 +82,8 @@ export async function PUT(
             companyBusinessType,
             companyRegistrationDate,
             isFavorite,
+            companyImage,
+            companyImagePublicId,
         } = body;
 
         // ถ้ามีการตั้งเป็น Favorite ให้ไปปลด Favorite ตัวอื่นๆ ก่อน
@@ -109,6 +111,8 @@ export async function PUT(
                 ...(companyBusinessType !== undefined && { companyBusinessType }),
                 ...(companyRegistrationDate !== undefined && { companyRegistrationDate: companyRegistrationDate ? new Date(companyRegistrationDate) : null }),
                 ...(isFavorite !== undefined && { isFavorite }),
+                ...(companyImage !== undefined && { companyImage }),
+                ...(companyImagePublicId !== undefined && { companyImagePublicId }),
             },
         });
 

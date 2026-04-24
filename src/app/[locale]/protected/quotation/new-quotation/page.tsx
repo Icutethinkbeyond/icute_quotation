@@ -54,7 +54,7 @@ function CustomTabPanel(props: TabPanelProps) {
 const NewQuotation = () => {
   const { setCategories, setDiscount, setVatIncluded, setWithholdingTaxRate } =
     usePricingContext();
-  const { setHeadForm } = useQuotationListContext();
+  const { setHeadForm, loadHeadForm } = useQuotationListContext();
   const { setBreadcrumbs } = useBreadcrumbContext();
 
   const [value, setValue] = useState(0); // 0 for Contactor, 1 for Company
@@ -181,48 +181,6 @@ const NewQuotation = () => {
               <PricingSummary />
             </Paper>
 
-            {/* Action Buttons */}
-            <Paper elevation={3} sx={{ p: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                จัดการเอกสาร
-              </Typography>
-              <Divider />
-              <Stack spacing={1} sx={{ mt: 2 }}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<Save />}
-                  onClick={handleSave}
-                  disabled={!isDirty}
-                >
-                  บันทึก
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<Undo />}
-                  onClick={handleUndo}
-                >
-                  ยกเลิก
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<Redo />}
-                  onClick={handleRedo}
-                >
-                  ทำซ้ำ
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<Print />}
-                  onClick={handlePrint}
-                >
-                  พิมพ์
-                </Button>
-              </Stack>
-            </Paper>
           </Box>
         </Grid2>
       </Grid2>

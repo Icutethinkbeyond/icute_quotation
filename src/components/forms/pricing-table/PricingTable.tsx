@@ -337,44 +337,44 @@ const PricingTable: React.FC = () => {
                       </TableRow>
                       <TableRow sx={{ "& td": { borderBottom: "1px solid", borderColor: "grey.100", pt: 0.5, pb: 2 } }}>
                         <TableCell />
-                        <TableCell colSpan={1}>
-                          <TextField
-                            fullWidth
-                            multiline
-                            placeholder="รายละเอียดเพิ่มเติม (ระบุหรือไม่ก็ได้)"
-                            value={item.description}
-                            onChange={(e) => updateSubItem(category.id, item.id, { description: e.target.value })}
-                            variant="outlined"
-                            size="small"
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "8px",
-                                fontSize: "0.8125rem",
-                                bgcolor: "grey.50",
-                                "& fieldset": { borderColor: "transparent" },
-                                "&:hover fieldset": { borderColor: "grey.300" },
-                                "&.Mui-focused fieldset": { borderColor: "primary.main", bgcolor: "white" },
-                              }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell colSpan={4}>
-                          <TextField
-                            fullWidth
-                            placeholder="หมายเหตุ (ภายใน)"
-                            value={item.remark}
-                            onChange={(e) => updateSubItem(category.id, item.id, { remark: e.target.value })}
-                            variant="outlined"
-                            size="small"
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "8px",
-                                fontSize: "0.8125rem",
-                                bgcolor: "grey.50",
-                                "& fieldset": { borderColor: "transparent" },
-                              }
-                            }}
-                          />
+                        <TableCell colSpan={5}>
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                            <TextField
+                              fullWidth
+                              multiline
+                              placeholder="รายละเอียดเพิ่มเติม (ระบุหรือไม่ก็ได้)"
+                              value={item.description}
+                              onChange={(e) => updateSubItem(category.id, item.id, { description: e.target.value })}
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                "& .MuiOutlinedInput-root": {
+                                  borderRadius: "8px",
+                                  fontSize: "0.8125rem",
+                                  bgcolor: "grey.50",
+                                  "& fieldset": { borderColor: "transparent" },
+                                  // "&:hover fieldset": { borderColor: "grey.300" },
+                                  // "&.Mui-focused fieldset": { borderColor: "primary.main", bgcolor: "white" },
+                                }
+                              }}
+                            />
+                            <TextField
+                              fullWidth
+                              placeholder="หมายเหตุ (ภายใน)"
+                              value={item.remark}
+                              onChange={(e) => updateSubItem(category.id, item.id, { remark: e.target.value })}
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                "& .MuiOutlinedInput-root": {
+                                  borderRadius: "8px",
+                                  fontSize: "0.8125rem",
+                                  bgcolor: "grey.50",
+                                  "& fieldset": { borderColor: "transparent" },
+                                }
+                              }}
+                            />
+                          </Box>
                         </TableCell>
                         <TableCell />
                       </TableRow>

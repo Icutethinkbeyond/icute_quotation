@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { CompanyProfile } from "@/interfaces/Company";
 import GenericInfoView, { FieldConfig, ViewStatus } from "@/components/shared/GenericInfoView";
+import { Avatar, Box, Typography } from "@mui/material";
 
 interface CompanyViewProps {
     companyId: string;
@@ -51,15 +52,37 @@ export default function CompanyView({ companyId }: CompanyViewProps) {
     ];
 
     return (
-        <GenericInfoView
-            title="รายละเอียดบริษัท"
-            backPath="/company"
-            data={data}
-            fields={fields}
-            status={status}
-            notFoundMessage="ไม่พบข้อมูลบริษัท"
-            errorMessage="เกิดข้อผิดพลาดในการโหลดข้อมูล"
-        />
+        <>
+            {data?.companyImage && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                    <Box
+                        component="img"
+                        src={data.companyImage}
+                        alt="Company Logo"
+                        sx={{
+                            maxWidth: '100%',
+                            maxHeight: 200,
+                            width: 'auto',
+                            height: 'auto',
+                            objectFit: 'contain',
+                            borderRadius: '8px',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        }}
+                    />
+                </Box>
+            )}
+            <GenericInfoView
+                title="รายละเอียดบริษัท"
+                backPath="/company"
+                data={data}
+                fields={fields}
+                status={status}
+                notFoundMessage="ไม่พบข้อมูลบริษัท"
+                errorMessage="เกิดข้อผิดพลาดในการโหลดข้อมูล"
+            />
+        </>
     );
 }
 

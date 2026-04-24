@@ -120,6 +120,8 @@ model Company {
   companyWebsite          String?
   companyRegistrationDate DateTime?
   companyBusinessType     String?
+  companyImage            String?
+  companyImagePublicId    String?
 
   customer       Customer[]
   companyUsers   CompanyUser[]

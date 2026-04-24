@@ -36,8 +36,30 @@ jobs:
             echo "❌ Missing PERSONAL_TOKEN in Secrets"
             exit 1
           fi
+          if [ -z "${{ secrets.TELEGRAM_TO }}" ] && [ "$SECRET" == "TELEGRAM_TO" ]; then
+            echo "❌ Missing TELEGRAM_TO in Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.TELEGRAM_TOKEN }}" ] && [ "$SECRET" == "TELEGRAM_TOKEN" ]; then
+            echo "❌ Missing TELEGRAM_TOKEN in Secrets"
+            exit 1
+          fi
         done
         echo "✅ All required Secrets are present."
+
+    - name: Notify Telegram - Start
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        format: markdown
+        message: |
+          🚀 *Deployment Started*
+          *Project:* icute-booking-management
+          *Branch:* `${{ github.ref_name }}`
+          *Commit:* `${{ github.sha }}`
+          *Message:* `${{ github.event.head_commit.message }}`
+          *Author:* ${{ github.actor }}
 
     # ขั้นตอนที่ 2: Checkout โค้ดจาก GitHub
     - name: Checkout Code
@@ -204,3 +226,32 @@ jobs:
 
           echo "✅ Deployment completed and cleaned up."
         EOF
+
+    - name: Notify Telegram - Success
+      if: success()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        format: markdown
+        message: |
+          ✅ *Deployment Succeeded*
+          *Project:* icute-booking-management
+          *Branch:* `${{ github.ref_name }}`
+          *Commit:* `${{ github.sha }}`
+          *Message:* `${{ github.event.head_commit.message }}`
+
+    - name: Notify Telegram - Failure
+      if: failure()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        format: markdown
+        message: |
+          ❌ *Deployment Failed*
+          *Project:* icute-booking-management
+          *Branch:* `${{ github.ref_name }}`
+          *Commit:* `${{ github.sha }}`
+          *Message:* `${{ github.event.head_commit.message }}`
+          [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})

@@ -361,7 +361,7 @@ export default function DirectPDFPreviewPage({
       doc.setFontSize(22);
       doc.setFont("Sarabun-Regular", "normal");
       doc.setTextColor("#1976d2");
-      doc.text(data.companyName, margin + 4, brandingY + 8);
+      // doc.text(data.companyName, margin + 4, brandingY + 8);
 
       // Graphic Accent: Rounded Box for Quotation Info
       const infoBoxWidth = 75;

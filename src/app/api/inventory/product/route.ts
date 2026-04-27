@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../../lib/prisma';
 
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const showDeleted = searchParams.get('trash') === 'true';
 
-        const products = await prisma.product.findMany({
+        const products = await prisma.items.findMany({
             where: {
                 // กรองตาม isDeleted - รองรับข้อมูลเก่าที่ isDeleted เป็น null/undefined
                 ...(showDeleted
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
             },
             include: {
                 category: true,
-                aboutProduct: true,
+                aboutItems: true,
             },
             orderBy: {
                 createdAt: 'desc'
@@ -60,25 +60,25 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const product = await prisma.product.create({
+        const product = await prisma.items.create({
             data: {
-                productName: data.productName,
-                productSKU: sku,
-                productDescription: data.productDescription || "",
+                itemsName: data.itemsName,
+                itemsSKU: sku,
+                itemsDescription: data.itemsDescription || "",
                 categoryId: null,
-                productImage: null,
-                aboutProduct: {
+                itemsImage: null,
+                aboutItems: {
                     create: {
-                        productPrice: data.price || 0,
-                        productStock: 0, // ไม่ใช้ stock แต่ตั้งค่าเป็น 0
+                        itemsPrice: data.price || 0,
+                        itemsStock: 0, // ไม่ใช้ stock แต่ตั้งค่าเป็น 0
                         unitName: data.unit || "ชิ้น",
-                        productBrand: null,
+                        itemsBrand: null,
                     }
                 }
             },
             include: {
                 category: true,
-                aboutProduct: true,
+                aboutItems: true,
             }
         });
 

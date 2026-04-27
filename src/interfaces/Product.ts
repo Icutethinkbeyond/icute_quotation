@@ -1,31 +1,30 @@
-
 export interface Category {
   categoryId: string;
   categoryName: string;
   categoryDesc?: string | null;
-  products?: Product[];
+  itemss?: Items[];
   _count?: {
-    products?: number
+    itemss?: number
   }
 }
 
-export interface AboutProduct {
-  aboutProductId: string;
-  productId: string;
-  productPrice: number;
-  productDiscountPrice: number | null;
-  productStock: number;
-  productBrand: string | null;
+export interface AboutItem {
+  aboutItemsId: string;
+  itemsId: string;
+  itemsPrice: number;
+  itemsDiscountPrice: number | null;
+  itemsStock: number;
+  itemsBrand: string | null;
   unitName: string | null;
 }
 
-export interface Product {
-  productId: string;
-  productName: string;
-  productSKU: string | null;
-  productDescription: string | null;
-  productImage: string | null;
-  aboutProduct?: AboutProduct | null;
+export interface Items {
+  itemsId: string;
+  itemsName: string;
+  itemsSKU: string | null;
+  itemsDescription: string | null;
+  itemsImage: string | null;
+  aboutItems?: AboutItem | null;
   category?: Category | null;
   categoryId: string | null;
   createdAt?: string | Date;
@@ -36,27 +35,27 @@ export const initialCategory: Category = {
   categoryId: '',
   categoryName: '',
   categoryDesc: '',
-  products: [],
+  itemss: [],
 };
 
 
-export const initialAboutProduct: AboutProduct = {
-  aboutProductId: "",
-  productId: "",
-  productPrice: 0,
-  productDiscountPrice: 0,
-  productStock: 0,
-  productBrand: "",
+export const initialAboutItem: AboutItem = {
+  aboutItemsId: "",
+  itemsId: "",
+  itemsPrice: 0,
+  itemsDiscountPrice: 0,
+  itemsStock: 0,
+  itemsBrand: "",
   unitName: '',
 }
 
-export const initialProduct: Product = {
-  productId: "",
-  productName: "",
-  productSKU: "",
-  productDescription: "",
-  productImage: "",
-  aboutProduct: initialAboutProduct,
+export const initialItems: Items = {
+  itemsId: "",
+  itemsName: "",
+  itemsSKU: "",
+  itemsDescription: "",
+  itemsImage: "",
+  aboutItems: initialAboutItem,
   category: initialCategory,
   categoryId: "",
 }
@@ -66,7 +65,7 @@ export type CategorySelect = {
   categoryId: string; // ID ของหมวดหมู่
   categoryName: string; // ชื่อของหมวดหมู่
 };
-export type ProductSelect = {
-  productId: string; // ID ของสินค้า
-  productName: string; // ชื่อของสินค้า
+export type ItemsSelect = {
+  itemsId: string; // ID ของสินค้า
+  itemsName: string; // ชื่อของสินค้า
 };

@@ -11,6 +11,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { SessionProvider } from "next-auth/react";
 import EmailVerificationGuard from "@/components/forms/auth/EmailVerificationGuard";
 import StoreSetupGuard from "@/components/forms/auth/StoreSetupGuard";
+import AlertDialog from "@/components/shared/AlertDialog";
 
 const MainWrapper = styled("div")(() => ({
   display: "flex",
@@ -18,18 +19,18 @@ const MainWrapper = styled("div")(() => ({
   width: "100%",
 }));
 
-const PageWrapper = styled("div")(() => ({
+const PageWrapper = styled("div", {
+  shouldForwardProp: (prop) => prop !== "sidebarCollapsed",
+})<{ sidebarCollapsed?: boolean }>(({ sidebarCollapsed = true }) => ({
   display: "flex",
   flexGrow: 1,
   paddingBottom: "60px",
   flexDirection: "column",
   zIndex: 1,
   backgroundColor: "transparent",
+  marginLeft: sidebarCollapsed ? "80px" : "270px",
+  transition: "margin-left 0.3s ease-in-out",
 }));
-
-interface Props {
-  children: React.ReactNode;
-}
 
 export default function RootLayout({
   children,
@@ -38,37 +39,43 @@ export default function RootLayout({
 }) {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
 
   return (
-    <EmailVerificationGuard>
-      <StoreSetupGuard>
+    <>
+      <EmailVerificationGuard>
+        {/* <StoreSetupGuard> */}
         <MainWrapper className="mainwrapper">
           <Sidebar
             isSidebarOpen={isSidebarOpen}
             isMobileSidebarOpen={isMobileSidebarOpen}
             onSidebarClose={() => setMobileSidebarOpen(false)}
+            onToggleSidebar={handleToggleSidebar}
           />
           <PageWrapper
+            sidebarCollapsed={sidebarCollapsed}
             className="page-wrapper"
-            sx={
-              {
-                // background: "linear-gradient(90deg, rgba(42, 72, 160, 1) 0%, rgba(69, 189, 187, 1) 100%)"
-              }
-            }
           >
             <Header toggleMobileSidebar={() => setMobileSidebarOpen(true)} />
             <Container
               sx={{
                 paddingTop: "20px",
                 maxWidth: "1200px",
+                transition: "max-width 0.3s ease-in-out",
               }}
             >
-              <Box sx={{ minHeight: "calc(100vh - 170px)" }}>{children}</Box>
+              <AlertDialog />
+              <Box sx={{ minHeight: "calc(100vh - 170px)", transition: "all 0.3s ease-in-out" }}>{children}</Box>
               {/* <Footer /> */}
             </Container>
           </PageWrapper>
         </MainWrapper>
-      </StoreSetupGuard>
-    </EmailVerificationGuard>
+        {/* </StoreSetupGuard> */}
+      </EmailVerificationGuard>
+    </>
   );
 }

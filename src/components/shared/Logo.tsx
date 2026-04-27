@@ -14,14 +14,16 @@ const LinkStyled = styled(Link)(() => ({
   textDecoration: "none",
 }));
 
-const Logo = () => {
+const Logo = ({ collapsed }: { collapsed?: boolean }) => {
   return (
-    <LinkStyled href={`/quotation`}>
+    <LinkStyled href={`/protected/dashboard`}>
       <Stack direction="row" alignItems="center" spacing={1}>
         <Image src="/images/logos/logo-dark.svg" alt="logo" height={40} width={40} priority />
-        <Typography variant="h3" color="primary.main" fontWeight="700" sx={{ letterSpacing: "-1px" }}>
-          EzyAccount
-        </Typography>
+        {!collapsed && (
+          <Typography variant="h3" color="primary.main" fontWeight="700" sx={{ letterSpacing: "-1px" }}>
+            EzyAccount
+          </Typography>
+        )}
       </Stack>
     </LinkStyled>
   );

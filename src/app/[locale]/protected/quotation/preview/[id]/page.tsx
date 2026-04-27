@@ -166,15 +166,15 @@ export default function QuotationPreviewPage({
           branch: quotation.companyBranch || "",
 
           // Customer
-          customerType: quotation.customerCompany?.taxId
+          customerType: quotation.customer?.taxId
             ? "Corporate"
             : "Individual",
-          customerCompanyName: quotation.customerCompany?.companyName || "",
-          customerCompanyTel: quotation.customerCompany?.companyTel || "",
+          customerCompanyName: quotation.customer?.name || "",
+          customerCompanyTel: quotation.customer?.phone || "",
           customerCompanyAddress:
-            quotation.customerCompany?.companyAddress || "",
-          customerTaxId: quotation.customerCompany?.taxId || "",
-          customerBranch: quotation.customerCompany?.branch || "",
+            quotation.customer?.address || "",
+          customerTaxId: quotation.customer?.taxId || "",
+          customerBranch: "", // Customer model doesn't have branch
 
           // Contactor
           contactorName: quotation.contactor?.contactorName || "",

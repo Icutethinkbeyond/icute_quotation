@@ -5,18 +5,17 @@ export interface User {
   userId: string;
   email: string;
   password?: string;
-  repassword?: string;
-  name: string;
-  department: string;
-  position: string;
-  image?: string;
-  manDay?: number;
-  phone?: string;
-  role: Role;
-  roleId: string;
-  roleName?: string;
+  name?: string;
+
+  provider?: string;
+  providerId?: string;
+
+  imageId?: string;
+  imageUrl?: string;
+  role?: Role;
+  roleId?: string;
   userStatus: UserStatus;
-  address?: string;
+  isEmailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,54 +25,29 @@ export interface Role {
   roleId: string;
   name: RoleName;
   description?: string;
-  userIds: string[];
+  permissions: string; // JSON string array
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface Login {
-  email: string | null;
-  password: string | null;
+  email: string;
+  password: string;
 }
 
-export interface EngineerSelect {
-  name: string;
-  userId: string;
+export interface ResetPassword {
+  token?: string;
+  newPassword?: string;
+  confirmPassword?: string;
 }
 
-
-// ค่าเริ่มต้นสำหรับ Role
-export const initialRole: Role = {
-  roleId: "",
-  name: RoleName.User,
-  description: undefined,
-  userIds: [],
-  createdAt: new Date(),
-  updatedAt: new Date(),
+export const initialResetPassword: ResetPassword = {
+  token: "",
+  newPassword: "",
+  confirmPassword: "",
 };
 
 export const initialLogin: Login = {
   email: "",
   password: ""
-};
-
-// ค่าเริ่มต้นสำหรับ User
-export const initialUser: User = {
-  userId: "",
-  email: "",
-  password: "",
-  repassword: "",
-  name: "",
-  department: "",
-  position: "",
-  image: "",
-  phone: "",
-  manDay: 0,
-  role: initialRole,
-  roleId: "",
-  roleName: "",
-  userStatus: UserStatus.Active,
-  address: "",
-  createdAt: new Date(),
-  updatedAt: new Date(),
 };

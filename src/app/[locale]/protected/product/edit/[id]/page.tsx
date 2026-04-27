@@ -10,8 +10,8 @@ const EditProductPage = ({ params }: { params: { id: string } }) => {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
-        productName: "",
-        productDescription: "",
+        itemsName: "",
+        itemsDescription: "",
         price: 0,
         unit: "ชิ้น",
     });
@@ -27,10 +27,10 @@ const EditProductPage = ({ params }: { params: { id: string } }) => {
             const product = await response.json();
 
             setFormData({
-                productName: product.productName || "",
-                productDescription: product.productDescription || "",
-                price: product.aboutProduct?.productPrice || 0,
-                unit: product.aboutProduct?.unitName || "ชิ้น",
+                itemsName: product.itemsName || "",
+                itemsDescription: product.itemsDescription || "",
+                price: product.aboutItems?.itemsPrice || 0,
+                unit: product.aboutItems?.unitName || "ชิ้น",
             });
         } catch (error) {
             console.error("Error fetching product:", error);
@@ -90,8 +90,8 @@ const EditProductPage = ({ params }: { params: { id: string } }) => {
                                 fullWidth
                                 required
                                 label="ชื่อสินค้า"
-                                name="productName"
-                                value={formData.productName}
+                                name="itemsName"
+                                value={formData.itemsName}
                                 onChange={handleChange}
                             />
                         </Grid2>
@@ -102,8 +102,8 @@ const EditProductPage = ({ params }: { params: { id: string } }) => {
                                 multiline
                                 rows={3}
                                 label="รายละเอียดสินค้า"
-                                name="productDescription"
-                                value={formData.productDescription}
+                                name="itemsDescription"
+                                value={formData.itemsDescription}
                                 onChange={handleChange}
                             />
                         </Grid2>

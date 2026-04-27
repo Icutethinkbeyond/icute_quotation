@@ -6,39 +6,28 @@ import {
   Button,
   InputAdornment,
   IconButton,
-  CircularProgress,
-  FormControlLabel,
-  Checkbox,
   Typography,
   Grid2,
   Avatar,
   Box,
   Card,
   Divider,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { Field, FieldProps, Form, Formik, FormikHelpers } from "formik";
+import { Field, Form, Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { useNotifyContext } from "@/contexts/NotifyContext";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { StoreRegister } from "@/interfaces/Store";
-import { useStoreContext } from "@/contexts/StoreContext";
-import { KeyRound, StoreIcon, UserPlus, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { authService } from "@/services/ApiServices/AuthAPI";
+import { KeyRound, StoreIcon, UserPlus, ArrowRight, User } from "lucide-react";
+import { authService, RegisterData } from "@/services/api-services/AuthAPI";
 import { LoadingButton } from "@mui/lab";
 
 const validationSchema = Yup.object().shape({
-  storeName: Yup.string().required("กรุณากรอกชื่อร้านค้า"),
-  storeUsername: Yup.string()
-    .required("กรุณากรอก ID ร้านค้า")
-    .matches(/^[a-zA-Z0-9-]+$/, "ID ร้านค้าต้องเป็นภาษาอังกฤษ ตัวเลข หรือขีดกลางเท่านั้น")
-    .min(3, "ID ร้านค้าต้องมีอย่างน้อย 3 ตัวอักษร")
-    .test('check-username', 'ชื่อผู้ใช้งานนี้ถูกใช้ไปแล้ว', async (value) => {
-      if (!value || value.length < 3) return true;
-      const res = await authService.checkStoreUsername(value);
-      return res.available;
-    }),
+  name: Yup.string().required("กรุณากรอกชื่อ-นามสกุล"),
+  companyName: Yup.string().required("กรุณากรอกชื่อบริษัท/ห้างร้าน"),
   email: Yup.string().required("กรุณากรอกอีเมล").email("รูปแบบอีเมลไม่ถูกต้อง"),
   password: Yup.string().required("กรุณากรอกรหัสผ่าน").min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
   confirmPassword: Yup.string()
@@ -47,26 +36,38 @@ const validationSchema = Yup.object().shape({
   termsAccepted: Yup.bool().oneOf([true], "กรุณายอมรับเงื่อนไขการใช้บริการ"),
 });
 
+const initialValues = {
+  name: "",
+  companyName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  termsAccepted: false,
+};
+
 const AuthRegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const { setNotify, openBackdrop } = useNotifyContext();
-  const { storeRegister } = useStoreContext();
+  const { setNotify } = useNotifyContext();
 
   const router = useRouter();
-  const localActive = useLocale();
+  const locale = useLocale();
 
   const handleTogglePassword = () => setShowPassword(!showPassword);
 
   const handleSubmit = async (
-    values: StoreRegister,
-    {
-      setSubmitting,
-      resetForm,
-    }: FormikHelpers<StoreRegister>
+    values: typeof initialValues,
+    { setSubmitting, resetForm }: FormikHelpers<typeof initialValues>
   ) => {
     setSubmitting(true);
 
-    const result = await authService.registerStore(values);
+    const data: RegisterData = {
+      email: values.email,
+      password: values.password,
+      name: values.name,
+      companyName: values.companyName,
+    };
+
+    const result = await authService.register(data);
     
     if (result.success) {
       setNotify({
@@ -76,7 +77,7 @@ const AuthRegisterForm = () => {
       });
       resetForm();
       setTimeout(() => {
-        router.push(`/${localActive}/store/auth/sign-in`);
+        router.push(`/${locale}/auth/sign-in`);
       }, 2000);
     } else {
       setNotify({
@@ -91,12 +92,10 @@ const AuthRegisterForm = () => {
   return (
     <Box
       sx={{
-        // minHeight: "90vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         padding: { xs: 2, md: 4 },
-        // backgroundColor: "#f5f7f9",
       }}
     >
       <Card
@@ -123,7 +122,7 @@ const AuthRegisterForm = () => {
             padding: 6,
             color: "white",
             textAlign: "center",
-            background: "linear-gradient(135deg, #182E4E 0%, #3BB173 100%)",
+            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           }}
         >
           <Box
@@ -141,10 +140,10 @@ const AuthRegisterForm = () => {
             <UserPlus size={40} color="white" />
           </Box>
           <Typography variant="h3" fontWeight="800" mb={2}>
-            iCute Booking
+            iCute Account
           </Typography>
           <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400, mb: 4 }}>
-            เริ่มต้นจัดการธุรกิจของคุณ<br />ให้ง่ายและเป็นระบบมากขึ้น
+            เริ่มต้นจัดการบัญชีของคุณ<br />ให้ง่ายและเป็นระบบมากขึ้น
           </Typography>
           
           <Box sx={{ mt: "auto", width: "100%" }}>
@@ -162,7 +161,7 @@ const AuthRegisterForm = () => {
                 px: 4,
                 "&:hover": { borderColor: "white", bgcolor: "rgba(255,255,255,0.1)" }
               }}
-              onClick={() => router.push(`/${localActive}/store/auth/sign-in`)}
+              onClick={() => router.push(`/${locale}/auth/sign-in`)}
             >
               เข้าสู่ระบบที่นี่
             </Button>
@@ -183,14 +182,13 @@ const AuthRegisterForm = () => {
             สร้างบัญชีใหม่
           </Typography>
           <Typography variant="body1" color="text.secondary" mb={4}>
-            กรอกข้อมูลสั้นๆ เพื่อเริ่มต้นใช้งานระบบจองคิวออนไลน์
+            กรอกข้อมูลสั้นๆ เพื่อเริ่มต้นใช้งานระบบบัญชี
           </Typography>
 
-          <Formik<StoreRegister>
-            initialValues={storeRegister}
+          <Formik
+            initialValues={initialValues}
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
-            enableReinitialize
           >
             {({
               values,
@@ -201,18 +199,33 @@ const AuthRegisterForm = () => {
             }) => (
               <Form>
                 <Grid2 container spacing={2.5}>
-                  {/* Section 1: User Account */}
+                  {/* Section 1: User Info */}
                   <Grid2 size={{ xs: 12 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
                       <Avatar sx={{ bgcolor: "primary.light", width: 32, height: 32 }}>
-                        <KeyRound size={16} />
+                        <User size={16} color="#03c9d7" />
                       </Avatar>
                       <Typography variant="subtitle1" fontWeight="600">
-                        ข้อมูลการเข้าสู่ระบบ
+                        ข้อมูลผู้ใช้งาน
                       </Typography>
                     </Box>
                   </Grid2>
-                  
+
+                  <Grid2 size={{ xs: 12 }}>
+                    <Field name="name">
+                      {({ field }: any) => (
+                        <TextField
+                          {...field}
+                          label="ชื่อ-นามสกุล"
+                          fullWidth
+                          variant="outlined"
+                          error={touched.name && Boolean(errors.name)}
+                          helperText={touched.name && errors.name}
+                        />
+                      )}
+                    </Field>
+                  </Grid2>
+
                   <Grid2 size={{ xs: 12 }}>
                     <Field name="email">
                       {({ field }: any) => (
@@ -227,6 +240,18 @@ const AuthRegisterForm = () => {
                         />
                       )}
                     </Field>
+                  </Grid2>
+
+                  {/* Section 2: Password */}
+                  <Grid2 size={{ xs: 12 }} sx={{ mt: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                      <Avatar sx={{ bgcolor: "warning.light", width: 32, height: 32 }}>
+                        <KeyRound size={16} />
+                      </Avatar>
+                      <Typography variant="subtitle1" fontWeight="600">
+                        ตั้งรหัสผ่าน
+                      </Typography>
+                    </Box>
                   </Grid2>
                   
                   <Grid2 size={{ xs: 12, sm: 6 }}>
@@ -268,63 +293,28 @@ const AuthRegisterForm = () => {
                     </Field>
                   </Grid2>
 
-                  {/* Section 2: Store Info */}
-                  <Grid2 size={{ xs: 12 }} sx={{ mt: 2 }}>
+                  {/* Section 3: Company Info */}
+                  <Grid2 size={{ xs: 12 }} sx={{ mt: 1 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
                       <Avatar sx={{ bgcolor: "secondary.light", width: 32, height: 32 }}>
                         <StoreIcon size={16} />
                       </Avatar>
                       <Typography variant="subtitle1" fontWeight="600">
-                        ข้อมูลร้านค้า
+                        ข้อมูลบริษัท/ธุรกิจ
                       </Typography>
                     </Box>
                   </Grid2>
 
                   <Grid2 size={{ xs: 12 }}>
-                    <Field name="storeName">
-                      {({ field }: FieldProps) => (
+                    <Field name="companyName">
+                      {({ field }: any) => (
                         <TextField
                           {...field}
-                          label="ชื่อร้านค้าของคุณ"
+                          label="ชื่อบริษัท หรือ ชื่อร้านค้า"
                           fullWidth
-                          error={touched.storeName && Boolean(errors.storeName)}
-                          helperText={touched.storeName && errors.storeName}
-                          placeholder="เช่น iCute Salon"
-                        />
-                      )}
-                    </Field>
-                  </Grid2>
-
-                  <Grid2 size={{ xs: 12 }}>
-                    <Field name="storeUsername">
-                      {({ field, form }: FieldProps) => (
-                        <TextField
-                          {...field}
-                          label="ID ร้านค้า (สำหรับใช้งานใน URL)"
-                          fullWidth
-                          error={form.touched.storeUsername && Boolean(form.errors.storeUsername)}
-                          helperText={typeof form.errors.storeUsername === 'string' ? form.errors.storeUsername : undefined}
-                          placeholder="เช่น icute-salon"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Typography variant="body2" color="text.disabled">
-                                  booking.icute.site/
-                                </Typography>
-                              </InputAdornment>
-                            ),
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                {form.isValidating && field.value ? (
-                                  <Loader2 size={20} className="animate-spin" color="#94a3b8" />
-                                ) : form.touched.storeUsername && !form.errors.storeUsername && field.value.length >= 3 ? (
-                                  <CheckCircle2 size={20} color="#3BB173" />
-                                ) : form.touched.storeUsername && form.errors.storeUsername ? (
-                                  <AlertCircle size={20} color="#d32f2f" />
-                                ) : null}
-                              </InputAdornment>
-                            )
-                          }}
+                          error={touched.companyName && Boolean(errors.companyName)}
+                          helperText={touched.companyName && errors.companyName}
+                          placeholder="เช่น บริษัท ไอคิวท์ จำกัด"
                         />
                       )}
                     </Field>
@@ -369,7 +359,7 @@ const AuthRegisterForm = () => {
                         boxShadow: "0 8px 20px rgba(24, 46, 78, 0.2)",
                       }}
                     >
-                      สร้างบัญชีของฉัน
+                      ลงทะเบียนใช้งาน
                     </LoadingButton>
                   </Grid2>
                 </Grid2>

@@ -131,15 +131,15 @@ const EditQuotation = ({ params }: { params: { id: string } }) => {
           branch: quotation.companyBranch || "",
 
           // Customer Company Info
-          customerType: quotation.customerCompany?.taxId
+          customerType: quotation.customer?.taxId
             ? "Corporate"
             : "Individual",
-          customerCompanyName: quotation.customerCompany?.companyName || "",
-          customerCompanyTel: quotation.customerCompany?.companyTel || "",
+          customerCompanyName: quotation.customer?.name || "",
+          customerCompanyTel: quotation.customer?.phone || "",
           customerCompanyAddress:
-            quotation.customerCompany?.companyAddress || "",
-          customerTaxId: quotation.customerCompany?.taxId || "",
-          customerBranch: quotation.customerCompany?.branch || "",
+            quotation.customer?.address || "",
+          customerTaxId: quotation.customer?.taxId || "",
+          customerBranch: "", // Customer model doesn't have branch
 
           // Contactor Info
           contactorName: quotation.contactor?.contactorName || "",

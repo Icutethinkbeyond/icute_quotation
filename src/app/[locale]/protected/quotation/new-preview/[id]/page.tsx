@@ -48,10 +48,10 @@ interface QuotationData {
   companyAddress: string;
   companyTaxId: string;
   companyBranch: string;
-  customerCompany: {
-    companyName?: string;
-    companyTel?: string;
-    companyAddress?: string;
+  customer: {
+    name?: string;
+    phone?: string;
+    address?: string;
     taxId?: string;
     branch?: string;
   } | null;
@@ -467,18 +467,18 @@ export default function NewQuotationPreviewPage({
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                {data.customerCompany?.taxId ? (
+                {data.customer?.taxId ? (
                   <>
                     <Typography variant="body1" fontWeight="bold">
-                      {data.customerCompany.companyName}
+                      {data.customer.name}
                     </Typography>
-                    {data.customerCompany.taxId && (
+                    {data.customer.taxId && (
                       <Typography variant="body2">
-                        Tax ID: {data.customerCompany.taxId}
-                        {data.customerCompany.branch && ` (สาขา: ${data.customerCompany.branch})`}
+                        Tax ID: {data.customer.taxId}
+                        {data.customer.branch && ` (สาขา: ${data.customer.branch})`}
                       </Typography>
                     )}
-                    <Typography variant="body2">{data.customerCompany.companyAddress}</Typography>
+                    <Typography variant="body2">{data.customer.address}</Typography>
                   </>
                 ) : (
                   <>
@@ -594,7 +594,7 @@ export default function NewQuotationPreviewPage({
                 <Typography variant="caption">ผู้อนุมัติ / ผู้ว่าจ้าง</Typography>
                 <Typography variant="body2">
                   คุณ{" "}
-                  {data.customerCompany?.taxId ? data.customerCompany.companyName : data.contactor?.contactorName}
+                  {data.customer?.taxId ? data.customer.name : data.contactor?.contactorName}
                 </Typography>
               </Grid>
               <Grid item xs={4} textAlign="center">

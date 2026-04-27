@@ -199,11 +199,11 @@ export function getHtmlTemplate(content: string, brandName: string = "iCute Book
 // ========================================
 
 export async function sendVerificationEmail(toEmail: string, token: string, storeId?: string) {
-  const verificationLink = `${BASE_URL}/api/store/verify-email?token=${token}`;
+  const verificationLink = `${BASE_URL}/api/auth/verify-email?token=${token}`;
 
   const content = `
     <h2>สวัสดีครับ/ค่ะ,</h2>
-    <p>ขอบคุณที่ร่วมเป็นส่วนหนึ่งของ iCute Booking! กรุณายืนยันอีเมลโดยคลิกปุ่มด้านล่าง:</p>
+    <p>ขอบคุณที่ร่วมเป็นส่วนหนึ่งของ iCute Account! กรุณายืนยันอีเมลโดยคลิกปุ่มด้านล่าง:</p>
     <div style="text-align: center;">
       <a href="${verificationLink}" class="button">ยืนยันอีเมลของคุณ</a>
     </div>
@@ -212,7 +212,7 @@ export async function sendVerificationEmail(toEmail: string, token: string, stor
     <p style="font-size: 14px; color: #6b7280;">ลิงก์นี้จะมีอายุ 24 ชั่วโมง หากคุณไม่ได้ลงทะเบียน กรุณาเพิกเฉย</p>
   `;
 
-  return await sendMail(toEmail, "ยืนยันอีเมลสำหรับ iCute Booking", getHtmlTemplate(content), { storeId, type: "verification" });
+  return await sendMail(toEmail, "ยืนยันอีเมลสำหรับ iCute Account", getHtmlTemplate(content), { storeId, type: "verification" });
 }
 
 export async function sendResetPasswordEmail(toEmail: string, token: string, storeId?: string) {
@@ -229,7 +229,7 @@ export async function sendResetPasswordEmail(toEmail: string, token: string, sto
     <p style="font-size: 14px; color: #6b7280;">ลิงก์นี้จะมีอายุ 1 ชั่วโมง หากคุณไม่ได้ร้องขอ กรุณาเพิกเฉย</p>
   `;
 
-  return await sendMail(toEmail, "รีเซ็ตรหัสผ่าน iCute Booking", getHtmlTemplate(content), { storeId, type: "reset_password" });
+  return await sendMail(toEmail, "รีเซ็ตรหัสผ่าน iCute Account", getHtmlTemplate(content), { storeId, type: "reset_password" });
 }
 
 

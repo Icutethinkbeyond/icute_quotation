@@ -27,6 +27,9 @@ model User {
   password String?
   name     String?
 
+  provider   ProviderAccount @default(Email)
+  providerId String?         @unique
+
   userStatus      UserStatus @default(ACTIVE)
   isEmailVerified Boolean    @default(false)
 
@@ -40,8 +43,11 @@ model User {
 
   verificationTokens VerificationToken[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  emailLogs     EmailLog[]
+  lineLogs      LineLog[]
+  notifications Notification[]
 }
 
 model CompanyUser {
@@ -411,9 +417,96 @@ model Unit {
 //   createdAt DateTime @default(now())
 // }
 
+model EmailLog {
+  id      String  @id @default(uuid())
+  to      String
+  subject String
+  type    String  @default("general") // verification, reset_password, notification, etc.
+  success Boolean @default(true)
+  error   String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model LineLog {
+  id      String  @id @default(uuid())
+  to      String
+  type    String  @default("notification") // notification, booking, etc.
+  success Boolean @default(true)
+  error   String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// System-level settings for environment configuration (admin only)
+model SystemSetting {
+  id    String @id @default(uuid())
+  key   String @unique // e.g. LINE_CLIENT_ID, CLOUDINARY_CLOUD_NAME
+  value String @db.Text // encrypted or plain text
+  group String @default("general") // line, cloudinary, email
+
+  // Help links for setup guides (stored as JSON string)
+  helpLinks String @default("{}") // JSON: { "en": "url", "th": "url" }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  title         String
+  message       String
+  targetAddress String
+
+  metadata String?
+
+  type        NotificationType
+  method      SendMethod
+  targetGroup NotificationTarget
+
+  isSent       Boolean   @default(false)
+  isRead       Boolean   @default(false)
+  sentAt       DateTime?
+  errorMessage String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  lineUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // --------------------------------------
 // Enums
 // --------------------------------------
+
+enum NotificationType {
+  USER_NEW_REGISTRATION // Not About Booking, but for new store registration notification to admin
+}
+
+enum SendMethod {
+  LINE_MESSAGING_API
+  EMAIL
+  WEBLOGIN
+}
+
+enum NotificationTarget {
+  ADMIN
+  SUPERADMIN
+}
 
 enum UserStatus {
   ACTIVE

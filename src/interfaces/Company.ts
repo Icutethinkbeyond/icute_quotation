@@ -1,6 +1,5 @@
-
-// CompanyProfile
-export interface CompanyProfile {
+// Company
+export interface Company {
     companyId: string;
     companyName: string;
     companyAddress?: string | null;
@@ -18,20 +17,7 @@ export interface CompanyProfile {
     updatedAt?: string | Date;
 }
 
-export interface CustomerCompany {
-    customerCompanyId: string;
-    companyName: string;
-    companyTel?: string | null;
-    customerCompanyEmail?: string | null;
-    taxId?: string | null;
-    branch?: string | null;
-    companyAddress?: string | null;
-    isFavorite?: boolean;
-    createdAt?: string | Date;
-    updatedAt?: string | Date;
-}
-
-export const initialCompany: CompanyProfile = {
+export const initialCompany: Company = {
     companyId: '',
     companyName: '',
     companyAddress: '',
@@ -44,16 +30,5 @@ export const initialCompany: CompanyProfile = {
     companyRegistrationDate: '',
     companyImage: '',
     companyImagePublicId: '',
-    isFavorite: false,
-};
-
-export const initialCustomerCompany: CustomerCompany = {
-    customerCompanyId: '',
-    companyName: '',
-    companyTel: '',
-    customerCompanyEmail: '',
-    taxId: '',
-    branch: '',
-    companyAddress: '',
     isFavorite: false,
 };

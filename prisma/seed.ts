@@ -27,7 +27,7 @@ async function main() {
     create: {
       email: "thanapognchunchombun@gmail.com",
       password: hashedPassword,
-      name: "Admin",
+      name: "SUPERADMIN",
       userStatus: "ACTIVE",
       isEmailVerified: true,
       roleId: adminRole.roleId,

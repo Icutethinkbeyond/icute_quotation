@@ -1,17 +1,14 @@
 import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-// export type AuthType = "store" | "customer";
-
 export enum AuthType {
-  store = "store",
-  customer = "customer",
+  user = "user",
   admin = "admin"
 }
 
 interface JWTUserPayload {
   id?: string;
-  storeId?: string;
+  companyId?: string;
   email?: string;
   exp?: number;
   type?: AuthType;
@@ -19,21 +16,15 @@ interface JWTUserPayload {
 }
 
 function getCookieName(type: AuthType) {
-  if (type === AuthType.store) {
-    return process.env.NODE_ENV === "production"
-      ? "__Secure-store-session-token"
-      : "store-session-token";
-  }
-
   return process.env.NODE_ENV === "production"
-    ? "__Secure-customer-session-token"
-    : "customer-session-token";
+    ? "__Secure-accounting-session-token"
+    : "accounting-session-token";
 }
 
-export async function getCurrentUserAndStoreIdsByToken(
+export async function getCurrentUserAndCompanyIdsByToken(
   request: NextRequest,
-  type: AuthType
-): Promise<{ userId: string; storeId?: string; email: string; roleName?: string }> {
+  type: AuthType = AuthType.user
+): Promise<{ userId: string; companyId?: string; email: string; roleName?: string }> {
   
   const token = (await getToken({
     req: request,
@@ -52,33 +43,19 @@ export async function getCurrentUserAndStoreIdsByToken(
     throw new Error("Unauthorized");
   }
 
-  // 3️⃣ ตรวจ type กันข้ามฝั่ง
-  if (token.type !== type) {
-    throw new Error("Unauthorized");
-  }
-
-  // console.log(token)
-
   const userId = token.id;
-  const storeId = token.storeId;
+  const companyId = token.companyId;
   const email = token.email;
   const roleName = token.roleName;
 
-  // 4️⃣ ตรวจ payload ขั้นต่ำ
+  // 3️⃣ ตรวจ payload ขั้นต่ำ
   if (!userId || !email) {
     throw new Error("Unauthorized");
   }
 
-  if(roleName !== "ADMIN"){
-  // 5️⃣ ถ้าเป็น store ต้องมี storeId
-    if (type === "store" && !storeId) {
-        throw new Error("Unauthorized");
-      }
-  }
-
   return {
     userId,
-    storeId,
+    companyId,
     email,
     roleName,
   };

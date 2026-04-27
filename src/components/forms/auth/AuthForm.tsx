@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import { useNotifyContext } from "@/contexts/NotifyContext";
 import { useLocale } from "next-intl";
 import { LogIn, KeyRound, UserCircle } from "lucide-react";
+import { IconBrandGoogle, IconBrandFacebook } from "@tabler/icons-react";
 
 const validationSchema = Yup.object().shape({
   email: Yup.string().required("กรุณากรอกอีเมล").email("รูปแบบอีเมลไม่ถูกต้อง"),
@@ -36,7 +37,7 @@ interface loginType {
 
 const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [credentail] = useState<Login>(initialLogin);
+  const [credential] = useState<Login>(initialLogin);
   const [disableLogin, setDisableLogin] = useState<boolean>(false);
 
   const localActive = useLocale();
@@ -50,9 +51,13 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
     onLogin(value);
   };
 
-  const onLogin = async (credential: Login) => {
+  const handleSocialLogin = async (provider: "google" | "facebook") => {
+    await signIn(provider, { callbackUrl: `/${localActive}/protected/dashboard` });
+  };
+
+  const onLogin = async (loginCredential: Login) => {
     setDisableLogin(true);
-    const { email, password } = credential;
+    const { email, password } = loginCredential;
 
     if (email && password) {
       const result = await signIn("credentials", {
@@ -70,7 +75,7 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
         });
         setDisableLogin(false);
       } else {
-        router.push(`/${localActive}/store/protected/dashboard`);
+        router.push(`/${localActive}/protected/dashboard`);
       }
     }
   };
@@ -84,12 +89,10 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         padding: { xs: 2, md: 4 },
-        backgroundColor: "#f5f7f9",
       }}
     >
       <Card
@@ -116,7 +119,7 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
             padding: 6,
             color: "white",
             textAlign: "center",
-            background: "linear-gradient(135deg, #182E4E 0%, #3BB173 100%)",
+            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           }}
         >
           <Box
@@ -134,16 +137,16 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
             <LogIn size={40} color="white" />
           </Box>
           <Typography variant="h3" fontWeight="800" mb={2}>
-            iCute Booking
+            iCute Account
           </Typography>
           <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400, mb: 4 }}>
-            ยินดีต้อนรับกลับมา!<br />เข้าสู่ระบบเพื่อจัดการร้านค้าของคุณ
+            ยินดีต้อนรับกลับมา!<br />เข้าสู่ระบบเพื่อจัดการบัญชีของคุณ
           </Typography>
           
           <Box sx={{ mt: "auto", width: "100%" }}>
             <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", mb: 3 }} />
             <Typography variant="body2" sx={{ opacity: 0.7 }}>
-              ยังไม่มีบัญชีร้านค้า? 
+              ยังไม่มีบัญชี? 
             </Typography>
             <Button 
               color="inherit" 
@@ -155,7 +158,7 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
                 px: 4,
                 "&:hover": { borderColor: "white", bgcolor: "rgba(255,255,255,0.1)" }
               }}
-              onClick={() => router.push(`/${localActive}/store/auth/sign-up`)}
+              onClick={() => router.push(`/${localActive}/auth/sign-up`)}
             >
               สมัครสมาชิกที่นี่
             </Button>
@@ -176,14 +179,56 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
           <Typography variant="h4" fontWeight="700" mb={1} color="text.primary">
             เข้าสู่ระบบ
           </Typography>
-          <Typography variant="body1" color="text.secondary" mb={5}>
+          <Typography variant="body1" color="text.secondary" mb={4}>
             กรุณาระบุอีเมลและรหัสผ่านเพื่อเข้าใช้งานระบบ
           </Typography>
+
+          {/* Social Logins */}
+          <Grid2 container spacing={2} sx={{ mb: 4 }}>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<IconBrandGoogle size={20} />}
+                onClick={() => handleSocialLogin("google")}
+                sx={{
+                  borderRadius: "12px",
+                  py: 1,
+                  color: "text.primary",
+                  borderColor: "divider",
+                  "&:hover": { bgcolor: "grey.50", borderColor: "grey.400" },
+                }}
+              >
+                Google
+              </Button>
+            </Grid2>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<IconBrandFacebook size={20} color="#1877F2" />}
+                onClick={() => handleSocialLogin("facebook")}
+                sx={{
+                  borderRadius: "12px",
+                  py: 1,
+                  color: "text.primary",
+                  borderColor: "divider",
+                  "&:hover": { bgcolor: "grey.50", borderColor: "grey.400" },
+                }}
+              >
+                Facebook
+              </Button>
+            </Grid2>
+          </Grid2>
+
+          <Divider sx={{ mb: 4 }}>
+            <Typography variant="body2" color="text.disabled">หรือใช้งานด้วยอีเมล</Typography>
+          </Divider>
 
           {subtext}
 
           <Formik
-            initialValues={credentail}
+            initialValues={credential}
             validationSchema={validationSchema}
             onSubmit={onLoginPress}
             enableReinitialize
@@ -194,12 +239,13 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
                   <Grid2 size={{ xs: 12 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
                       <Avatar sx={{ bgcolor: "primary.light", width: 32, height: 32 }}>
-                        <UserCircle size={16} />
+                        <UserCircle size={16} color="#03c9d7" />
                       </Avatar>
                       <Typography variant="subtitle1" fontWeight="600">
                         อีเมลผู้ใช้งาน
                       </Typography>
                     </Box>
+
                     <Field name="email">
                       {({ field }: any) => (
                         <TextField
@@ -228,7 +274,7 @@ const AuthForm: React.FC<loginType> = ({ title, subtext }) => {
                         variant="text"
                         size="small"
                         sx={{ textTransform: "none", fontWeight: 500 }}
-                        onClick={() => router.push(`/${localActive}/store/auth/forgot-password`)}
+                        onClick={() => router.push(`/${localActive}/auth/forgot-password`)}
                       >
                         ลืมรหัสผ่าน?
                       </Button>

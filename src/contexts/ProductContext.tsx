@@ -1,4 +1,4 @@
-// contexts/CategoryContext.tsx
+// contexts/ProductContext.tsx
 
 "use client";
 
@@ -6,13 +6,11 @@ import {
   Category,
   initialCategory,
   CategorySelect,
-  Product,
-  initialProduct,
-  ProductSelect
+  Items,
+  initialItems,
+  ItemsSelect
 } from "@/interfaces/Product";
-import { faker } from "@faker-js/faker";
 import { GridPaginationModel } from "@mui/x-data-grid";
-import { Dayjs } from "dayjs";
 
 import React, {
   createContext,
@@ -20,21 +18,20 @@ import React, {
   useState,
   ReactNode,
   Dispatch,
-  useEffect,
 } from "react";
 
 export interface SearchFormData {
   categoryName: string;
 }
 export interface SearchProductFormData {
-  productId: string;
+  itemsId: string;
   categoryName: string;
-  productName: string;
-  productSKU: string;
-  productStock: string;
-  productBrand: string;
-  productPrice: string;
-  productDiscountPrice: string;
+  itemsName: string;
+  itemsSKU: string;
+  itemsStock: string;
+  itemsBrand: string;
+  itemsPrice: string;
+  itemsDiscountPrice: string;
 }
 
 // กำหนดประเภทของ Context
@@ -46,12 +43,12 @@ interface ProductContextProps {
   setCategorySelectState: Dispatch<React.SetStateAction<CategorySelect[]>>;
   categorySelectState: CategorySelect[];
 
-  productState: Product[];
-  setProductState: Dispatch<React.SetStateAction<Product[]>>;
-  productForm: Product;
-  setProductForm: Dispatch<React.SetStateAction<Product>>;
-  setProductSelectState: Dispatch<React.SetStateAction<ProductSelect[]>>;
-  productSelectState: ProductSelect[];
+  productState: Items[];
+  setProductState: Dispatch<React.SetStateAction<Items[]>>;
+  productForm: Items;
+  setProductForm: Dispatch<React.SetStateAction<Items>>;
+  setProductSelectState: Dispatch<React.SetStateAction<ItemsSelect[]>>;
+  productSelectState: ItemsSelect[];
   paginationModel: GridPaginationModel;
   setPaginationModel: Dispatch<React.SetStateAction<GridPaginationModel>>;
   rowCount: number;
@@ -74,11 +71,11 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   >([]);
   const [categoryForm, setCategoryForm] = useState<Category>(initialCategory);
   
-  const [productState, setProductState] = useState<Product[]>([]);
+  const [productState, setProductState] = useState<Items[]>([]);
   const [productSelectState, setProductSelectState] = useState<
-    ProductSelect[]
+    ItemsSelect[]
   >([]);
-  const [productForm, setProductForm] = useState<Product>(initialProduct);
+  const [productForm, setProductForm] = useState<Items>(initialItems);
   const [rowCount, setRowCount] = useState<number>(0);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
@@ -91,14 +88,14 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const [searchProductForm, setSearchProductForm] = useState<SearchProductFormData>({
-    productId: "",
+    itemsId: "",
     categoryName: "",
-    productName: "",
-    productSKU: "",
-    productStock: "",
-    productBrand: "",
-    productPrice: "",
-    productDiscountPrice: "",
+    itemsName: "",
+    itemsSKU: "",
+    itemsStock: "",
+    itemsBrand: "",
+    itemsPrice: "",
+    itemsDiscountPrice: "",
   });
 
   return (

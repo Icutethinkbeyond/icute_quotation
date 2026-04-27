@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../../../lib/prisma';
 import { DocumentStatus } from '@prisma/client';
 
 // Define input types based on what we see in the contexts
@@ -71,30 +71,28 @@ export async function POST(req: NextRequest) {
             documentStatus = DocumentStatus.Waiting;
         }
 
-        // 1. Handle CompanyProfile (Our Company)
+        // 1. Handle Company (Our Company)
         let issuerProfile;
         if (data.companyName) {
-            const existingCompanyProfile = await prisma.companyProfile.findFirst({
+            const existingCompany = await prisma.company.findFirst({
                 where: { companyName: data.companyName }
             });
 
-            if (!existingCompanyProfile) {
-                const firstUser = await prisma.user.findFirst();
-                issuerProfile = await prisma.companyProfile.create({
+            if (!existingCompany) {
+                issuerProfile = await prisma.company.create({
                     data: {
                         companyName: data.companyName,
                         companyTaxId: data.taxId,
                         branch: data.branch,
                         companyPhoneNumber: data.companyTel,
                         companyAddress: data.companyAddress,
-                        userId: firstUser?.userId,
                     }
                 });
-                console.log("✅ Auto-created new CompanyProfile:", data.companyName);
+                console.log("✅ Auto-created new Company:", data.companyName);
             } else {
                 // Update existing company profile info
-                issuerProfile = await prisma.companyProfile.update({
-                    where: { companyId: existingCompanyProfile.companyId },
+                issuerProfile = await prisma.company.update({
+                    where: { companyId: existingCompany.companyId },
                     data: {
                         companyTaxId: data.taxId,
                         branch: data.branch,
@@ -105,33 +103,31 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 2. Handle CustomerCompany
+        // 2. Handle Customer
         let customer;
         if (data.customerCompanyName) {
-            customer = await prisma.customerCompany.findFirst({
-                where: { companyName: data.customerCompanyName }
+            customer = await prisma.customer.findFirst({
+                where: { name: data.customerCompanyName, companyId: issuerProfile?.companyId }
             });
 
             if (!customer) {
-                customer = await prisma.customerCompany.create({
+                customer = await prisma.customer.create({
                     data: {
-                        companyName: data.customerCompanyName,
+                        name: data.customerCompanyName,
                         taxId: data.customerTaxId,
-                        companyTel: data.customerCompanyTel,
-                        branch: data.customerBranch,
-                        companyAddress: data.customerCompanyAddress,
-                        companyId: issuerProfile?.companyId, // Link to issuer
+                        phone: data.customerCompanyTel,
+                        address: data.customerCompanyAddress,
+                        companyId: issuerProfile?.companyId as string, // Link to issuer
                     }
                 });
-                console.log("✅ Auto-created new CustomerCompany:", data.customerCompanyName);
+                console.log("✅ Auto-created new Customer:", data.customerCompanyName);
             } else {
-                customer = await prisma.customerCompany.update({
-                    where: { customerCompanyId: customer.customerCompanyId },
+                customer = await prisma.customer.update({
+                    where: { id: customer.id },
                     data: {
                         taxId: data.customerTaxId,
-                        companyTel: data.customerCompanyTel,
-                        branch: data.customerBranch,
-                        companyAddress: data.customerCompanyAddress,
+                        phone: data.customerCompanyTel,
+                        address: data.customerCompanyAddress,
                         companyId: issuerProfile?.companyId || customer.companyId, // Ensure it's linked
                     }
                 });
@@ -144,7 +140,7 @@ export async function POST(req: NextRequest) {
             contactor = await prisma.contactor.findFirst({
                 where: {
                     contactorName: data.contactorName,
-                    customerCompanyId: customer?.customerCompanyId || null
+                    companyId: issuerProfile?.companyId || null
                 }
             });
 
@@ -155,7 +151,7 @@ export async function POST(req: NextRequest) {
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
-                        customerCompanyId: customer?.customerCompanyId || null,
+                        companyId: issuerProfile?.companyId || null,
                     }
                 });
                 console.log("✅ Auto-created new Contactor:", data.contactorName);
@@ -166,13 +162,13 @@ export async function POST(req: NextRequest) {
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
-                        customerCompanyId: customer?.customerCompanyId || contactor.customerCompanyId,
+                        companyId: issuerProfile?.companyId || contactor.companyId,
                     }
                 });
             }
         }
 
-        // 4. Handle Products and Units
+        // 4. Handle Items and Units
         for (const cat of data.categories) {
             for (const item of cat.subItems) {
                 if (item.unit) {
@@ -196,18 +192,18 @@ export async function POST(req: NextRequest) {
                 }
 
                 if (item.name) {
-                    const existingProduct = await prisma.product.findFirst({
-                        where: { productName: item.name }
+                    const existingItem = await prisma.items.findFirst({
+                        where: { itemsName: item.name }
                     });
 
-                    if (!existingProduct) {
-                        await prisma.product.create({
+                    if (!existingItem) {
+                        await prisma.items.create({
                             data: {
-                                productName: item.name,
-                                productDescription: item.description,
-                                aboutProduct: {
+                                itemsName: item.name,
+                                itemsDescription: item.description,
+                                aboutItems: {
                                     create: {
-                                        productPrice: item.pricePerUnit,
+                                        itemsPrice: item.pricePerUnit,
                                         unitName: item.unit
                                     }
                                 }
@@ -232,7 +228,7 @@ export async function POST(req: NextRequest) {
                 companyTaxId: data.taxId,
                 companyBranch: data.branch,
 
-                customerCompanyId: customer?.customerCompanyId || null,
+                customerId: customer?.id || null,
                 contactorId: contactor?.contactorId || null,
                 documentStatus: documentStatus,
 
@@ -241,6 +237,9 @@ export async function POST(req: NextRequest) {
                 globalDiscount: data.globalDiscount,
                 withholdingTax: data.withholdingTax,
                 note: data.note || null,
+
+                paymentDate: new Date(), // Add default payment date if required
+                method: 'CASH', // Add default method if required
 
                 // Items
                 categories: {

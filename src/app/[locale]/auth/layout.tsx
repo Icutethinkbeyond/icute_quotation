@@ -1,7 +1,7 @@
 "use client";
 
+import AlertDialog from "@/components/shared/AlertDialog";
 import React from "react";
-import CustomNotification from "@/components/shared/CustomNotifications";
 
 export default function RootLayout({
   children,
@@ -10,7 +10,7 @@ export default function RootLayout({
 }) {
   return (
     <>
-      <CustomNotification/>
+      <AlertDialog/>
       {children}
     </>
   );

@@ -51,7 +51,7 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
     searchFields: [
       "documentIdNo",
       "contactor.contactorName",
-      "customerCompany.companyName",
+      "customer.name",
       "grandTotal",
     ],
     debounceMs: 1000,

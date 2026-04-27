@@ -10,8 +10,7 @@ import React, {
   useEffect,
 } from "react";
 import { calculateFooterTotals, calculateTax } from "@/utils/utils";
-import { Customer } from "@/interfaces/Customer";
-import { CustomerCompany } from "@/interfaces/Company";
+import { Customer, Contactor } from "@/interfaces/Customer";
 
 
 // ==================== ENUMS ====================
@@ -33,11 +32,9 @@ export enum DOCUMENT_STATUS {
 
 // ----- Contact & Company Types -----
 
-// ----- Contact & Company Types -----
-
 // Use shared interfaces
-export type IContactor = Customer;
-export type ICustomerCompany = CustomerCompany;
+export type IContactor = Contactor;
+export type ICustomer = Customer;
 
 // ----- Product & Item Types -----
 
@@ -122,7 +119,7 @@ export interface IHeadForm {
   // Customer Type
   customerType: "Individual" | "Corporate"; // Added field
 
-  // Customer Company Fields
+  // Customer Fields
   customerCompanyName: string;
   customerCompanyTel: string;
   customerCompanyAddress: string;
@@ -150,8 +147,8 @@ export interface IQuotation {
   docYear?: string;
   documentDetials?: string;
 
-  customerCompany?: ICustomerCompany;
-  customerCompanyId?: string;
+  customer?: ICustomer;
+  customerId?: string;
 
   contactor?: IContactor;
   contactorId?: string;

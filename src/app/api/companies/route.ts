@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
-import { CompanyProfile } from '@/interfaces/Company';
+import { prisma } from '@/../lib/prisma';
+import { Company } from '@/interfaces/Company';
+
+type CompanyProfile = Company & {
+    companyUsers: {
+        user: {
+            email: string | null;
+            name: string | null;
+        };
+    }[];
+};
 
 // ============================================================================
 // GET: Fetch All Companies
@@ -11,8 +20,8 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const showDeleted = searchParams.get('trash') === 'true';
 
-        // Fallback Strategy: Get ALL CompanyProfiles
-        const companyProfiles = await prisma.companyProfile.findMany({
+        // Fallback Strategy: Get ALL Companies
+        const companyProfiles = await prisma.company.findMany({
             where: {
                 // กรองตาม isDeleted - รองรับข้อมูลเก่าที่ isDeleted เป็น null/undefined
                 ...(showDeleted
@@ -21,10 +30,14 @@ export async function GET(req: NextRequest) {
                 ),
             },
             include: {
-                user: {
-                    select: {
-                        userEmail: true,
-                        name: true
+                companyUsers: {
+                    include: {
+                        user: {
+                            select: {
+                                email: true,
+                                name: true
+                            }
+                        }
                     }
                 }
             },
@@ -76,8 +89,8 @@ export async function POST(req: NextRequest) {
 
         // Note: The schema has `userId String?`, so we can leave it null.
 
-        // Create NEW Company Profile
-        const newProfile = await prisma.companyProfile.create({
+        // Create NEW Company
+        const newProfile = await prisma.company.create({
             data: {
                 companyName,
                 companyAddress,
@@ -92,7 +105,14 @@ export async function POST(req: NextRequest) {
                 companyImagePublicId: companyImagePublicId || null,
                 isDeleted: false,
                 isFavorite: body.isFavorite || false,
-                userId: firstUser?.userId ?? undefined,
+                // Add companyUser relation if we want to link the first user
+                ...(firstUser ? {
+                    companyUsers: {
+                        create: {
+                            userId: firstUser.userId
+                        }
+                    }
+                } : {})
             },
         });
 

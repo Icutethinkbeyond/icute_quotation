@@ -88,9 +88,10 @@ Example:
 export default function Page() {
   return <UserPage />;
 }
-Component Rules
 
-## Create reusable components for:
+## Component Rules
+
+Create reusable components for:
 
 Forms
 Tables
@@ -99,6 +100,52 @@ Cards
 Filters
 Sections
 Layout blocks
+
+## Frontend Form Validation Rules
+
+All form components must use **Formik** for form state management and **Yup** for validation.
+
+Every input form must be validated before submit.
+
+### Required Standard
+
+Use only:
+
+```typescript
+import { Formik, Form, Field } from "formik";
+import * as Yup from "yup";
+```
+
+### Rules
+Every form must have initialValues
+Every form must have validationSchema
+Every form must use onSubmit
+Show validation error messages clearly
+Prevent submit when invalid
+Use reusable form components whenever possible
+
+```typescript
+const validationSchema = Yup.object({
+  name: Yup.string().required("Name is required"),
+  email: Yup.string().email("Invalid email").required("Email is required"),
+});
+
+<Formik
+  initialValues={{ name: "", email: "" }}
+  validationSchema={validationSchema}
+  onSubmit={(values) => {
+    console.log(values);
+  }}
+>
+  {() => (
+    <Form>
+      <Field name="name" />
+      <Field name="email" />
+      <button type="submit">Submit</button>
+    </Form>
+  )}
+</Formik>
+```
 
 ## Clean Code Rules
 

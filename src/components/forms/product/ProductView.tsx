@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Product } from "@/interfaces/Product";
+import { Items } from "@/interfaces/Product";
 import GenericInfoView, { FieldConfig, ViewStatus } from "@/components/shared/GenericInfoView";
 
 interface ProductViewProps {
@@ -10,7 +10,7 @@ interface ProductViewProps {
 
 export default function ProductView({ productId }: ProductViewProps) {
     const [status, setStatus] = useState<ViewStatus>('loading');
-    const [data, setData] = useState<Product | null>(null);
+    const [data, setData] = useState<Items | null>(null);
 
     useEffect(() => {
         if (productId) {
@@ -23,7 +23,7 @@ export default function ProductView({ productId }: ProductViewProps) {
             setStatus('loading');
             const res = await fetch(`/api/inventory/product/${id}`);
             if (res.ok) {
-                const result: Product = await res.json();
+                const result: Items = await res.json();
                 setData(result);
                 setStatus('ready');
             } else {
@@ -35,19 +35,19 @@ export default function ProductView({ productId }: ProductViewProps) {
         }
     };
 
-    const fields: FieldConfig<Product>[] = [
-        { label: "ชื่อสินค้า", key: "productName" },
+    const fields: FieldConfig<Items>[] = [
+        { label: "ชื่อสินค้า", key: "itemsName" },
         {
             label: "ราคา",
-            key: "aboutProduct",
-            format: (val: any) => val?.productPrice ? `${val.productPrice.toLocaleString()} บาท` : "-"
+            key: "aboutItems",
+            format: (val: any) => val?.itemsPrice ? `${val.itemsPrice.toLocaleString()} บาท` : "-"
         },
         {
             label: "หน่วย",
-            key: "aboutProduct",
+            key: "aboutItems",
             format: (val: any) => val?.unitName || "-"
         },
-        { label: "รายละเอียด", key: "productDescription" },
+        { label: "รายละเอียด", key: "itemsDescription" },
     ];
 
     return (

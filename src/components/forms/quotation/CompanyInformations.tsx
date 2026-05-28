@@ -18,7 +18,7 @@ import {
   HeadForm,
   useQuotationListContext,
 } from "@/contexts/QuotationContext";
-import { CompanyProfile } from "@/interfaces/Company";
+import { Company } from "@/interfaces/Company";
 import debounce from "lodash/debounce";
 import { 
   Business, 
@@ -60,7 +60,7 @@ const inputStyles = (theme: any) => ({
 const CompanyInformation: React.FC = () => {
   const theme = useTheme();
   const { headForm, setHeadForm } = useQuotationListContext();
-  const [suggestions, setSuggestions] = useState<CompanyProfile[]>([]);
+  const [suggestions, setSuggestions] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
 
@@ -77,7 +77,7 @@ const CompanyInformation: React.FC = () => {
       const data = await response.json();
       if (Array.isArray(data)) {
         const filtered = data.filter(
-          (c: CompanyProfile) =>
+          (c: Company) =>
             c.companyName.toLowerCase().includes(search.toLowerCase()) ||
             c.companyTaxId?.toLowerCase().includes(search.toLowerCase()),
         );
@@ -109,7 +109,7 @@ const CompanyInformation: React.FC = () => {
   // };
 
   const handleSelectCompany = (
-    profile: CompanyProfile | null,
+    profile: Company | null,
     setFieldValue: any,
   ) => {
     if (profile) {

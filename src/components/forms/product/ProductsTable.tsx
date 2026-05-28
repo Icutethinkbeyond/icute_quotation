@@ -12,7 +12,7 @@ import { useDebounceSearch } from "@/hooks/useDebounceSearch";
 interface ProductRow {
     id: string;
     keyId: string;
-    productName: string;
+    itemsName: string;
     description: string;
     price: number;
     unit: string;
@@ -24,12 +24,12 @@ const ProductsTable: React.FC = () => {
 
     // Data mapping function
     const mapProductData = useCallback((product: any): ProductRow => ({
-        id: product.productId,
-        keyId: product.productId,
-        productName: product.productName,
-        description: product.productDescription || "",
-        price: product.aboutProduct?.productPrice || 0,
-        unit: product.aboutProduct?.unitName || "ชิ้น",
+        id: product.itemsId,
+        keyId: product.itemsId,
+        itemsName: product.itemsName,
+        description: product.itemsDescription || "",
+        price: product.aboutItems?.itemsPrice || 0,
+        unit: product.aboutItems?.unitName || "ชิ้น",
     }), []);
 
     // Use data table hook
@@ -47,7 +47,7 @@ const ProductsTable: React.FC = () => {
     // Use debounce search hook
     const { searchQuery, setSearchQuery, filteredRows } = useDebounceSearch({
         rows,
-        searchFields: ["productName", "description"],
+        searchFields: ["itemsName", "description"],
         debounceMs: 500,
     });
 
@@ -69,7 +69,7 @@ const ProductsTable: React.FC = () => {
     };
 
     const columns: GridColDef[] = [
-        { field: "productName", headerName: "ชื่อสินค้า", flex: 3, type: "string", },
+        { field: "itemsName", headerName: "ชื่อสินค้า", flex: 3, type: "string", },
         { field: "description", headerName: "รายละเอียด", flex: 3, type: "string", },
         { field: "price", headerName: "ราคา", flex: 3, type: "number", valueFormatter: (params: any) => params.value},
         { field: "unit", headerName: "หน่วย", flex: 3, type: "string", },

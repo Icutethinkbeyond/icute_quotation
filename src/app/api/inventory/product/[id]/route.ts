@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../../../lib/prisma';
 
 export async function GET(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const product = await prisma.product.findUnique({
-            where: { productId: params.id },
+        const product = await prisma.items.findUnique({
+            where: { itemsId: params.id },
             include: {
                 category: true,
-                aboutProduct: true,
+                aboutItems: true,
             }
         });
 
@@ -54,22 +54,22 @@ export async function PATCH(
             }
         }
 
-        const product = await prisma.product.update({
-            where: { productId: params.id },
+        const product = await prisma.items.update({
+            where: { itemsId: params.id },
             data: {
-                productName: data.productName,
-                productDescription: data.productDescription,
-                aboutProduct: {
+                itemsName: data.itemsName,
+                itemsDescription: data.itemsDescription,
+                aboutItems: {
                     update: {
-                        productPrice: data.price,
+                        itemsPrice: data.price,
                         unitName: data.unit,
-                        // ไม่อัปเดต productStock
+                        // ไม่อัปเดต itemsStock
                     }
                 }
             },
             include: {
                 category: true,
-                aboutProduct: true,
+                aboutItems: true,
             }
         });
 
@@ -88,15 +88,15 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
-        const restoredProduct = await prisma.product.update({
-            where: { productId: params.id },
+        const restoredProduct = await prisma.items.update({
+            where: { itemsId: params.id },
             data: {
                 isDeleted: false,
                 deletedAt: null,
             },
             include: {
                 category: true,
-                aboutProduct: true,
+                aboutItems: true,
             }
         });
 
@@ -120,14 +120,14 @@ export async function DELETE(
 
         if (permanent) {
             // Permanent delete - ลบออกจาก database จริงๆ
-            await prisma.product.delete({
-                where: { productId: params.id }
+            await prisma.items.delete({
+                where: { itemsId: params.id }
             });
             return NextResponse.json({ success: true, message: 'Product permanently deleted' });
         } else {
             // Soft delete - ย้ายไปถังขยะ
-            await prisma.product.update({
-                where: { productId: params.id },
+            await prisma.items.update({
+                where: { itemsId: params.id },
                 data: {
                     isDeleted: true,
                     deletedAt: new Date(),

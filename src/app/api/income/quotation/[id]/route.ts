@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../../../lib/prisma';
 import { DocumentStatus } from '@prisma/client';
 
 interface QuotationInput {
@@ -64,9 +64,9 @@ export async function GET(
                 documentId: documentId
             },
             include: {
-                customerCompany: {
+                customer: {
                     include: {
-                        companyProfile: true
+                        company: true
                     }
                 },
                 contactor: true,
@@ -111,7 +111,7 @@ export async function PATCH(
         const existingQuotation = await prisma.documentPaper.findUnique({
             where: { documentId },
             include: {
-                customerCompany: true,
+                customer: true,
                 contactor: true,
                 categories: {
                     include: {
@@ -135,28 +135,26 @@ export async function PATCH(
             documentStatus = DocumentStatus.Waiting;
         }
 
-        // 1. Handle CompanyProfile (Our Company)
+        // 1. Handle Company (Our Company)
         let issuerProfile;
         if (data.companyName) {
-            const existingCompanyProfile = await prisma.companyProfile.findFirst({
+            const existingCompany = await prisma.company.findFirst({
                 where: { companyName: data.companyName }
             });
 
-            if (!existingCompanyProfile) {
-                const firstUser = await prisma.user.findFirst();
-                issuerProfile = await prisma.companyProfile.create({
+            if (!existingCompany) {
+                issuerProfile = await prisma.company.create({
                     data: {
                         companyName: data.companyName,
                         companyTaxId: data.taxId,
                         branch: data.branch,
                         companyPhoneNumber: data.companyTel,
                         companyAddress: data.companyAddress,
-                        userId: firstUser?.userId,
                     }
                 });
             } else {
-                issuerProfile = await prisma.companyProfile.update({
-                    where: { companyId: existingCompanyProfile.companyId },
+                issuerProfile = await prisma.company.update({
+                    where: { companyId: existingCompany.companyId },
                     data: {
                         companyTaxId: data.taxId,
                         branch: data.branch,
@@ -167,36 +165,67 @@ export async function PATCH(
             }
         }
 
-        // 2. Handle Products and Units
-        // ... (skipping for brevity but keeping in mind)
+        // 2. Handle Items and Units
+        for (const cat of data.categories) {
+            for (const item of cat.subItems) {
+                if (item.unit) {
+                    const existingUnit = await prisma.unit.findUnique({
+                        where: { unitName: item.unit }
+                    });
+                    if (!existingUnit) {
+                        await prisma.unit.create({
+                            data: { unitName: item.unit, usageCount: 1 }
+                        });
+                    }
+                }
 
-        // 3. Update or Create CustomerCompany
+                if (item.name) {
+                    const existingItem = await prisma.items.findFirst({
+                        where: { itemsName: item.name }
+                    });
+                    if (!existingItem) {
+                        await prisma.items.create({
+                            data: {
+                                itemsName: item.name,
+                                itemsDescription: item.description,
+                                aboutItems: {
+                                    create: {
+                                        itemsPrice: item.pricePerUnit,
+                                        unitName: item.unit
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        // 3. Update or Create Customer
         let customer;
         if (data.customerCompanyName) {
-            customer = await prisma.customerCompany.findFirst({
-                where: { companyName: data.customerCompanyName }
+            customer = await prisma.customer.findFirst({
+                where: { name: data.customerCompanyName, companyId: issuerProfile?.companyId }
             });
 
             if (customer) {
-                customer = await prisma.customerCompany.update({
-                    where: { customerCompanyId: customer.customerCompanyId },
+                customer = await prisma.customer.update({
+                    where: { id: customer.id },
                     data: {
                         taxId: data.customerTaxId,
-                        companyTel: data.customerCompanyTel,
-                        branch: data.customerBranch,
-                        companyAddress: data.customerCompanyAddress,
+                        phone: data.customerCompanyTel,
+                        address: data.customerCompanyAddress,
                         companyId: issuerProfile?.companyId || customer.companyId, // Ensure link
                     }
                 });
             } else {
-                customer = await prisma.customerCompany.create({
+                customer = await prisma.customer.create({
                     data: {
-                        companyName: data.customerCompanyName,
+                        name: data.customerCompanyName,
                         taxId: data.customerTaxId,
-                        companyTel: data.customerCompanyTel,
-                        branch: data.customerBranch,
-                        companyAddress: data.customerCompanyAddress,
-                        companyId: issuerProfile?.companyId, // Link to issuer
+                        phone: data.customerCompanyTel,
+                        address: data.customerCompanyAddress,
+                        companyId: issuerProfile?.companyId as string, // Link to issuer
                     }
                 });
             }
@@ -208,7 +237,7 @@ export async function PATCH(
             contactor = await prisma.contactor.findFirst({
                 where: {
                     contactorName: data.contactorName,
-                    customerCompanyId: customer?.customerCompanyId || null
+                    companyId: issuerProfile?.companyId || null
                 }
             });
 
@@ -219,7 +248,7 @@ export async function PATCH(
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
-                        customerCompanyId: customer?.customerCompanyId || contactor.customerCompanyId
+                        companyId: issuerProfile?.companyId || contactor.companyId
                     }
                 });
             } else {
@@ -229,14 +258,14 @@ export async function PATCH(
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
-                        customerCompanyId: customer?.customerCompanyId || null
+                        companyId: issuerProfile?.companyId || null
                     }
                 });
             }
         }
 
         // Ensure DocumentPaper is linked correctly
-        const customerCompanyId = customer?.customerCompanyId || null;
+        const customerId = customer?.id || null;
         const contactorId = contactor?.contactorId || null;
 
         // Delete old categories before creating new ones
@@ -257,7 +286,7 @@ export async function PATCH(
                 companyBranch: data.branch,
 
                 // Customer Relations
-                customerCompanyId: customerCompanyId,
+                customerId: customerId,
                 contactorId: contactorId,
 
                 includeVat: data.includeVat,
@@ -266,6 +295,9 @@ export async function PATCH(
                 withholdingTax: data.withholdingTax,
                 note: data.note || null,
                 documentStatus: documentStatus,
+
+                paymentDate: existingQuotation.paymentDate || new Date(),
+                method: existingQuotation.method || 'CASH',
 
                 categories: {
                     create: data.categories.map((cat, index) => ({
@@ -287,7 +319,7 @@ export async function PATCH(
                 }
             },
             include: {
-                customerCompany: true,
+                customer: true,
                 contactor: true,
                 categories: {
                     include: {
@@ -375,7 +407,7 @@ export async function PUT(
         const originalQuotation = await prisma.documentPaper.findUnique({
             where: { documentId },
             include: {
-                customerCompany: true,
+                customer: true,
                 contactor: true,
                 categories: {
                     include: {
@@ -408,7 +440,7 @@ export async function PUT(
             companyBranch: originalQuotation.companyBranch,
             
             // Copy customer and contactor relations
-            customerCompanyId: originalQuotation.customerCompanyId,
+            customerId: originalQuotation.customerId,
             contactorId: originalQuotation.contactorId,
             
             // Copy pricing settings
@@ -420,6 +452,9 @@ export async function PUT(
             
             documentStatus: 'Draft',
             isDeleted: false,
+
+            paymentDate: new Date(),
+            method: 'CASH',
             
             // Copy categories and items
             categories: {
@@ -446,7 +481,7 @@ export async function PUT(
         const duplicatedQuotation = await prisma.documentPaper.create({
             data: newQuotationData,
             include: {
-                customerCompany: true,
+                customer: true,
                 contactor: true,
                 categories: {
                     include: {

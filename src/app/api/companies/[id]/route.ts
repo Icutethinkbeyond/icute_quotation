@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../../lib/prisma';
 
 // ============================================================================
 // GET: Fetch Single Company by ID
@@ -15,23 +15,27 @@ export async function GET(
             return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
         }
 
-        const companyProfile = await prisma.companyProfile.findUnique({
+        const company = await prisma.company.findUnique({
             where: { companyId: id },
             include: {
-                user: {
-                    select: {
-                        userEmail: true,
-                        name: true
+                companyUsers: {
+                    include: {
+                        user: {
+                            select: {
+                                email: true,
+                                name: true
+                            }
+                        }
                     }
                 }
             }
         });
 
-        if (!companyProfile) {
+        if (!company) {
             return NextResponse.json({ error: 'Company not found' }, { status: 404 });
         }
 
-        return NextResponse.json(companyProfile);
+        return NextResponse.json(company);
     } catch (error) {
         console.error("Error fetching company profile:", error);
         return NextResponse.json(
@@ -60,7 +64,7 @@ export async function PUT(
 
         // ถ้าไม่มี body หรือ body ว่างเปล่า = Restore from trash
         if (!body || Object.keys(body).length === 0) {
-            const restoredCompany = await prisma.companyProfile.update({
+            const restoredCompany = await prisma.company.update({
                 where: { companyId: id },
                 data: {
                     isDeleted: false,
@@ -88,7 +92,7 @@ export async function PUT(
 
         // ถ้ามีการตั้งเป็น Favorite ให้ไปปลด Favorite ตัวอื่นๆ ก่อน
         if (isFavorite === true) {
-            await prisma.companyProfile.updateMany({
+            await prisma.company.updateMany({
                 where: {
                     companyId: { not: id },
                 },
@@ -98,7 +102,7 @@ export async function PUT(
             });
         }
 
-        const updatedProfile = await prisma.companyProfile.update({
+        const updatedProfile = await prisma.company.update({
             where: { companyId: id },
             data: {
                 ...(companyName !== undefined && { companyName }),
@@ -146,13 +150,13 @@ export async function DELETE(
 
         if (permanent) {
             // Permanent delete - ลบออกจาก database จริงๆ
-            await prisma.companyProfile.delete({
+            await prisma.company.delete({
                 where: { companyId: id },
             });
             return NextResponse.json({ message: 'Company permanently deleted' });
         } else {
             // Soft delete - ย้ายไปถังขยะ
-            await prisma.companyProfile.update({
+            await prisma.company.update({
                 where: { companyId: id },
                 data: {
                     isDeleted: true,

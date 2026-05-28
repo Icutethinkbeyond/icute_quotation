@@ -15,7 +15,7 @@ const constructionCategories = [
 
 const units = ['ถุง', 'เส้น', 'ท่อน', 'ชุด', 'แกลลอน', 'ตารางเมตร', 'ลูกบาศก์เมตร', 'กล่อง', 'ม้วน', 'อัน', 'เครื่อง']
 
-const productTemplates: Record<string, any[]> = {
+const ItemsTemplates: Record<string, any[]> = {
   'งานโครงสร้าง': [
     { name: 'ปูนซีเมนต์ปอร์ตแลนด์ ประเภท 1', unit: 'ถุง', price: [145, 175] },
     { name: 'เหล็กเส้นกลม SR24 ขนาด 9 มม.', unit: 'เส้น', price: [110, 130] },
@@ -76,7 +76,7 @@ const productTemplates: Record<string, any[]> = {
 }
 
 async function main() {
-  console.log('🚀 Starting construction product seed...')
+  console.log('🚀 Starting construction Items seed...')
 
   // 1. Create Categories
   for (const cat of constructionCategories) {
@@ -97,35 +97,35 @@ async function main() {
       console.log(`✅ Created category: ${cat.name}`)
     }
 
-    // 2. Create Products for this category
-    const products = productTemplates[cat.name] || []
-    for (const p of products) {
+    // 2. Create Itemss for this category
+    const Itemss = ItemsTemplates[cat.name] || []
+    for (const p of Itemss) {
       const sku = `CON-${cat.name.substring(0, 2)}-${faker.string.alphanumeric(5).toUpperCase()}`
       
-      const existingProduct = await prisma.product.findFirst({
-        where: { productName: p.name }
+      const existingItems = await prisma.items.findFirst({
+        where: { itemsName: p.name }
       })
 
-      if (!existingProduct) {
+      if (!existingItems) {
         const price = faker.number.float({ min: p.price[0], max: p.price[1], fractionDigits: 2 })
         
-        await prisma.product.create({
+        await prisma.items.create({
           data: {
-            productName: p.name,
-            productSKU: sku,
-            productDescription: `${p.name} คุณภาพมาตรฐานสำหรับงานก่อสร้าง`,
+            itemsName: p.name,
+            itemsSKU: sku,
+            itemsDescription: `${p.name} คุณภาพมาตรฐานสำหรับงานก่อสร้าง`,
             categoryId: categoryId,
-            aboutProduct: {
+            aboutItems: {
               create: {
-                productPrice: price,
-                productStock: faker.number.int({ min: 10, max: 100 }),
-                productBrand: faker.helpers.arrayElement(['SCG', 'TPI', 'TOA', 'Diamond', 'Makita', 'Bosch', 'Generic']),
+                itemsPrice: price,
+                itemsStock: faker.number.int({ min: 10, max: 100 }),
+                itemsBrand: faker.helpers.arrayElement(['SCG', 'TPI', 'TOA', 'Diamond', 'Makita', 'Bosch', 'Generic']),
                 unitName: p.unit
               }
             }
           }
         })
-        console.log(`   📦 Created product: ${p.name} (${price} THB)`)
+        console.log(`   📦 Created Items: ${p.name} (${price} THB)`)
       }
     }
   }
@@ -144,7 +144,7 @@ async function main() {
     }
   }
 
-  console.log('✨ Construction product seed complete!')
+  console.log('✨ Construction Items seed complete!')
 }
 
 main()

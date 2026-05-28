@@ -16,10 +16,8 @@ import {
 } from "@mui/material";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import FormSection from "../../shared/FormSection";
 import { HeadForm, useQuotationListContext } from "@/contexts/QuotationContext";
-import { CustomerCompany } from "@/interfaces/Company";
-import { Customer } from "@/interfaces/Customer";
+import { Customer, Contactor } from "@/interfaces/Customer";
 import debounce from "lodash/debounce";
 import {
   Business,
@@ -48,8 +46,8 @@ const ContactorInformationSchema = Yup.object().shape({
   }),
 });
 
-interface ContactorOption extends Customer {}
-interface CompanyOption extends CustomerCompany {}
+interface ContactorOption extends Contactor {}
+interface CompanyOption extends Customer {}
 
 // Styled Input Helper
 const inputStyles = (theme: any) => ({

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../../lib/prisma';
 import { calculateQuotationTotals } from '@/services/utils/quotationCalculations';
 
 export async function GET(req: NextRequest) {
@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
         const totalQuotations = await prisma.documentPaper.count({
             where: { isDeleted: false }
         });
-        const totalCustomers = await prisma.customerCompany.count();
-        const totalProducts = await prisma.product.count({
+        const totalCustomers = await prisma.customer.count();
+        const totalProducts = await prisma.items.count({
             where: { isDeleted: false }
         });
 
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         const recentQuotations = await prisma.documentPaper.findMany({
             where: { isDeleted: false },
             include: {
-                customerCompany: true,
+                customer: true,
                 contactor: true,
             },
             orderBy: {
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
             recentQuotations: recentQuotations.map((doc: any) => ({
                 id: doc.documentId,
                 number: doc.documentIdNo,
-                customer: doc.customerCompany?.companyName || doc.contactor?.contactorName || 'N/A',
+                customer: doc.customer?.name || doc.contactor?.contactorName || 'N/A',
                 date: doc.createdAt,
                 status: doc.documentStatus,
                 // We'd need to calculate total for each if we want it here, 

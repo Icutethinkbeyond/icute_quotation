@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleImageUpload } from '@/services/module/cloudinary';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../../lib/prisma';
 
 export async function POST(req: NextRequest) {
     try {
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
         // Update company record with new image data
         if (companyId) {
-            await prisma.companyProfile.update({
+            await prisma.company.update({
                 where: { companyId },
                 data: {
                     companyImage: result.url,

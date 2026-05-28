@@ -19,12 +19,16 @@ import { LoadingButton } from "@mui/lab";
 import { useNotifyContext } from "@/contexts/NotifyContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
-import { KeyRound, Lock, ArrowRight, CheckCircle, EyeOff, Eye } from "lucide-react";
 import {
-  ResetPassword,
-  initialResetPassword,
-} from "@/interfaces/User";
-import { authService } from "@/services/ApiServices/AuthAPI";
+  KeyRound,
+  Lock,
+  ArrowRight,
+  CheckCircle,
+  EyeOff,
+  Eye,
+} from "lucide-react";
+import { ResetPassword, initialResetPassword } from "@/interfaces/User";
+import { authService } from "@/services/api-services/AuthAPI";
 
 interface StoreProps {
   viewOnly?: boolean;
@@ -54,7 +58,7 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
 
   const handleFormSubmit = async (
     values: ResetPassword,
-    { setSubmitting, validateForm }: FormikHelpers<ResetPassword>
+    { setSubmitting, validateForm }: FormikHelpers<ResetPassword>,
   ) => {
     validateForm();
     setSubmitting(true);
@@ -140,7 +144,8 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
             padding: 6,
             color: "white",
             textAlign: "center",
-            background: "linear-gradient(135deg, #182E4E 0%, #3BB173 100%)",
+            background: (theme) =>
+              `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           }}
         >
           <Box
@@ -160,22 +165,27 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
           <Typography variant="h3" fontWeight="800" mb={2}>
             ตั้งรหัสผ่านใหม่
           </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400, mb: 4 }}>
-            สร้างรหัสผ่านใหม่ที่ปลอดภัย<br />เพื่อปกป้องบัญชีร้านค้าของคุณ
+          <Typography
+            variant="h6"
+            sx={{ opacity: 0.9, fontWeight: 400, mb: 4 }}
+          >
+            สร้างรหัสผ่านใหม่ที่ปลอดภัย
+            <br />
+            เพื่อปกป้องบัญชีร้านค้าของคุณ
           </Typography>
-          
+
           <Box sx={{ mt: "auto", width: "100%" }}>
             <Divider sx={{ borderColor: "rgba(255,255,255,0.1)", mb: 3 }} />
             <Typography variant="body2" sx={{ opacity: 0.7 }}>
               จำรหัสผ่านได้แล้ว?
             </Typography>
-            <LoadingButton 
-              color="inherit" 
-              variant="text" 
-              sx={{ 
+            <LoadingButton
+              color="inherit"
+              variant="text"
+              sx={{
                 mt: 1,
                 opacity: 0.8,
-                "&:hover": { opacity: 1, bgcolor: "rgba(255,255,255,0.1)" }
+                "&:hover": { opacity: 1, bgcolor: "rgba(255,255,255,0.1)" },
               }}
               onClick={() => router.push(signinUrl)}
             >
@@ -197,7 +207,15 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
         >
           {success ? (
             <Box sx={{ textAlign: "center" }}>
-              <Avatar sx={{ bgcolor: "success.light", width: 64, height: 64, mx: "auto", mb: 3 }}>
+              <Avatar
+                sx={{
+                  bgcolor: "success.light",
+                  width: 64,
+                  height: 64,
+                  mx: "auto",
+                  mb: 3,
+                }}
+              >
                 <CheckCircle size={32} color="#2e7d32" />
               </Avatar>
               <Typography variant="h4" fontWeight="700" mb={2}>
@@ -206,7 +224,12 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
               <Typography variant="body1" color="text.secondary" mb={4}>
                 ระบบกำลังนำคุณไปยังหน้าเข้าสู่ระบบในอีก
               </Typography>
-              <Typography variant="h2" fontWeight="800" color="primary.main" mb={4}>
+              <Typography
+                variant="h2"
+                fontWeight="800"
+                color="primary.main"
+                mb={4}
+              >
                 {countdown}
               </Typography>
               <LoadingButton
@@ -219,7 +242,12 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
             </Box>
           ) : (
             <>
-              <Typography variant="h4" fontWeight="700" mb={1} color="text.primary">
+              <Typography
+                variant="h4"
+                fontWeight="700"
+                mb={1}
+                color="text.primary"
+              >
                 ความปลอดภัยใหม่
               </Typography>
               <Typography variant="body1" color="text.secondary" mb={5}>
@@ -236,9 +264,22 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
                   <Form>
                     <Grid2 container spacing={3}>
                       <Grid2 size={{ xs: 12 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-                          <Avatar sx={{ bgcolor: "primary.light", width: 32, height: 32 }}>
-                            <KeyRound size={16} />
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                            mb: 1,
+                          }}
+                        >
+                          <Avatar
+                            sx={{
+                              bgcolor: "primary.light",
+                              width: 32,
+                              height: 32,
+                            }}
+                          >
+                            <KeyRound size={16} color="#03c9d7" />
                           </Avatar>
                           <Typography variant="subtitle1" fontWeight="600">
                             รหัสผ่านใหม่
@@ -251,14 +292,28 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
                               type={showPassword ? "text" : "password"}
                               fullWidth
                               placeholder="อย่างน้อย 6 ตัวอักษร"
-                              error={touched.newPassword && Boolean(errors.newPassword)}
-                              helperText={touched.newPassword && errors.newPassword}
+                              error={
+                                touched.newPassword &&
+                                Boolean(errors.newPassword)
+                              }
+                              helperText={
+                                touched.newPassword && errors.newPassword
+                              }
                               InputProps={{
                                 readOnly: viewOnly,
                                 endAdornment: (
                                   <InputAdornment position="end">
-                                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    <IconButton
+                                      onClick={() =>
+                                        setShowPassword(!showPassword)
+                                      }
+                                      edge="end"
+                                    >
+                                      {showPassword ? (
+                                        <EyeOff size={20} />
+                                      ) : (
+                                        <Eye size={20} />
+                                      )}
                                     </IconButton>
                                   </InputAdornment>
                                 ),
@@ -269,8 +324,21 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
                       </Grid2>
 
                       <Grid2 size={{ xs: 12 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-                          <Avatar sx={{ bgcolor: "primary.light", width: 32, height: 32 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                            mb: 1,
+                          }}
+                        >
+                          <Avatar
+                            sx={{
+                              bgcolor: "primary.light",
+                              width: 32,
+                              height: 32,
+                            }}
+                          >
                             <KeyRound size={16} />
                           </Avatar>
                           <Typography variant="subtitle1" fontWeight="600">
@@ -284,8 +352,14 @@ const ResetPasswordForm: FC<StoreProps> = ({ viewOnly = false }) => {
                               type={showPassword ? "text" : "password"}
                               fullWidth
                               placeholder="กรอกรหัสผ่านเดิมซ้ำอีกครั้ง"
-                              error={touched.confirmPassword && Boolean(errors.confirmPassword)}
-                              helperText={touched.confirmPassword && errors.confirmPassword}
+                              error={
+                                touched.confirmPassword &&
+                                Boolean(errors.confirmPassword)
+                              }
+                              helperText={
+                                touched.confirmPassword &&
+                                errors.confirmPassword
+                              }
                               InputProps={{ readOnly: viewOnly }}
                             />
                           )}

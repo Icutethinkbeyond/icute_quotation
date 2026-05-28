@@ -24,7 +24,7 @@ function VerificationContent() {
   const [countdown, setCountdown] = useState(5);
 
 
-  const redirectUrl = `/${locaActive}/store/protected/dashboard`
+  const redirectUrl = `/${locaActive}/protected/dashboard`
 
   const [isProcessing, setIsProcessing] = useState(true);
   const status = searchParams.get("status");
@@ -50,7 +50,7 @@ function VerificationContent() {
         router.replace(redirectUrl);
       } else {
         // Not logged in - go to login page
-        router.replace(`/${locaActive}/store/auth/sign-in?verified=true`);
+        router.replace(`/${locaActive}/auth/sign-in?verified=true`);
       }
     }, countdown * 1000);
 
@@ -77,7 +77,7 @@ function VerificationContent() {
 
         if (authStatus === "unauthenticated") {
           // User is not logged in, redirect to login page
-          router.replace(`/${locaActive}/store/auth/sign-in?verified=true`);
+          router.replace(`/${locaActive}/auth/sign-in?verified=true`);
           return;
         }
       } catch (error) {

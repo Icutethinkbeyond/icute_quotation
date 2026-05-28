@@ -240,7 +240,7 @@ const PricingTable: React.FC = () => {
                             disableClearable={false}
                             options={item.name && item.name.length >= 2 ? allProducts : []}
                             loading={loadingProducts}
-                            getOptionLabel={(option) => typeof option === 'string' ? option : option.productName || ""}
+                            getOptionLabel={(option) => typeof option === 'string' ? option : option.itemsName || ""}
                             value={item.name}
                             onInputChange={(event, newInputValue, reason) => {
                               if (reason === "input" || reason === "clear") {
@@ -251,10 +251,10 @@ const PricingTable: React.FC = () => {
                             onChange={(event, newValue: any) => {
                               if (newValue && typeof newValue !== 'string') {
                                 updateSubItem(category.id, item.id, {
-                                  name: newValue.productName,
-                                  description: newValue.productDescription || "",
-                                  unit: newValue.aboutProduct?.unitName || "",
-                                  pricePerUnit: newValue.aboutProduct?.productPrice || 0,
+                                  name: newValue.itemsName,
+                                  description: newValue.itemsDescription || "",
+                                  unit: newValue.aboutItems?.unitName || "",
+                                  pricePerUnit: newValue.aboutItems?.itemsPrice || 0,
                                 });
                               }
                             }}

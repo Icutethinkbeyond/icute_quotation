@@ -9,8 +9,8 @@ import DashboardCard from "@/components/shared/DashboardCard";
 const NewProductPage = () => {
     const router = useRouter();
     const [formData, setFormData] = useState({
-        productName: "",
-        productDescription: "",
+        itemsName: "",
+        itemsDescription: "",
         price: 0,
         unit: "ชิ้น",
     });
@@ -53,8 +53,8 @@ const NewProductPage = () => {
                                 fullWidth
                                 required
                                 label="ชื่อสินค้า"
-                                name="productName"
-                                value={formData.productName}
+                                name="itemsName"
+                                value={formData.itemsName}
                                 onChange={handleChange}
                             />
                         </Grid2>
@@ -65,8 +65,8 @@ const NewProductPage = () => {
                                 multiline
                                 rows={3}
                                 label="รายละเอียดสินค้า"
-                                name="productDescription"
-                                value={formData.productDescription}
+                                name="itemsDescription"
+                                value={formData.itemsDescription}
                                 onChange={handleChange}
                             />
                         </Grid2>

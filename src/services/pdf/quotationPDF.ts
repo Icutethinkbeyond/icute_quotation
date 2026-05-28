@@ -28,10 +28,10 @@ export interface QuotationData {
   companyAddress: string;
   companyTaxId: string;
   companyBranch: string;
-  customerCompany: {
-    companyName?: string;
-    companyTel?: string;
-    companyAddress?: string;
+  customer: {
+    name?: string;
+    phone?: string;
+    address?: string;
     taxId?: string;
     branch?: string;
   } | null;
@@ -469,9 +469,9 @@ export const generateQuotationPDF = async (
   let customerY = row2Y + 6;
   doc.setFontSize(10);
   doc.setTextColor("#000000");
-  if (data.customerCompany?.taxId) {
+  if (data.customer?.taxId) {
     customerY += addWrappedText(
-      data.customerCompany.companyName || "",
+      data.customer.name || "",
       margin,
       customerY,
       contentWidth * 0.45,
@@ -479,11 +479,11 @@ export const generateQuotationPDF = async (
       true,
       "#000000"
     );
-    if (data.customerCompany.taxId) {
+    if (data.customer.taxId) {
       customerY += addWrappedText(
-        `Tax ID: ${data.customerCompany.taxId}${
-          data.customerCompany.branch
-            ? ` (สาขา: ${data.customerCompany.branch})`
+        `Tax ID: ${data.customer.taxId}${
+          data.customer.branch
+            ? ` (สาขา: ${data.customer.branch})`
             : ""
         }`,
         margin,
@@ -493,7 +493,7 @@ export const generateQuotationPDF = async (
       );
     }
     customerY += addWrappedText(
-      data.customerCompany.companyAddress || "",
+      data.customer.address || "",
       margin,
       customerY,
       contentWidth * 0.45,

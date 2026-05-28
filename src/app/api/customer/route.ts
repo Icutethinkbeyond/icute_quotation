@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../lib/prisma';
 
 // GET - ดึงรายชื่อลูกค้าที่สร้างจากหน้า customer เท่านั้น (isStandalone = true)
 export async function GET(req: NextRequest) {

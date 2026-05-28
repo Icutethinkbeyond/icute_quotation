@@ -4,34 +4,24 @@ import React from "react";
 import { GridColDef } from "@mui/x-data-grid";
 import { GenericTrashTable } from "@/components/shared/GenericTrashTable";
 
-const ProductTrashTable = () => {
-    // กำหนดคอลัมน์สำหรับสินค้า
+const ProductTrashTable: React.FC = () => {
     const columns: GridColDef[] = [
         {
-            field: "productName",
+            field: "itemsName",
             headerName: "ชื่อสินค้า",
             flex: 1,
-            minWidth: 200,
-            type: "string",
-        },
-        {
-            field: "productSKU",
-            headerName: "รหัสสินค้า",
-            flex: 0.8,
             minWidth: 150,
-            type: "string",
         },
         {
-            field: "productDescription",
-            headerName: "รายละเอียด",
-            flex: 1.2,
-            minWidth: 250,
-            type: "string",
+            field: "itemsSKU",
+            headerName: "SKU",
+            flex: 0.5,
+            minWidth: 100,
         },
         {
             field: "price",
             headerName: "ราคา",
-            flex: 0.6,
+            flex: 0.5,
             minWidth: 100,
             type: "number",
         },
@@ -47,8 +37,8 @@ const ProductTrashTable = () => {
     // ฟังก์ชันแปลงข้อมูลก่อนแสดง
     const mapProductData = (product: any) => ({
         ...product,
-        price: product.aboutProduct?.productPrice || 0,
-        unit: product.aboutProduct?.unitName || "-",
+        price: product.aboutItems?.itemsPrice || 0,
+        unit: product.aboutItems?.unitName || "-",
     });
 
     return (
@@ -58,7 +48,7 @@ const ProductTrashTable = () => {
             deleteEndpoint={(id) => `/api/inventory/product/${id}?permanent=true`}
             title="ถังขยะ - สินค้า"
             backUrl="/product"
-            idField="productId"
+            idField="itemsId"
             columns={columns}
             mapData={mapProductData}
         />

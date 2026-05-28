@@ -25,7 +25,7 @@ const QuotationsTable: React.FC = () => {
     const mapQuotationData = useCallback((quotation: any): QuotationRow => ({
         id: quotation.documentId,
         quotationNumber: quotation.documentIdNo,
-        customerCompanyName: quotation.customerCompany?.companyName || quotation.contactor?.contactorName || "ทั่วไป",
+        customerCompanyName: quotation.customer?.name || quotation.contactor?.contactorName || "ทั่วไป",
         totalAmount: quotation.grandTotal || 0,
         status: quotation.documentStatus,
         dateCreate: quotation.documentCreateDate ? new Date(quotation.documentCreateDate).toLocaleDateString("th-TH") : "-",

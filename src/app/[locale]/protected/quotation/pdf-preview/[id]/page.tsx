@@ -43,10 +43,10 @@ interface QuotationData {
   companyAddress: string;
   companyTaxId: string;
   companyBranch: string;
-  customerCompany: {
-    companyName?: string;
-    companyTel?: string;
-    companyAddress?: string;
+  customer: {
+    name?: string;
+    phone?: string;
+    address?: string;
     taxId?: string;
     branch?: string;
   } | null;
@@ -140,33 +140,33 @@ export default function DirectPDFPreviewPage({
   const generatePDF = useCallback(async () => {
     if (!data) return;
 
-    setGenerating(true);
-    try {
-      const blob = await generateQuotationPDF(data, { detailSpacing });
+    // setGenerating(true);
+    // try {
+    //   const blob = await generateQuotationPDF(data, { detailSpacing });
 
-      // Cleanup old URL
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
+    //   // Cleanup old URL
+    //   if (pdfUrl) {
+    //     URL.revokeObjectURL(pdfUrl);
+    //   }
 
-      pdfBlobRef.current = blob;
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-      setNotification({
-        open: true,
-        message: "สร้าง PDF สำเร็จ",
-        severity: "success",
-      });
-    } catch (err: any) {
-      console.error("PDF generation error:", err);
-      setNotification({
-        open: true,
-        message: `PDF Error: ${err.message}`,
-        severity: "error",
-      });
-    } finally {
-      setGenerating(false);
-    }
+    //   pdfBlobRef.current = blob;
+    //   const url = URL.createObjectURL(blob);
+    //   setPdfUrl(url);
+    //   setNotification({
+    //     open: true,
+    //     message: "สร้าง PDF สำเร็จ",
+    //     severity: "success",
+    //   });
+    // } catch (err: any) {
+    //   console.error("PDF generation error:", err);
+    //   setNotification({
+    //     open: true,
+    //     message: `PDF Error: ${err.message}`,
+    //     severity: "error",
+    //   });
+    // } finally {
+    //   setGenerating(false);
+    // }
   }, [data, detailSpacing, pdfUrl]);
 
   // Auto-generate when data or settings change

@@ -42,7 +42,7 @@ const QuotationTrashTable = () => {
     const mapQuotationData = (quotation: any) => ({
         id: quotation.documentId,
         quotationNumber: quotation.documentIdNo,
-        customerCompanyName: quotation.customerCompany?.companyName || quotation.contactor?.contactorName || "ทั่วไป",
+        customerCompanyName: quotation.customer?.name || quotation.contactor?.contactorName || "ทั่วไป",
         totalAmount: quotation.grandTotal || 0,
         deletedAt: quotation.deletedAt ? new Date(quotation.deletedAt).toLocaleDateString("th-TH") : "-",
     });

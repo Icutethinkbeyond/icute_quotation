@@ -1,69 +1,54 @@
-import { StoreRegister } from "@/interfaces/Store";
 import { ResetPassword } from "@/interfaces/User";
 import APIServices from "../utils/apiServices";
 
-export const AUTH_API_BASE_URL = "/api/store/register";
+export const AUTH_API_BASE_URL = "/api/auth";
+
+export interface RegisterData {
+    email: string;
+    password: string;
+    name: string;
+    companyName: string;
+}
 
 export const authService = {
 
-    async registerStore(store: StoreRegister) {
+    async register(data: RegisterData) {
         try {
-            let data: any = await APIServices.post(`${AUTH_API_BASE_URL}/shop`, store);
-            return { success: true, message: data.message, data: data.data };
+            let response: any = await APIServices.post(`${AUTH_API_BASE_URL}/register`, data);
+            return { success: true, message: response.message, data: response.data };
         } catch (error: any) {
-            console.log(error.response.data)
-            if (error.name === "AbortError") {
-                console.log("Request cancelled");
-            }
-            return { success: false, message: error.response.data?.message || "เกิดข้อผิดพลาด" };
+            console.error("Register error:", error.response?.data);
+            return { success: false, message: error.response?.data?.message || "เกิดข้อผิดพลาดในการลงทะเบียน" };
         }
     },
 
-    async checkStoreUsername(username: string) {
+    async forgotPassword(email: string) {
         try {
-            let data: any = await APIServices.get(`/api/store/check-username?username=${username}`);
-            return { success: true, available: data.available, message: data.message };
+            let response: any = await APIServices.post(`${AUTH_API_BASE_URL}/forgot-password`, { email });
+            return { success: true, message: response.message, data: response.data };
         } catch (error: any) {
-            return { success: false, available: false, message: "ไม่สามารถตรวจสอบชื่อผู้ใช้งานได้" };
-        }
-    },
-
-    async resendVerifyEmail() {
-        try {
-            let data: any = await APIServices.get(`/api/store/resend-verify`);
-            return { success: true, message: data.message, data: data.data };
-        } catch (error: any) {
-            console.log(error.response.data)
-            if (error.name === "AbortError") {
-                console.log("Request cancelled");
-            }
-            return { success: false, message: error.response.data?.message || "เกิดข้อผิดพลาด" };
-        }
-    },
-
-    async sendForgotPassword(email: string) {
-        try {
-            let data: any = await APIServices.post(`/api/forgot-password`, email);
-            return { success: true, message: data.message, data: data.data };
-        } catch (error: any) {
-            console.log(error.response.data)
-            if (error.name === "AbortError") {
-                console.log("Request cancelled");
-            }
-            return { success: false, message: error.response.data?.message || "เกิดข้อผิดพลาด" };
+            console.error("Forgot password error:", error.response?.data);
+            return { success: false, message: error.response?.data?.message || "เกิดข้อผิดพลาด" };
         }
     },
 
     async resetPassword(value: ResetPassword) {
         try {
-            let data: any = await APIServices.post(`/api/reset-password`, value);
-            return { success: true, message: data.message, data: data.data };
+            let response: any = await APIServices.post(`${AUTH_API_BASE_URL}/reset-password`, value);
+            return { success: true, message: response.message, data: response.data };
         } catch (error: any) {
-            console.log(error.response.data)
-            if (error.name === "AbortError") {
-                console.log("Request cancelled");
-            }
-            return { success: false, message: error.response.data?.message || "เกิดข้อผิดพลาด" };
+            console.error("Reset password error:", error.response?.data);
+            return { success: false, message: error.response?.data?.message || "เกิดข้อผิดพลาด" };
+        }
+    },
+
+    async resendVerifyEmail(email: string) {
+        try {
+            let response: any = await APIServices.post(`${AUTH_API_BASE_URL}/resend-verify`, { email });
+            return { success: true, message: response.message, data: response.data };
+        } catch (error: any) {
+            console.error("Resend verify error:", error.response?.data);
+            return { success: false, message: error.response?.data?.message || "เกิดข้อผิดพลาด" };
         }
     },
 

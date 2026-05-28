@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/../lib/prisma';
+import { prisma } from '../../../../../lib/prisma';
 import ExcelJS from 'exceljs';
 import fs from 'fs';
 import path from 'path';
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
                 docType: "Quotation"
             },
             include: {
-                customerCompany: true,
+                customer: true,
                 contactor: true,
                 categories: {
                     include: {

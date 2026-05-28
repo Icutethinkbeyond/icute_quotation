@@ -14,11 +14,11 @@ import {
 import { Field, Form, Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { useNotifyContext } from "@/contexts/NotifyContext";
-import { authService } from "@/services/ApiServices/AuthAPI";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { Mail, HelpCircle, ArrowLeft, Send } from "lucide-react";
 import { LoadingButton } from "@mui/lab";
+import { authService } from "@/services/api-services/AuthAPI";
 
 const validationSchema = Yup.object().shape({
   email: Yup.string().required("กรุณากรอกอีเมล").email("รูปแบบอีเมลไม่ถูกต้อง"),
@@ -35,7 +35,7 @@ export default function ForgetPasswordForm() {
     { setSubmitting }: FormikHelpers<{ email: string }>
   ) => {
     setIsSubmitting(true);
-    const result = await authService.sendForgotPassword(values.email);
+    const result = await authService.forgotPassword(values.email);
 
     setNotify({
       open: true,
@@ -50,12 +50,10 @@ export default function ForgetPasswordForm() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         padding: { xs: 2, md: 4 },
-        // backgroundColor: "#f5f7f9",
       }}
     >
       <Card
@@ -82,7 +80,7 @@ export default function ForgetPasswordForm() {
             padding: 6,
             color: "white",
             textAlign: "center",
-            background: "linear-gradient(135deg, #182E4E 0%, #3BB173 100%)",
+            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           }}
         >
           <Box
@@ -116,7 +114,7 @@ export default function ForgetPasswordForm() {
                 opacity: 0.8,
                 "&:hover": { opacity: 1, bgcolor: "rgba(255,255,255,0.1)" }
               }}
-              onClick={() => router.push(`/${localActive}/store/auth/sign-in`)}
+              onClick={() => router.push(`/${localActive}/auth/sign-in`)}
             >
               กลับไปหน้าเข้าสู่ระบบ
             </Button>
@@ -154,7 +152,7 @@ export default function ForgetPasswordForm() {
                   <Grid2 size={{ xs: 12 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
                       <Avatar sx={{ bgcolor: "primary.light", width: 32, height: 32 }}>
-                        <Mail size={16} />
+                        <Mail size={16} color="#03c9d7" />
                       </Avatar>
                       <Typography variant="subtitle1" fontWeight="600">
                         อีเมลของคุณ

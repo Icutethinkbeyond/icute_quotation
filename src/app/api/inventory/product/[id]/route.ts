@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/prisma';
+import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
 export async function GET(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const product = await prisma.items.findUnique({
-            where: { itemsId: params.id },
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
+        const product = await prisma.items.findFirst({
+            where: {
+                itemsId: params.id,
+                userId,
+            },
             include: {
                 category: true,
                 aboutItems: true,
@@ -32,9 +37,9 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const data = await req.json();
 
-        // Handle Units and Increment Frequency
         if (data.unit) {
             const existingUnit = await prisma.unit.findUnique({
                 where: { unitName: data.unit }
@@ -59,11 +64,11 @@ export async function PATCH(
             data: {
                 itemsName: data.itemsName,
                 itemsDescription: data.itemsDescription,
+                userId,
                 aboutItems: {
                     update: {
                         itemsPrice: data.price,
                         unitName: data.unit,
-                        // ไม่อัปเดต itemsStock
                     }
                 }
             },
@@ -82,17 +87,18 @@ export async function PATCH(
     }
 }
 
-// PUT - กู้คืนสินค้าจากถังขยะ (Restore)
 export async function PUT(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const restoredProduct = await prisma.items.update({
             where: { itemsId: params.id },
             data: {
                 isDeleted: false,
                 deletedAt: null,
+                userId,
             },
             include: {
                 category: true,
@@ -109,23 +115,21 @@ export async function PUT(
     }
 }
 
-// DELETE - ลบสินค้า (Soft delete หรือ Permanent delete)
 export async function DELETE(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const { searchParams } = new URL(req.url);
         const permanent = searchParams.get('permanent') === 'true';
 
         if (permanent) {
-            // Permanent delete - ลบออกจาก database จริงๆ
             await prisma.items.delete({
                 where: { itemsId: params.id }
             });
             return NextResponse.json({ success: true, message: 'Product permanently deleted' });
         } else {
-            // Soft delete - ย้ายไปถังขยะ
             await prisma.items.update({
                 where: { itemsId: params.id },
                 data: {

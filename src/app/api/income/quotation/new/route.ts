@@ -1,45 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/prisma';
 import { DocumentStatus } from '@prisma/client';
+import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
-// Define input types based on what we see in the contexts
 interface QuotationInput {
-    // Document Number
     quotationNumber?: string;
-
-    // Our Company Info
     companyName: string;
     companyTel: string;
     taxId: string;
     branch: string;
     companyAddress: string;
-
-    // Customer Company Info
     customerCompanyName: string;
     customerCompanyTel: string;
     customerCompanyAddress: string;
     customerTaxId: string;
     customerBranch: string;
-
-    // Contactor Info
     contactorName: string;
     contactorTel: string;
     contactorEmail: string;
     contactorAddress: string;
-
     dateCreate: string;
-    
-    // Status
     status?: string;
-
-    // Footer/Calculation Info
     includeVat: boolean;
     taxRate: number;
     globalDiscount: number;
     withholdingTax: number;
     note?: string;
-
-    // Items
     categories: {
         id: string;
         name: string;
@@ -57,13 +43,12 @@ interface QuotationInput {
 
 export async function POST(req: NextRequest) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const data: QuotationInput = await req.json();
         console.log("Creating quotation with data:", JSON.stringify(data, null, 2));
 
-        // Use provided quotationNumber or generate a fallback Document ID
         const docIdNo = data.quotationNumber || `QT-${Date.now()}`;
 
-        // Map status
         let documentStatus: DocumentStatus = DocumentStatus.Draft;
         if (data.status === 'approve') {
             documentStatus = DocumentStatus.Approve;
@@ -71,7 +56,6 @@ export async function POST(req: NextRequest) {
             documentStatus = DocumentStatus.Waiting;
         }
 
-        // 1. Handle Company (Our Company)
         let issuerProfile;
         if (data.companyName) {
             const existingCompany = await prisma.company.findFirst({
@@ -86,11 +70,11 @@ export async function POST(req: NextRequest) {
                         branch: data.branch,
                         companyPhoneNumber: data.companyTel,
                         companyAddress: data.companyAddress,
+                        userId,
                     }
                 });
-                console.log("✅ Auto-created new Company:", data.companyName);
+                console.log("Auto-created new Company:", data.companyName);
             } else {
-                // Update existing company profile info
                 issuerProfile = await prisma.company.update({
                     where: { companyId: existingCompany.companyId },
                     data: {
@@ -103,7 +87,6 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 2. Handle Customer
         let customer;
         if (data.customerCompanyName) {
             customer = await prisma.customer.findFirst({
@@ -117,10 +100,11 @@ export async function POST(req: NextRequest) {
                         taxId: data.customerTaxId,
                         phone: data.customerCompanyTel,
                         address: data.customerCompanyAddress,
-                        companyId: issuerProfile?.companyId as string, // Link to issuer
+                        companyId: issuerProfile?.companyId as string,
+                        userId,
                     }
                 });
-                console.log("✅ Auto-created new Customer:", data.customerCompanyName);
+                console.log("Auto-created new Customer:", data.customerCompanyName);
             } else {
                 customer = await prisma.customer.update({
                     where: { id: customer.id },
@@ -128,13 +112,12 @@ export async function POST(req: NextRequest) {
                         taxId: data.customerTaxId,
                         phone: data.customerCompanyTel,
                         address: data.customerCompanyAddress,
-                        companyId: issuerProfile?.companyId || customer.companyId, // Ensure it's linked
+                        companyId: issuerProfile?.companyId || customer.companyId,
                     }
                 });
             }
         }
 
-        // 3. Handle Contactor
         let contactor;
         if (data.contactorName) {
             contactor = await prisma.contactor.findFirst({
@@ -152,9 +135,10 @@ export async function POST(req: NextRequest) {
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
                         companyId: issuerProfile?.companyId || null,
+                        userId,
                     }
                 });
-                console.log("✅ Auto-created new Contactor:", data.contactorName);
+                console.log("Auto-created new Contactor:", data.contactorName);
             } else {
                 contactor = await prisma.contactor.update({
                     where: { contactorId: contactor.contactorId },
@@ -168,7 +152,6 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 4. Handle Items and Units
         for (const cat of data.categories) {
             for (const item of cat.subItems) {
                 if (item.unit) {
@@ -183,7 +166,6 @@ export async function POST(req: NextRequest) {
                             }
                         });
                     } else {
-                        // Increment usage count for existing units
                         await prisma.unit.update({
                             where: { unitName: item.unit },
                             data: { usageCount: { increment: 1 } }
@@ -201,10 +183,12 @@ export async function POST(req: NextRequest) {
                             data: {
                                 itemsName: item.name,
                                 itemsDescription: item.description,
+                                userId,
                                 aboutItems: {
                                     create: {
                                         itemsPrice: item.pricePerUnit,
-                                        unitName: item.unit
+                                        unitName: item.unit,
+                                        userId,
                                     }
                                 }
                             }
@@ -214,14 +198,12 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 5. Create DocumentPaper
         const document = await prisma.documentPaper.create({
             data: {
                 documentIdNo: docIdNo,
                 docType: "Quotation",
                 documentDetials: "Generated from Web Form",
-                
-                // Issuer Info Snapshot
+                userId,
                 companyName: data.companyName,
                 companyTel: data.companyTel,
                 companyAddress: data.companyAddress,
@@ -238,14 +220,14 @@ export async function POST(req: NextRequest) {
                 withholdingTax: data.withholdingTax,
                 note: data.note || null,
 
-                paymentDate: new Date(), // Add default payment date if required
-                method: 'CASH', // Add default method if required
+                paymentDate: new Date(),
+                method: 'CASH',
 
-                // Items
                 categories: {
                     create: data.categories.map((cat, index) => ({
                         name: cat.name,
                         orderIndex: index,
+                        userId,
                         items: {
                             create: cat.subItems.map((item, iIndex) => ({
                                 name: item.name,
@@ -255,7 +237,8 @@ export async function POST(req: NextRequest) {
                                 pricePerUnit: item.pricePerUnit,
                                 remark: item.remark,
                                 totalPrice: (item.qty * item.pricePerUnit),
-                                orderIndex: iIndex
+                                orderIndex: iIndex,
+                                userId,
                             }))
                         }
                     }))

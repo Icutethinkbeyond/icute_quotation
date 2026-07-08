@@ -48,6 +48,20 @@ model User {
   emailLogs     EmailLog[]
   lineLogs      LineLog[]
   notifications Notification[]
+
+  ownedAccounts       Account[]
+  ownedCompanies      Company[]
+  ownedJournalEntries JournalEntry[]
+  ownedCustomers      Customer[]
+  ownedVendors        Vendor[]
+  ownedContactors     Contactor[]
+  ownedDocumentPapers DocumentPaper[]
+  ownedCategories     Category[]
+  ownedItems          Items[]
+  ownedUnits          Unit[]
+  ownedAboutItems     AboutItem[]
+  ownedDocumentCategories DocumentCategory[]
+  ownedDocumentItems DocumentItem[]
 }
 
 model CompanyUser {
@@ -99,6 +113,9 @@ model Account {
   isActive   Boolean     @default(true)
   parentId   String?
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   company  Company   @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
   parent   Account?  @relation("AccountParent", fields: [parentId], references: [id])
   children Account[] @relation("AccountParent")
@@ -109,6 +126,7 @@ model Account {
   updatedAt DateTime @updatedAt
 
   @@unique([companyId, code])
+  @@index([userId])
 }
 
 // --------------------------------------
@@ -129,6 +147,9 @@ model Company {
   companyImage            String?
   companyImagePublicId    String?
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   customer       Customer[]
   companyUsers   CompanyUser[]
   accounts       Account[]
@@ -137,11 +158,13 @@ model Company {
   contactors     Contactor[]
 
   isDeleted  Boolean   @default(false)
-  deletedAt  DateTime?
+  deletedAt DateTime?
   isFavorite Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ======================================================
@@ -156,6 +179,9 @@ model JournalEntry {
   description String?
   status      JournalStatus @default(DRAFT)
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   company Company       @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
   lines   JournalLine[]
 
@@ -163,6 +189,7 @@ model JournalEntry {
   updatedAt DateTime @updatedAt
 
   @@unique([companyId, journalNo])
+  @@index([userId])
 }
 
 model JournalLine {
@@ -188,10 +215,15 @@ model Customer {
   email     String?
   address   String?
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   company        Company         @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
   documentPapers DocumentPaper[]
 
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Vendor {
@@ -203,10 +235,15 @@ model Vendor {
   email     String?
   address   String?
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   company        Company         @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
   documentPapers DocumentPaper[]
 
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Contactor {
@@ -219,16 +256,20 @@ model Contactor {
   company   Company? @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
   companyId String?
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   documentPapers DocumentPaper[]
 
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
-  // true = สร้างจากหน้า customer management, false = สร้างจาก quotation
   isStandalone Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // --------------------------------------
@@ -239,50 +280,44 @@ model DocumentPaper {
   documentId   String @id @default(uuid())
   documentIdNo String @unique
 
-  // Issuer Info (Snapshot at creation)
   companyName    String?
   companyTel     String?
   companyAddress String?
   companyTaxId   String?
   companyBranch  String?
 
-  // Details
   docType         String
   docMonth        String?
   docYear         String?
   documentDetials String? // Keeping typo as requested
 
-  // Relations
   customer   Customer? @relation(fields: [customerId], references: [id])
   customerId String?
 
   contactor   Contactor? @relation(fields: [contactorId], references: [contactorId])
   contactorId String?
 
-  // Status & Dates
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   documentType   eDocumentType  @default(Quotation)
   documentStatus DocumentStatus @default(Draft)
 
   documentCreateDate DateTime? @default(now())
   documentExpire     DateTime?
 
-  // PricingContext Global State
   includeVat     Boolean @default(false)
   taxRate        Float   @default(7)
   globalDiscount Float   @default(0)
 
-  // Summary Fields
   withholdingTax Float @default(0)
 
-  // Notes field
   note String?
 
-  // For Payment || RECEIPT
   paymentDate DateTime
   method      PaymentMethod
   referenceNo String?
 
-  // Relation to Categories
   categories DocumentCategory[]
 
   isDeleted Boolean   @default(false)
@@ -292,24 +327,28 @@ model DocumentPaper {
   updatedAt DateTime @updatedAt
   vendor    Vendor?  @relation(fields: [vendorId], references: [id])
   vendorId  String?
+
+  @@index([userId])
 }
 
 model DocumentCategory {
   categoryId String @id @default(uuid())
   name       String
 
-  // Relation back to Paper
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   documentPaper   DocumentPaper @relation(fields: [documentPaperId], references: [documentId], onDelete: Cascade)
   documentPaperId String
 
-  // Relation to SubItems
   items DocumentItem[]
 
-  // Ordering
   orderIndex Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model DocumentItem {
@@ -322,18 +361,20 @@ model DocumentItem {
   pricePerUnit Float   @default(0)
   remark       String?
 
-  // Calculation helper
   totalPrice Float @default(0)
 
-  // Relation back to Category
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   category   DocumentCategory @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade)
   categoryId String
 
-  // Ordering
   orderIndex Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // --------------------------------------
@@ -346,8 +387,13 @@ model Category {
   categoryDesc String?
   itemss       Items[]
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Items {
@@ -361,11 +407,16 @@ model Items {
   category   Category?  @relation(fields: [categoryId], references: [categoryId])
   categoryId String?
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model AboutItem {
@@ -373,6 +424,9 @@ model AboutItem {
 
   items   Items  @relation(fields: [itemsId], references: [itemsId], onDelete: Cascade)
   itemsId String @unique
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
 
   itemsPrice         Float?  @default(0)
   itemsDiscountPrice Float?  @default(0)
@@ -382,6 +436,8 @@ model AboutItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // --------------------------------------
@@ -393,8 +449,13 @@ model Unit {
   unitName   String @unique
   usageCount Int    @default(0)
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ======================================================

@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
+import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
 export async function GET(req: NextRequest) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const { searchParams } = new URL(req.url);
         const showDeleted = searchParams.get('trash') === 'true';
 
         const products = await prisma.items.findMany({
             where: {
-                // กรองตาม isDeleted - รองรับข้อมูลเก่าที่ isDeleted เป็น null/undefined
+                userId,
                 ...(showDeleted
                     ? { isDeleted: true }
-                    : { NOT: { isDeleted: true } } // แสดงทุกอย่างยกเว้นที่ isDeleted = true
+                    : { NOT: { isDeleted: true } }
                 ),
             },
             include: {
@@ -35,12 +37,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const data = await req.json();
 
-        // Auto-generate SKU if not provided
         const sku = data.productSKU || `SKU-${Date.now()}`;
 
-        // Handle Units and Increment Frequency
         if (data.unit) {
             const existingUnit = await prisma.unit.findUnique({
                 where: { unitName: data.unit }
@@ -67,12 +68,14 @@ export async function POST(req: NextRequest) {
                 itemsDescription: data.itemsDescription || "",
                 categoryId: null,
                 itemsImage: null,
+                userId,
                 aboutItems: {
                     create: {
                         itemsPrice: data.price || 0,
-                        itemsStock: 0, // ไม่ใช้ stock แต่ตั้งค่าเป็น 0
+                        itemsStock: 0,
                         unitName: data.unit || "ชิ้น",
                         itemsBrand: null,
+                        userId,
                     }
                 }
             },

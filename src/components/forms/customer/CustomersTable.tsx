@@ -20,7 +20,7 @@ const CustomersTable: React.FC = () => {
     // Data mapping function
     const mapCustomerData = useCallback((item: Customer): CustomerTableRow => ({
         ...item,
-        id: item.contactorId,
+        id: item.id,
     }), []);
 
     // Use data table hook
@@ -84,7 +84,7 @@ const CustomersTable: React.FC = () => {
                         <IconButton
                             size="small"
                             color="secondary"
-                            onClick={() => router.push(`/customer/edit-customer/${params.row.contactorId}`)}
+                            onClick={() => router.push(`/protected/customer/edit-customer/${params.row.contactorId}`)}
                         >
                             <EditCalendar />
                         </IconButton>
@@ -92,7 +92,7 @@ const CustomersTable: React.FC = () => {
                     <Tooltip title="ดูข้อมูล">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/customer/view-customer/${params.row.contactorId}`)}
+                            onClick={() => router.push(`/protected/customer/view-customer/${params.row.contactorId}`)}
                             size="small"
                         >
                             <Visibility />
@@ -116,7 +116,7 @@ const CustomersTable: React.FC = () => {
         <>
             <Button
                 startIcon={<DeleteSweep />}
-                onClick={() => router.push("/customer/trash")}
+                onClick={() => router.push("/protected/customer/trash")}
                 sx={{
                     backgroundColor: "#ffe2e6",
                     color: "#d32f2f",
@@ -131,7 +131,7 @@ const CustomersTable: React.FC = () => {
             <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => router.push("/customer/new-customer")}
+                onClick={() => router.push("/protected/customer/new-customer")}
                 sx={{
                     backgroundColor: "#03c9d7",
                     color: "#fff",

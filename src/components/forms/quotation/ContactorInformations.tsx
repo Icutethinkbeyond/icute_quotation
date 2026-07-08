@@ -29,6 +29,7 @@ import {
   LocationOn,
   CalendarToday,
 } from "@mui/icons-material";
+import FormSection from "@/components/shared/FormSection";
 
 // Validation Schema with Yup
 const ContactorInformationSchema = Yup.object().shape({

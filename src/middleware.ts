@@ -23,8 +23,8 @@ function getLocale(pathname: string) {
 
 function getStoreCookieName() {
   return process.env.NODE_ENV === "production"
-    ? "__Secure-store-session-token"
-    : "store-session-token";
+    ? "__Secure-accounting-session-token"
+    : "accounting-session-token";
 }
 
 // -----------------------------
@@ -80,13 +80,12 @@ export default async function middleware(req: NextRequest) {
     locales.some(
       (loc) =>
         pathname === `/${loc}` ||
-        pathname === `/${loc}/` ||
-        pathname === `/${loc}/store`
+        pathname === `/${loc}/`
     );
 
   if (isRoot) {
     return NextResponse.redirect(
-      new URL(`/${locale}/store/auth/sign-in`, req.url)
+      new URL(`/${locale}/auth/sign-in`, req.url)
     );
   }
 
@@ -102,10 +101,10 @@ export default async function middleware(req: NextRequest) {
   // -----------------------------
   // 1️⃣ STORE PROTECTED
   // -----------------------------
-  if (pathname.includes("/store/protected")) {
+  if (pathname.includes("/protected")) {
     if (!merchantToken) {
       return NextResponse.redirect(
-        new URL(`/${locale}/store/auth/sign-in`, req.url)
+        new URL(`/${locale}/auth/sign-in`, req.url)
       );
     }
 
@@ -115,10 +114,10 @@ export default async function middleware(req: NextRequest) {
   // -----------------------------
   // 2️⃣ STORE AUTH (กัน login ซ้ำ)
   // -----------------------------
-  if (pathname.includes("/store/auth")) {
+  if (pathname.includes("/auth")) {
     if (merchantToken) {
       return NextResponse.redirect(
-        new URL(`/${locale}/store/protected/dashboard`, req.url)
+        new URL(`/${locale}/protected/dashboard`, req.url)
       );
     }
 
@@ -130,7 +129,7 @@ export default async function middleware(req: NextRequest) {
   // -----------------------------
   if (pathname.includes("/not-found")) {
     return NextResponse.redirect(
-      new URL(`/${locale}/store/auth/sign-in`, req.url)
+      new URL(`/${locale}/auth/sign-in`, req.url)
     );
   }
 

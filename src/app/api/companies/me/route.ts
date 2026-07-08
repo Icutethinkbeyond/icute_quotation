@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
+import { prisma } from '@/../lib/prisma';
 import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
 // ============================================================================
-// GET: Fetch Single Company by ID
+// GET: Fetch the current user's own company (from session companyId)
 // ============================================================================
-export async function GET(
-    req: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest) {
     try {
-        const { id } = params;
+        const { companyId } = await getCurrentUserAndCompanyIdsByToken(req);
 
-        if (!id) {
-            return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
+        if (!companyId) {
+            return NextResponse.json({ error: 'No company associated with this account' }, { status: 404 });
         }
 
         const company = await prisma.company.findUnique({
-            where: { companyId: id },
+            where: { companyId },
             include: {
                 companyUsers: {
                     include: {
@@ -37,8 +34,11 @@ export async function GET(
         }
 
         return NextResponse.json(company);
-    } catch (error) {
-        console.error("Error fetching company profile:", error);
+    } catch (error: any) {
+        if (error?.message === 'Unauthorized') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+        console.error("Error fetching own company:", error);
         return NextResponse.json(
             { error: 'Internal Server Error', details: String(error) },
             { status: 500 }
@@ -49,37 +49,24 @@ export async function GET(
 }
 
 // ============================================================================
-// PUT: Update Company OR Restore from Trash
+// PUT: Update the current user's own company (from session companyId)
 // ============================================================================
-export async function PUT(
-    req: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function PUT(req: NextRequest) {
     try {
-        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
-        const { id } = params;
+        const { companyId } = await getCurrentUserAndCompanyIdsByToken(req);
+
+        if (!companyId) {
+            return NextResponse.json({ error: 'No company associated with this account' }, { status: 404 });
+        }
+
         const body = await req.json();
-
-        if (!id) {
-            return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
-        }
-
-        if (!body || Object.keys(body).length === 0) {
-            const restoredCompany = await prisma.company.update({
-                where: { companyId: id },
-                data: {
-                    isDeleted: false,
-                    deletedAt: null,
-                },
-            });
-            return NextResponse.json(restoredCompany);
-        }
 
         const {
             companyName,
             companyAddress,
             companyTaxId,
             branch,
+            companyPhoneNumber,
             companyEmail,
             companyWebsite,
             companyBusinessType,
@@ -87,13 +74,12 @@ export async function PUT(
             isFavorite,
             companyImage,
             companyImagePublicId,
-            companyPhoneNumber,
         } = body;
 
         if (isFavorite === true) {
             await prisma.company.updateMany({
                 where: {
-                    companyId: { not: id },
+                    companyId: { not: companyId },
                 },
                 data: {
                     isFavorite: false,
@@ -102,7 +88,7 @@ export async function PUT(
         }
 
         const updatedProfile = await prisma.company.update({
-            where: { companyId: id },
+            where: { companyId },
             data: {
                 ...(companyName !== undefined && { companyName }),
                 ...(companyAddress !== undefined && { companyAddress }),
@@ -120,51 +106,11 @@ export async function PUT(
         });
 
         return NextResponse.json(updatedProfile);
-    } catch (error) {
-        console.error("Error updating company profile:", error);
-        return NextResponse.json(
-            { error: 'Internal Server Error', details: String(error) },
-            { status: 500 }
-        );
-    } finally {
-        await prisma.$disconnect();
-    }
-}
-
-// ============================================================================
-// DELETE: Soft Delete OR Permanent Delete Company
-// ============================================================================
-export async function DELETE(
-    req: NextRequest,
-    { params }: { params: { id: string } }
-) {
-    try {
-        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
-        const { id } = params;
-        const { searchParams } = new URL(req.url);
-        const permanent = searchParams.get('permanent') === 'true';
-
-        if (!id) {
-            return NextResponse.json({ error: 'Company ID is required' }, { status: 400 });
+    } catch (error: any) {
+        if (error?.message === 'Unauthorized') {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-
-        if (permanent) {
-            await prisma.company.delete({
-                where: { companyId: id },
-            });
-            return NextResponse.json({ message: 'Company permanently deleted' });
-        } else {
-            await prisma.company.update({
-                where: { companyId: id },
-                data: {
-                    isDeleted: true,
-                    deletedAt: new Date(),
-                },
-            });
-            return NextResponse.json({ message: 'Company moved to trash' });
-        }
-    } catch (error) {
-        console.error("Error deleting company profile:", error);
+        console.error("Error updating own company:", error);
         return NextResponse.json(
             { error: 'Internal Server Error', details: String(error) },
             { status: 500 }

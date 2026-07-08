@@ -111,6 +111,11 @@ export const useMenuItemsStore = () => {
               title: "เปลี่ยนรหัสผ่าน",
               href: `/${localActive}/protected/password`,
             },
+            {
+              id: uniqueId(),
+              title: "ข้อมูลบริษัท",
+              href: `/${localActive}/protected/company-settings`,
+            },
           ]
         : [
             {
@@ -122,6 +127,11 @@ export const useMenuItemsStore = () => {
               id: uniqueId(),
               title: "เปลี่ยนรหัสผ่าน",
               href: `/${localActive}/protected/admin-password`,
+            },
+            {
+              id: uniqueId(),
+              title: "ข้อมูลบริษัท",
+              href: `/${localActive}/protected/company-settings`,
             },
           ],
     },

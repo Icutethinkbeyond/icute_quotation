@@ -8,9 +8,9 @@ import { Add, EditCalendar, Delete, Visibility, DeleteSweep, Star, StarBorder } 
 import { GenericDataTable } from "@/components/shared/GenericDataTable";
 import { useDataTable } from "@/hooks/useDataTable";
 import { useDebounceSearch } from "@/hooks/useDebounceSearch";
-import { CompanyProfile } from "@/interfaces/Company";
+import { Company } from "@/interfaces/Company";
 
-interface CompanyTableRow extends CompanyProfile {
+interface CompanyTableRow extends Company {
     id: string;
 }
 
@@ -18,7 +18,7 @@ const CompanyTable = () => {
     const router = useRouter();
 
     // Data mapping function
-    const mapCompanyData = useCallback((item: CompanyProfile): CompanyTableRow => ({
+    const mapCompanyData = useCallback((item: Company): CompanyTableRow => ({
         ...item,
         id: item.companyId,
     }), []);
@@ -30,7 +30,7 @@ const CompanyTable = () => {
         paginationModel,
         setPaginationModel,
         refresh,
-    } = useDataTable<CompanyProfile, CompanyTableRow>({
+    } = useDataTable<Company, CompanyTableRow>({
         apiUrl: "/api/companies",
         mapData: mapCompanyData,
     });
@@ -113,7 +113,7 @@ const CompanyTable = () => {
                     <Tooltip title="แก้ไข">
                         <IconButton
                             color="secondary"
-                            onClick={() => router.push(`/company/edit-company/${params.row.companyId}`)}
+                            onClick={() => router.push(`/protected/company/edit-company/${params.row.companyId}`)}
                             size="small"
                         >
                             <EditCalendar />
@@ -122,7 +122,7 @@ const CompanyTable = () => {
                     <Tooltip title="ดูข้อมูล">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/company/view-company/${params.row.companyId}`)}
+                            onClick={() => router.push(`/protected/company/view-company/${params.row.companyId}`)}
                             size="small"
                         >
                             <Visibility />

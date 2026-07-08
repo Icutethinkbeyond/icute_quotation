@@ -61,7 +61,7 @@ const Dashboard = () => {
       icon: IconReceipt2,
       color: "primary.main",
       bgColor: "primary.light",
-      href: "/quotation"
+      href: "/protected/quotation"
     },
     {
       title: "ลูกค้ารวม",
@@ -69,7 +69,7 @@ const Dashboard = () => {
       icon: IconUsers,
       color: "secondary.main",
       bgColor: "secondary.light",
-      href: "/customer"
+      href: "/protected/customer"
     },
     {
       title: "สินค้าในระบบ",
@@ -77,7 +77,7 @@ const Dashboard = () => {
       icon: IconPackage,
       color: "success.main",
       bgColor: "success.light",
-      href: "/product"
+      href: "/protected/product"
     },
     {
       title: "รายได้รวม (อนุมัติแล้ว)",
@@ -85,7 +85,7 @@ const Dashboard = () => {
       icon: IconCurrencyBaht,
       color: "warning.main",
       bgColor: "warning.light",
-      href: "/quotation"
+      href: "/protected/quotation"
     }
   ];
 
@@ -165,7 +165,7 @@ const Dashboard = () => {
                   variant="contained" 
                   fullWidth 
                   startIcon={<IconPlus size="20" />}
-                  onClick={() => router.push("/quotation/new-quotation")}
+                  onClick={() => router.push("/protected/quotation/new-quotation")}
                   sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
                 >
                   สร้างใบเสนอราคาใหม่
@@ -174,7 +174,7 @@ const Dashboard = () => {
                   variant="outlined" 
                   fullWidth 
                   startIcon={<IconUsers size="20" />}
-                  onClick={() => router.push("/customer/new-customer")}
+                  onClick={() => router.push("/protected/customer/new-customer")}
                   sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
                 >
                   เพิ่มลูกค้าใหม่
@@ -183,7 +183,7 @@ const Dashboard = () => {
                   variant="outlined" 
                   fullWidth 
                   startIcon={<IconPackage size="20" />}
-                  onClick={() => router.push("/product/new")}
+                  onClick={() => router.push("/protected/product/new")}
                   sx={{ py: 1.5, textTransform: 'none', fontWeight: 600 }}
                 >
                   เพิ่มสินค้าใหม่
@@ -244,7 +244,7 @@ const Dashboard = () => {
               </Box>
               <Box mt={2} textAlign="right">
                 <Button 
-                  onClick={() => router.push("/quotation")}
+                  onClick={() => router.push("/protected/quotation")}
                   sx={{ textTransform: 'none' }}
                 >
                   ดูใบเสนอราคาทั้งหมด

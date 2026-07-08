@@ -1,42 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/prisma';
 import { DocumentStatus } from '@prisma/client';
+import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
 interface QuotationInput {
-    // Document Number
     quotationNumber?: string;
-
-    // Our Company Info
     companyName: string;
     companyTel: string;
     taxId: string;
     branch: string;
     companyAddress: string;
-
-    // Customer Company Info
     customerCompanyName: string;
     customerCompanyTel: string;
     customerCompanyAddress: string;
     customerTaxId: string;
     customerBranch: string;
-
-    // Contactor Info
     contactorName: string;
     contactorTel: string;
     contactorEmail: string;
     contactorAddress: string;
-
     dateCreate: string;
-
-    // Status
     status?: string;
-
     includeVat: boolean;
     taxRate: number;
     globalDiscount: number;
     withholdingTax: number;
     note?: string;
-
     categories: {
         id: string;
         name: string;
@@ -57,11 +46,13 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const documentId = params.id;
 
-        const quotation = await prisma.documentPaper.findUnique({
+        const quotation = await prisma.documentPaper.findFirst({
             where: {
-                documentId: documentId
+                documentId,
+                userId,
             },
             include: {
                 customer: {
@@ -103,12 +94,13 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const documentId = params.id;
         const data: QuotationInput = await req.json();
 
         console.log("Updating quotation with data:", JSON.stringify(data, null, 2));
 
-        const existingQuotation = await prisma.documentPaper.findUnique({
+        const existingQuotation = await prisma.documentPaper.findFirst({
             where: { documentId },
             include: {
                 customer: true,
@@ -125,7 +117,6 @@ export async function PATCH(
             return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
         }
 
-        // Map status
         let documentStatus: DocumentStatus = existingQuotation.documentStatus;
         if (data.status === 'approve') {
             documentStatus = DocumentStatus.Approve;
@@ -135,7 +126,6 @@ export async function PATCH(
             documentStatus = DocumentStatus.Waiting;
         }
 
-        // 1. Handle Company (Our Company)
         let issuerProfile;
         if (data.companyName) {
             const existingCompany = await prisma.company.findFirst({
@@ -165,7 +155,6 @@ export async function PATCH(
             }
         }
 
-        // 2. Handle Items and Units
         for (const cat of data.categories) {
             for (const item of cat.subItems) {
                 if (item.unit) {
@@ -188,10 +177,12 @@ export async function PATCH(
                             data: {
                                 itemsName: item.name,
                                 itemsDescription: item.description,
+                                userId,
                                 aboutItems: {
                                     create: {
                                         itemsPrice: item.pricePerUnit,
-                                        unitName: item.unit
+                                        unitName: item.unit,
+                                        userId,
                                     }
                                 }
                             }
@@ -201,7 +192,6 @@ export async function PATCH(
             }
         }
 
-        // 3. Update or Create Customer
         let customer;
         if (data.customerCompanyName) {
             customer = await prisma.customer.findFirst({
@@ -215,7 +205,8 @@ export async function PATCH(
                         taxId: data.customerTaxId,
                         phone: data.customerCompanyTel,
                         address: data.customerCompanyAddress,
-                        companyId: issuerProfile?.companyId || customer.companyId, // Ensure link
+                        companyId: issuerProfile?.companyId || customer.companyId,
+                        userId,
                     }
                 });
             } else {
@@ -225,13 +216,13 @@ export async function PATCH(
                         taxId: data.customerTaxId,
                         phone: data.customerCompanyTel,
                         address: data.customerCompanyAddress,
-                        companyId: issuerProfile?.companyId as string, // Link to issuer
+                        companyId: issuerProfile?.companyId as string,
+                        userId,
                     }
                 });
             }
         }
 
-        // 4. Update or Create Contactor
         let contactor;
         if (data.contactorName) {
             contactor = await prisma.contactor.findFirst({
@@ -248,7 +239,8 @@ export async function PATCH(
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
-                        companyId: issuerProfile?.companyId || contactor.companyId
+                        companyId: issuerProfile?.companyId || contactor.companyId,
+                        userId,
                     }
                 });
             } else {
@@ -258,17 +250,16 @@ export async function PATCH(
                         contactorTel: data.contactorTel,
                         contactorEmail: data.contactorEmail,
                         contactorAddress: data.contactorAddress,
-                        companyId: issuerProfile?.companyId || null
+                        companyId: issuerProfile?.companyId || null,
+                        userId,
                     }
                 });
             }
         }
 
-        // Ensure DocumentPaper is linked correctly
         const customerId = customer?.id || null;
         const contactorId = contactor?.contactorId || null;
 
-        // Delete old categories before creating new ones
         await prisma.documentCategory.deleteMany({
             where: { documentPaperId: documentId }
         });
@@ -277,32 +268,26 @@ export async function PATCH(
             where: { documentId },
             data: {
                 documentIdNo: data.quotationNumber || existingQuotation.documentIdNo,
-                
-                // Issuer Info Snapshot
                 companyName: data.companyName,
                 companyTel: data.companyTel,
                 companyAddress: data.companyAddress,
                 companyTaxId: data.taxId,
                 companyBranch: data.branch,
-
-                // Customer Relations
                 customerId: customerId,
                 contactorId: contactorId,
-
                 includeVat: data.includeVat,
                 taxRate: data.taxRate || 7,
                 globalDiscount: data.globalDiscount,
                 withholdingTax: data.withholdingTax,
                 note: data.note || null,
                 documentStatus: documentStatus,
-
                 paymentDate: existingQuotation.paymentDate || new Date(),
                 method: existingQuotation.method || 'CASH',
-
                 categories: {
                     create: data.categories.map((cat, index) => ({
                         name: cat.name,
                         orderIndex: index,
+                        userId,
                         items: {
                             create: cat.subItems.map((item, iIndex) => ({
                                 name: item.name,
@@ -311,8 +296,9 @@ export async function PATCH(
                                 qty: item.qty,
                                 pricePerUnit: item.pricePerUnit,
                                 remark: item.remark,
-                                totalPrice: (item.qty * item.pricePerUnit),
-                                orderIndex: iIndex
+                                totalPrice: item.qty * item.pricePerUnit,
+                                orderIndex: iIndex,
+                                userId,
                             }))
                         }
                     }))
@@ -344,6 +330,7 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const documentId = params.id;
         const { searchParams } = new URL(req.url);
         const permanent = searchParams.get('permanent') === 'true';
@@ -374,11 +361,11 @@ export async function DELETE(
 export async function PUT(
     req: NextRequest,
     { params }: { params: { id: string } }
-  ) {
+) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const documentId = params.id;
-        // Restore from trash
-        await prisma.documentPaper.update({
+        const restored = await prisma.documentPaper.update({
             where: { documentId },
             data: {
                 isDeleted: false,
@@ -392,28 +379,26 @@ export async function PUT(
     } finally {
         await prisma.$disconnect();
     }
-  }
+}
 
-  export async function POST(
+export async function POST(
     req: NextRequest,
     { params }: { params: { id: string } }
-  ) {
+) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const documentId = params.id;
         const body = await req.json();
-        const duplicateType = body.duplicateType || 'full'; // 'full' or 'items_only'
+        const duplicateType = body.duplicateType || 'full';
 
-        // Fetch the original quotation
-        const originalQuotation = await prisma.documentPaper.findUnique({
+        const originalQuotation = await prisma.documentPaper.findFirst({
             where: { documentId },
             include: {
                 customer: true,
                 contactor: true,
                 categories: {
                     include: {
-                        items: {
-                            orderBy: { orderIndex: 'asc' }
-                        }
+                        items: true
                     }
                 }
             }
@@ -423,44 +408,34 @@ export async function PUT(
             return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
         }
 
-        // Generate new quotation number
         const newQuotationNumber = `QT-${Date.now()}`;
 
-        // Create new quotation data
         const newQuotationData: any = {
             documentIdNo: newQuotationNumber,
             docType: 'Quotation',
             documentDetials: 'Duplicated from ' + originalQuotation.documentIdNo,
-            
-            // Copy issuer info from original
+            userId,
             companyName: originalQuotation.companyName,
             companyTel: originalQuotation.companyTel,
             companyAddress: originalQuotation.companyAddress,
             companyTaxId: originalQuotation.companyTaxId,
             companyBranch: originalQuotation.companyBranch,
-            
-            // Copy customer and contactor relations
             customerId: originalQuotation.customerId,
             contactorId: originalQuotation.contactorId,
-            
-            // Copy pricing settings
             includeVat: originalQuotation.includeVat,
             taxRate: originalQuotation.taxRate,
             globalDiscount: duplicateType === 'full' ? originalQuotation.globalDiscount : 0,
             withholdingTax: duplicateType === 'full' ? originalQuotation.withholdingTax : 0,
             note: duplicateType === 'full' ? originalQuotation.note : 'Duplicated from ' + originalQuotation.documentIdNo,
-            
             documentStatus: 'Draft',
             isDeleted: false,
-
             paymentDate: new Date(),
             method: 'CASH',
-            
-            // Copy categories and items
             categories: {
                 create: originalQuotation.categories.map((cat, catIndex) => ({
                     name: cat.name,
                     orderIndex: catIndex,
+                    userId,
                     items: {
                         create: cat.items.map((item, itemIndex) => ({
                             name: item.name,
@@ -470,14 +445,14 @@ export async function PUT(
                             pricePerUnit: item.pricePerUnit,
                             remark: item.remark,
                             totalPrice: item.qty * item.pricePerUnit,
-                            orderIndex: itemIndex
+                            orderIndex: itemIndex,
+                            userId,
                         }))
                     }
                 }))
             }
         };
 
-        // Create the duplicated quotation
         const duplicatedQuotation = await prisma.documentPaper.create({
             data: newQuotationData,
             include: {
@@ -503,4 +478,4 @@ export async function PUT(
     } finally {
         await prisma.$disconnect();
     }
-  }
+}

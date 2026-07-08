@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
+import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
 // ============================================================================
 // GET: Fetch All Units
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
 // ============================================================================
 export async function PATCH(req: NextRequest) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const body = await req.json();
         const { unitName } = body;
 
@@ -61,6 +63,7 @@ export async function PATCH(req: NextRequest) {
 // ============================================================================
 export async function POST(req: NextRequest) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const body = await req.json();
         const { unitName } = body;
 
@@ -69,7 +72,7 @@ export async function POST(req: NextRequest) {
         }
 
         const newUnit = await prisma.unit.create({
-            data: { unitName },
+            data: { unitName, userId },
         });
 
         return NextResponse.json(newUnit);

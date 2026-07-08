@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
+import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
-
-// GET - ดึงข้อมูลลูกค้ารายตัว
 export async function GET(
     req: NextRequest,
     { params }: { params: { id: string } }
@@ -27,12 +26,12 @@ export async function GET(
     }
 }
 
-// PATCH - แก้ไขข้อมูลลูกค้า
 export async function PATCH(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const contactorId = params.id;
         const data = await req.json();
 
@@ -50,6 +49,7 @@ export async function PATCH(
                 contactorTel: contactorTel || null,
                 contactorEmail: contactorEmail || null,
                 contactorAddress: contactorAddress || null,
+                userId,
             }
         });
 
@@ -62,12 +62,12 @@ export async function PATCH(
     }
 }
 
-// PUT - กู้คืนลูกค้าจากถังขยะ (Restore)
 export async function PUT(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const contactorId = params.id;
 
         const restoredCustomer = await prisma.contactor.update({
@@ -75,6 +75,7 @@ export async function PUT(
             data: {
                 isDeleted: false,
                 deletedAt: null,
+                userId,
             }
         });
 
@@ -87,24 +88,22 @@ export async function PUT(
     }
 }
 
-// DELETE - ลบลูกค้า (Soft delete หรือ Permanent delete)
 export async function DELETE(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const contactorId = params.id;
         const { searchParams } = new URL(req.url);
         const permanent = searchParams.get('permanent') === 'true';
 
         if (permanent) {
-            // Permanent delete - ลบออกจาก database จริงๆ
             await prisma.contactor.delete({
                 where: { contactorId }
             });
             return NextResponse.json({ success: true, message: 'Customer permanently deleted' });
         } else {
-            // Soft delete - ย้ายไปถังขยะ
             await prisma.contactor.update({
                 where: { contactorId },
                 data: {

@@ -3,14 +3,13 @@
 import { styled, Container, Box } from "@mui/material";
 import React, { useState } from "react";
 import Header from "@/components/layout/header/Header";
-import Sidebar from "@/components/layout/sidebar/Sidebar";
+import Sidebar from "@/components/layout/sidebar/Sidebarold";
 import CustomNotifications from "@/components/shared/CustomNotifications";
 import LoadingBackdrop from "@/components/shared/BackdropLoading";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { SessionProvider } from "next-auth/react";
 import EmailVerificationGuard from "@/components/forms/auth/EmailVerificationGuard";
-import StoreSetupGuard from "@/components/forms/auth/StoreSetupGuard";
 import AlertDialog from "@/components/shared/AlertDialog";
 
 const MainWrapper = styled("div")(() => ({

@@ -1,8 +1,9 @@
-import { useMediaQuery, Box, Drawer, useTheme, Button } from "@mui/material";
-import Logo from "@/components/shared/Logo";
+import { useMediaQuery, Box, Drawer, Typography, Stack, useTheme, alpha } from "@mui/material";
 import SidebarItems from "./SidebarItems";
-import { IconLogout, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { RoleName } from "@prisma/client";
+import { CalendarDays } from "lucide-react";
+import React, { memo } from "react";
 
 interface ItemType {
   isMobileSidebarOpen: boolean;
@@ -11,105 +12,92 @@ interface ItemType {
   onToggleSidebar?: () => void;
 }
 
+const SidebarContent = ({ collapsed }: { collapsed: boolean }) => {
+  const theme = useTheme();
+  return (
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Branding Section */}
+      <Box sx={{ px: collapsed ? 2.5 : 3, py: 4, transition: "padding 0.3s" }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Box
+            sx={{
+              bgcolor: "background.paper",
+              borderRadius: "10px",
+              minWidth: 36,
+              width: 36,
+              height: 36,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              boxShadow: theme.shadows[3],
+            }}
+          >
+            <CalendarDays color={theme.palette.primary.main} size={20} />
+          </Box>
+          <Typography 
+            variant="h6" 
+            fontWeight={800} 
+            sx={{ 
+              color: theme.palette.primary.contrastText,
+              letterSpacing: "-0.02em",
+              whiteSpace: "nowrap",
+              opacity: collapsed ? 0 : 1,
+              transition: "opacity 0.3s, width 0.3s",
+              width: collapsed ? 0 : "auto",
+              overflow: "hidden"
+            }}
+          >
+            iCute Booking
+          </Typography>
+        </Stack>
+      </Box>
+
+      {/* Sidebar Navigation */}
+      <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", pb: 4 }}>
+        <SidebarItems collapsed={collapsed} />
+      </Box>
+
+      {/* Optional Footer or Version Info */}
+      <Box sx={{ p: 3, borderTop: `1px solid ${alpha(theme.palette.primary.contrastText, 0.05)}`, whiteSpace: "nowrap", overflow: "hidden" }}>
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            color: alpha(theme.palette.primary.contrastText, 0.3), 
+            fontWeight: 600,
+            opacity: collapsed ? 0 : 1,
+            transition: "opacity 0.3s"
+          }}
+        >
+          {collapsed ? "v1.0" : "v1.0.4 - iCute Booking"}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+const SidebarContentMemo = memo(SidebarContent);
+
 const Sidebar = ({
   isMobileSidebarOpen,
   onSidebarClose,
   isSidebarOpen,
-  onToggleSidebar,
 }: ItemType) => {
+  const { data: session } = useSession();
   const theme = useTheme();
   const lgUp = useMediaQuery(theme.breakpoints.up("lg"));
+  
+  const [isHovered, setIsHovered] = React.useState(false);
 
-  const [collapsed, setCollapsed] = useState(false);
-  const sidebarWidth = 270;
-  const sidebarWidthCollapsed = 80;
-
-  // Set collapsed as default on desktop
-  useEffect(() => {
-    if (lgUp) {
-      setCollapsed(true);
-    }
-  }, [lgUp]);
-
-  const currentWidth = collapsed ? sidebarWidthCollapsed : sidebarWidth;
-
-  const LogoutButton = (
-    <Box px={collapsed ? 0.5 : 2} pb={4} mt="auto">
-      <Button
-        fullWidth
-        startIcon={!collapsed && <IconLogout size="20" />}
-        sx={{
-          justifyContent: collapsed ? "center" : "flex-start",
-          color: theme.palette.error.main,
-          backgroundColor: "transparent",
-          py: "10px",
-          px: collapsed ? "0" : "16px",
-          borderRadius: "12px",
-          fontWeight: 600,
-          transition: "all 0.2s ease-in-out",
-          "&:hover": {
-            backgroundColor: theme.palette.error.light + "20",
-          },
-          "& .MuiButton-startIcon": {
-            marginRight: collapsed ? 0 : "8px",
-          },
-          fontSize: "0.875rem",
-        }}
-        onClick={() => {
-          // Add logout logic here
-          console.log("Logout clicked");
-        }}
-      >
-        {!collapsed && "ออกจากระบบ"}
-      </Button>
-    </Box>
-  );
-
-  const ToggleButton = () => (
-    <Box
-      onClick={() => {
-        setCollapsed(!collapsed);
-        if (onToggleSidebar) onToggleSidebar();
-      }}
-      sx={{
-        position: "absolute",
-        right: -16,
-        top: "50%",
-        transform: "translateY(-50%)",
-        width: 32,
-        height: 32,
-        borderRadius: "50%",
-        backgroundColor: theme.palette.background.paper,
-        border: "1px solid",
-        borderColor: "divider",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        boxShadow: theme.shadows[3],
-        zIndex: 10,
-        transition: "all 0.2s ease-in-out",
-        "&:hover": {
-          backgroundColor: theme.palette.action.hover,
-          boxShadow: theme.shadows[4],
-        },
-      }}
-    >
-      {collapsed ? (
-        <IconChevronRight size={18} />
-      ) : (
-        <IconChevronLeft size={18} />
-      )}
-    </Box>
-  );
+  const collapsedWidth = "80px";
+  const expandedWidth = "270px";
+  const sidebarWidth = lgUp ? (isHovered ? expandedWidth : collapsedWidth) : expandedWidth;
 
   if (lgUp) {
     return (
-      <Box
-        sx={{
-          width: currentWidth,
+      <Box 
+        sx={{ 
+          width: collapsedWidth, 
           flexShrink: 0,
-          position: "relative",
           transition: "width 0.3s ease-in-out",
         }}
       >
@@ -117,51 +105,23 @@ const Sidebar = ({
           anchor="left"
           open={isSidebarOpen}
           variant="permanent"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           PaperProps={{
             sx: {
-              width: currentWidth,
-              minWidth: currentWidth,
+              width: sidebarWidth,
               boxSizing: "border-box",
               border: "0",
-              borderRight: "1px solid",
-              borderColor: "divider",
-              boxShadow: "none",
-              background: theme.palette.background.paper,
+              bgcolor: "primary.main",
+              backgroundImage: `linear-gradient(to bottom, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+              color: theme.palette.primary.contrastText,
               transition: "width 0.3s ease-in-out",
               overflowX: "hidden",
-              color: theme.palette.text.primary,
+              boxShadow: isHovered ? theme.shadows[8] : "none",
             },
           }}
         >
-          <Box
-            sx={{
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              position: "relative",
-            }}
-          >
-            <Box
-              px={collapsed ? 0.5 : 3}
-              py={collapsed ? 1 : 3}
-              sx={{
-                transition: "all 0.2s ease-in-out",
-              }}
-            >
-              <Logo collapsed={collapsed} />
-            </Box>
-            <ToggleButton />
-            <Box
-              flexGrow={1}
-              sx={{
-                mt: 1,
-                transition: "all 0.2s ease-in-out",
-              }}
-            >
-              <SidebarItems collapsed={collapsed} />
-            </Box>
-            {LogoutButton}
-          </Box>
+          <SidebarContentMemo collapsed={!isHovered} />
         </Drawer>
       </Box>
     );
@@ -175,30 +135,17 @@ const Sidebar = ({
       variant="temporary"
       PaperProps={{
         sx: {
-          width: sidebarWidth,
-          boxShadow: (theme) => theme.shadows[8],
-          background: theme.palette.background.paper,
-          color: theme.palette.text.primary,
+          bgcolor: "primary.main",
+          backgroundImage: `linear-gradient(to bottom, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+          width: expandedWidth,
+          color: theme.palette.primary.contrastText,
+          boxShadow: theme.shadows[8],
         },
       }}
     >
-      <Box
-        sx={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Box px={2} py={2}>
-          <Logo collapsed={false} />
-        </Box>
-        <Box flexGrow={1}>
-          <SidebarItems toggleMobileSidebar={onSidebarClose} />
-        </Box>
-        {LogoutButton}
-      </Box>
+      <SidebarContentMemo collapsed={false} />
     </Drawer>
   );
 };
 
-export default Sidebar;
+export default memo(Sidebar);

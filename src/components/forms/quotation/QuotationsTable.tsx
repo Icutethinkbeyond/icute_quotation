@@ -188,7 +188,7 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
     <>
       <Button
         startIcon={<DeleteSweep />}
-        onClick={() => router.push("/quotation/trash")}
+        onClick={() => router.push("/protected/quotation/trash")}
         sx={{
           backgroundColor: "#ffe2e6",
           color: "#d32f2f",
@@ -203,7 +203,7 @@ const QuotationsTable: React.FC<QuotationsTableProps> = () => {
       <Button
         variant="contained"
         startIcon={<Add />}
-        onClick={() => router.push("/quotation/new-quotation")}
+        onClick={() => router.push("/protected/quotation/new-quotation")}
         sx={{
           backgroundColor: "#03c9d7",
           color: "#fff",

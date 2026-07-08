@@ -10,11 +10,13 @@ const SETTING_KEYS: Record<string, string[]> = {
   line: ["LINE_CLIENT_ID", "LINE_CLIENT_SECRET", "LINE_CHANNEL_ID", "LINE_HELP_URL_TH", "LINE_HELP_URL_EN"],
   cloudinary: ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"],
   email: ["EMAIL_HOST", "EMAIL_PORT", "EMAIL_SECURE", "EMAIL_USER", "EMAIL_PASSWORD", "EMAIL_FROM", "EMAIL_HELP_URL_TH", "EMAIL_HELP_URL_EN"],
+  facebook: ["FACEBOOK_APP_ID", "FACEBOOK_APP_SECRET", "FACEBOOK_REDIRECT_URI", "FACEBOOK_SCOPE", "FACEBOOK_HELP_URL_TH", "FACEBOOK_HELP_URL_EN"],
+  google: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URI", "GOOGLE_SCOPE", "GOOGLE_HELP_URL_TH", "GOOGLE_HELP_URL_EN"],
 };
 
 const ALL_GROUPS = Object.keys(SETTING_KEYS);
 
-const HELP_LINK_KEYS = ["LINE_HELP_URL_TH", "LINE_HELP_URL_EN", "EMAIL_HELP_URL_TH", "EMAIL_HELP_URL_EN"];
+const HELP_LINK_KEYS = ["LINE_HELP_URL_TH", "LINE_HELP_URL_EN", "EMAIL_HELP_URL_TH", "EMAIL_HELP_URL_EN", "FACEBOOK_HELP_URL_TH", "FACEBOOK_HELP_URL_EN", "GOOGLE_HELP_URL_TH", "GOOGLE_HELP_URL_EN"];
 
 // GET /api/system-settings?group=line|cloudinary|email
 export async function GET(request: NextRequest) {
@@ -60,6 +62,12 @@ export async function GET(request: NextRequest) {
         } else if (g === "email") {
           result[g]["EMAIL_HELP_URL_TH"] = settingsMap["EMAIL_HELP_URL_TH"] || "";
           result[g]["EMAIL_HELP_URL_EN"] = settingsMap["EMAIL_HELP_URL_EN"] || "";
+        } else if (g === "facebook") {
+          result[g]["FACEBOOK_HELP_URL_TH"] = settingsMap["FACEBOOK_HELP_URL_TH"] || "";
+          result[g]["FACEBOOK_HELP_URL_EN"] = settingsMap["FACEBOOK_HELP_URL_EN"] || "";
+        } else if (g === "google") {
+          result[g]["GOOGLE_HELP_URL_TH"] = settingsMap["GOOGLE_HELP_URL_TH"] || "";
+          result[g]["GOOGLE_HELP_URL_EN"] = settingsMap["GOOGLE_HELP_URL_EN"] || "";
         }
       }
     }

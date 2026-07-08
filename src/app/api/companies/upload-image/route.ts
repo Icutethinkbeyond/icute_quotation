@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleImageUpload } from '@/services/module/cloudinary';
 import { prisma } from '../../../../../lib/prisma';
+import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
 export async function POST(req: NextRequest) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const formData = await req.formData();
         const file = formData.get('file') as File;
         const currentPublicId = formData.get('publicId') as string;
@@ -13,25 +15,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 });
         }
 
-        // Convert file to base64
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-        // Upload to Cloudinary
         const result = await handleImageUpload({
             file: base64,
             publicId: currentPublicId || undefined,
             folder: '/icute-quotation/company-logos',
         });
 
-        // Update company record with new image data
         if (companyId) {
             await prisma.company.update({
                 where: { companyId },
                 data: {
                     companyImage: result.url,
                     companyImagePublicId: result.publicId,
+                    userId,
                 },
             });
         }

@@ -56,7 +56,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, isEdit = false
             });
 
             if (response.ok) {
-                router.push('/customer');
+                router.push('/protected/customer');
             } else {
                 const error = await response.json();
                 console.error("Error saving customer:", error);

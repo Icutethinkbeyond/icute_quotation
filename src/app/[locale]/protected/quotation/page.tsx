@@ -10,9 +10,9 @@ import PageContainer from "@/components/shared/PageContainer";
 const Dashboard = () => {
   const router = useRouter();
 
-    const { setBreadcrumbs } = useBreadcrumbContext();
+  const { setBreadcrumbs } = useBreadcrumbContext();
 
-    useEffect(() => {
+  useEffect(() => {
     setBreadcrumbs([
       { name: "หน้าแรก", href: `/` },
       { name: "ใบเสนอราคา", href: `/quotation` },

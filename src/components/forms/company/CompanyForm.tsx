@@ -18,7 +18,7 @@ import PageContainer from "@/components/shared/PageContainer";
 import PageHeader from "@/components/shared/PageHeader";
 import { useRouter } from "next/navigation";
 import FormSection from "@/components/shared/FormSection";
-import { CompanyProfile } from "@/interfaces/Company";
+import { Company } from "@/interfaces/Company";
 
 interface CompanyFormProps {
     title?: string;
@@ -45,7 +45,7 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [data, setData] = useState<CompanyProfile | null>(null);
+    const [data, setData] = useState<Company | null>(null);
     const [formData, setFormData] = useState<CompanyFormData>({
         companyName: "",
         companyTaxId: "",
@@ -74,7 +74,7 @@ export default function CompanyForm({ title = "ข้อมูลบริษั
             setLoading(true);
             const res = await fetch(`/api/companies/${id}`);
             if (res.ok) {
-                const data: CompanyProfile = await res.json();
+                const data: Company = await res.json();
                 if (data) {
                     setData(data);
                     setFormData({

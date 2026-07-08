@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CompanyProfile } from "@/interfaces/Company";
+import { Company } from "@/interfaces/Company";
 import GenericInfoView, { FieldConfig, ViewStatus } from "@/components/shared/GenericInfoView";
 import { Avatar, Box, Typography } from "@mui/material";
 
@@ -11,7 +11,7 @@ interface CompanyViewProps {
 
 export default function CompanyView({ companyId }: CompanyViewProps) {
     const [status, setStatus] = useState<ViewStatus>('loading');
-    const [data, setData] = useState<CompanyProfile | null>(null);
+    const [data, setData] = useState<Company | null>(null);
 
     useEffect(() => {
         if (companyId) {
@@ -24,7 +24,7 @@ export default function CompanyView({ companyId }: CompanyViewProps) {
             setStatus('loading');
             const res = await fetch(`/api/companies/${id}`);
             if (res.ok) {
-                const result: CompanyProfile = await res.json();
+                const result: Company = await res.json();
                 setData(result);
                 setStatus('ready');
             } else {
@@ -36,7 +36,7 @@ export default function CompanyView({ companyId }: CompanyViewProps) {
         }
     };
 
-    const fields: FieldConfig<CompanyProfile>[] = [
+    const fields: FieldConfig<Company>[] = [
         { label: "ชื่อบริษัท", key: "companyName" },
         { label: "เบอร์โทรศัพท์", key: "companyPhoneNumber" },
         { label: "เลขผู้เสียภาษี", key: "companyTaxId" },

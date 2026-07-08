@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
+import { getCurrentUserAndCompanyIdsByToken } from '@/services/utils/auth';
 
 // ============================================================================
 // DELETE: Remove Unit
 // ============================================================================
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
+        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const { id } = params;
 
         if (!id) {

@@ -137,7 +137,7 @@ export default function SystemSettings() {
     setLoading(true);
     const result = await systemSettingService.getSystemSettings();
     if (result.success) {
-      setSettings(result.data);
+      setSettings((prev) => ({ ...prev, ...result.data }));
       setEmailSecure(result.data?.email?.EMAIL_SECURE !== "false");
     }
     setLoading(false);
@@ -167,6 +167,7 @@ export default function SystemSettings() {
 
   const isConfigured = (group: SettingsGroup): boolean => {
     const data = settings[group];
+    if (!data) return false;
     const config = GROUP_CONFIG[group];
     return config.fields.every((f) => data[f.key]?.trim());
   };

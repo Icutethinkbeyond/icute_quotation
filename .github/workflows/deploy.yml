@@ -1,9 +1,11 @@
 name: Deploy to Server
 
 on:
-  push:
-    branches:
-      - main  # Trigger เมื่อ push ไปยัง branch main
+  # push:
+  #   branches:
+  #     - main  # Trigger เมื่อ push ไปยัง branch main
+  workflow_dispatch: # Allows manual triggering
+
 
 jobs:
   deploy:

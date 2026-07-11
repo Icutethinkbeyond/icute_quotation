@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect } from "react";
 import { useBreadcrumbContext } from "@/contexts/BreadcrumbContext";
 import CompanySettingsForm from "@/components/forms/company/CompanySettingsForm";

@@ -18,6 +18,12 @@ export interface AboutItem {
   unitName: string | null;
 }
 
+export interface Unit {
+  unitId: string;
+  unitName: string;
+  usageCount: number;
+}
+
 export interface Items {
   itemsId: string;
   itemsName: string;

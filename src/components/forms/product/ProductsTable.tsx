@@ -14,6 +14,7 @@ interface ProductRow {
     keyId: string;
     itemsName: string;
     description: string;
+    categoryName: string;
     price: number;
     unit: string;
 }
@@ -28,6 +29,7 @@ const ProductsTable: React.FC = () => {
         keyId: product.itemsId,
         itemsName: product.itemsName,
         description: product.itemsDescription || "",
+        categoryName: product.category?.categoryName || "-",
         price: product.aboutItems?.itemsPrice || 0,
         unit: product.aboutItems?.unitName || "ชิ้น",
     }), []);
@@ -47,7 +49,7 @@ const ProductsTable: React.FC = () => {
     // Use debounce search hook
     const { searchQuery, setSearchQuery, filteredRows } = useDebounceSearch({
         rows,
-        searchFields: ["itemsName", "description"],
+        searchFields: ["itemsName", "description", "categoryName"],
         debounceMs: 500,
     });
 
@@ -70,9 +72,10 @@ const ProductsTable: React.FC = () => {
 
     const columns: GridColDef[] = [
         { field: "itemsName", headerName: "ชื่อสินค้า", flex: 3, type: "string", },
+        { field: "categoryName", headerName: "หมวดหมู่", flex: 2, type: "string", },
         { field: "description", headerName: "รายละเอียด", flex: 3, type: "string", },
-        { field: "price", headerName: "ราคา", flex: 3, type: "number", valueFormatter: (params: any) => params.value},
-        { field: "unit", headerName: "หน่วย", flex: 3, type: "string", },
+        { field: "price", headerName: "ราคา", flex: 2, type: "number", valueFormatter: (params: any) => params.value},
+        { field: "unit", headerName: "หน่วย", flex: 2, type: "string", },
         {
             field: "actions",
             headerName: "การจัดการ",
@@ -94,7 +97,7 @@ const ProductsTable: React.FC = () => {
                         <IconButton
                             size="small"
                             color="secondary"
-                            onClick={() => router.push(`/product/edit/${params.row.id}`)}
+                            onClick={() => router.push(`/protected/product/edit/${params.row.id}`)}
                         >
                             <EditCalendar fontSize="small" />
                         </IconButton>
@@ -102,7 +105,7 @@ const ProductsTable: React.FC = () => {
                     <Tooltip title="ดูข้อมูล">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/product/view-product/${params.row.id}`)}
+                            onClick={() => router.push(`/protected/product/view-product/${params.row.id}`)}
                             size="small"
                         >
                             <Visibility fontSize="small" />
@@ -127,7 +130,7 @@ const ProductsTable: React.FC = () => {
             <Button
                 variant="outlined"
                 startIcon={<DeleteSweep />}
-                onClick={() => router.push("/product/trash")}
+                onClick={() => router.push("/protected/product/trash")}
                 sx={{
                     color: theme.palette.error.main,
                     borderColor: theme.palette.error.main,
@@ -147,7 +150,7 @@ const ProductsTable: React.FC = () => {
             <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => router.push("/product/new")}
+                onClick={() => router.push("/protected/product/new")}
                 sx={{
                     textTransform: "none",
                     borderRadius: "8px",

@@ -38,12 +38,33 @@ export default function ProductView({ productId }: ProductViewProps) {
     const fields: FieldConfig<Items>[] = [
         { label: "ชื่อสินค้า", key: "itemsName" },
         {
+            label: "หมวดหมู่",
+            key: "category",
+            format: (val: any) => val?.categoryName || "-"
+        },
+        { label: "SKU", key: "itemsSKU" },
+        {
             label: "ราคา",
             key: "aboutItems",
             format: (val: any) => val?.itemsPrice ? `${val.itemsPrice.toLocaleString()} บาท` : "-"
         },
         {
-            label: "หน่วย",
+            label: "ราคาพิเศษ",
+            key: "aboutItems",
+            format: (val: any) => val?.itemsDiscountPrice != null ? `${val.itemsDiscountPrice.toLocaleString()} บาท` : "-"
+        },
+        {
+            label: "จำนวนในสต็อก",
+            key: "aboutItems",
+            format: (val: any) => val?.itemsStock != null ? `${val.itemsStock} ${val.unitName || ""}`.trim() : "-"
+        },
+        {
+            label: "ยี่ห้อ / แบรนด์",
+            key: "aboutItems",
+            format: (val: any) => val?.itemsBrand || "-"
+        },
+        {
+            label: "หน่วยนับ",
             key: "aboutItems",
             format: (val: any) => val?.unitName || "-"
         },

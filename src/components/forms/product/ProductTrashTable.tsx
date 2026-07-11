@@ -13,6 +13,12 @@ const ProductTrashTable: React.FC = () => {
             minWidth: 150,
         },
         {
+            field: "categoryName",
+            headerName: "หมวดหมู่",
+            flex: 0.8,
+            minWidth: 120,
+        },
+        {
             field: "itemsSKU",
             headerName: "SKU",
             flex: 0.5,
@@ -37,6 +43,7 @@ const ProductTrashTable: React.FC = () => {
     // ฟังก์ชันแปลงข้อมูลก่อนแสดง
     const mapProductData = (product: any) => ({
         ...product,
+        categoryName: product.category?.categoryName || "-",
         price: product.aboutItems?.itemsPrice || 0,
         unit: product.aboutItems?.unitName || "-",
     });

@@ -207,13 +207,26 @@ model JournalLine {
 }
 
 model Customer {
-  id        String  @id @default(cuid())
+  id        String      @id @default(cuid())
   companyId String
+  customerType CustomerType @default(CORPORATION)
   name      String
   taxId     String?
   phone     String?
   email     String?
   address   String?
+  website   String?
+  note      String?
+  branch          String?
+  registrationDate DateTime?
+  businessType    String?
+  capital         Float?
+  directorName    String?
+  firstName       String?
+  lastName        String?
+  nationalId      String?
+  dateOfBirth     DateTime?
+  occupation      String?
 
   userId String?
   user   User?   @relation(fields: [userId], references: [userId], onDelete: SetNull)
@@ -221,7 +234,11 @@ model Customer {
   company        Company         @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
   documentPapers DocumentPaper[]
 
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
@@ -643,4 +660,9 @@ enum ProviderAccount {
   Google
   Facebook
   Email
+}
+
+enum CustomerType {
+  CORPORATION
+  INDIVIDUAL
 }

@@ -54,6 +54,8 @@ interface GenericInfoViewProps<T> {
     status: ViewStatus;
     errorMessage?: string;
     notFoundMessage?: string;
+    headerActions?: React.ReactNode;
+    renderExtraSection?: () => React.ReactNode;
 }
 
 const getIconForField = (label: string, icon?: React.ReactNode) => {
@@ -125,6 +127,8 @@ export function GenericInfoView<T>({
     status,
     errorMessage = "Cannot load data",
     notFoundMessage = "Data not found",
+    headerActions,
+    renderExtraSection,
 }: GenericInfoViewProps<T>) {
     const router = useRouter();
 
@@ -186,7 +190,7 @@ export function GenericInfoView<T>({
 
     return (
         <PageContainer title={title} description={`View ${title}`}>
-            <Box mb={4} display="flex" alignItems="center">
+            <Box mb={4} display="flex" alignItems="center" justifyContent="space-between">
                 <Button
                     variant="contained"
                     color="primary"
@@ -196,6 +200,7 @@ export function GenericInfoView<T>({
                 >
                     ย้อนกลับ
                 </Button>
+                {headerActions && <Box>{headerActions}</Box>}
             </Box>
 
             <Box mt={3}>
@@ -232,6 +237,7 @@ export function GenericInfoView<T>({
                         </Grid>
                     </DashboardCard>
                 )}
+                {renderExtraSection && renderExtraSection()}
             </Box>
         </PageContainer>
     );

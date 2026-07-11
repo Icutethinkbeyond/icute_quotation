@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
         const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const { searchParams } = new URL(req.url);
         const showDeleted = searchParams.get('trash') === 'true';
+        const search = searchParams.get('search') || '';
 
         const products = await prisma.items.findMany({
             where: {
@@ -15,6 +16,13 @@ export async function GET(req: NextRequest) {
                     ? { isDeleted: true }
                     : { NOT: { isDeleted: true } }
                 ),
+                ...(search ? {
+                    OR: [
+                        { itemsName: { contains: search, mode: 'insensitive' } },
+                        { itemsSKU: { contains: search, mode: 'insensitive' } },
+                        { itemsDescription: { contains: search, mode: 'insensitive' } },
+                    ]
+                } : {})
             },
             include: {
                 category: true,
@@ -25,7 +33,6 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        console.log(`Fetched ${products.length} products (trash=${showDeleted})`);
         return NextResponse.json(products);
     } catch (error) {
         console.error("Error fetching products:", error);
@@ -40,22 +47,27 @@ export async function POST(req: NextRequest) {
         const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const data = await req.json();
 
-        const sku = data.productSKU || `SKU-${Date.now()}`;
+        if (!data.itemsName) {
+            return NextResponse.json({ error: 'ชื่อสินค้าจำเป็นต้องกรอก' }, { status: 400 });
+        }
 
-        if (data.unit) {
+        const sku = data.itemsSKU || `SKU-${Date.now()}`;
+        const unitName = data.unitName || "ชิ้น";
+
+        if (data.unitName) {
             const existingUnit = await prisma.unit.findUnique({
-                where: { unitName: data.unit }
+                where: { unitName: data.unitName }
             });
             if (!existingUnit) {
                 await prisma.unit.create({
-                    data: { 
-                        unitName: data.unit,
+                    data: {
+                        unitName: data.unitName,
                         usageCount: 1
                     }
                 });
             } else {
                 await prisma.unit.update({
-                    where: { unitName: data.unit },
+                    where: { unitName: data.unitName },
                     data: { usageCount: { increment: 1 } }
                 });
             }
@@ -66,15 +78,16 @@ export async function POST(req: NextRequest) {
                 itemsName: data.itemsName,
                 itemsSKU: sku,
                 itemsDescription: data.itemsDescription || "",
-                categoryId: null,
-                itemsImage: null,
+                itemsImage: data.itemsImage || null,
+                categoryId: data.categoryId || null,
                 userId,
                 aboutItems: {
                     create: {
-                        itemsPrice: data.price || 0,
-                        itemsStock: 0,
-                        unitName: data.unit || "ชิ้น",
-                        itemsBrand: null,
+                        itemsPrice: Number(data.itemsPrice) || 0,
+                        itemsDiscountPrice: data.itemsDiscountPrice ? Number(data.itemsDiscountPrice) : null,
+                        itemsStock: Number(data.itemsStock) || 0,
+                        itemsBrand: data.itemsBrand || null,
+                        unitName,
                         userId,
                     }
                 }

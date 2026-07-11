@@ -59,13 +59,13 @@ export const useMenuItemsStore = () => {
       href: `/protected/quotation`,
       hide: isSuperAdmin,
     },
-    {
-      id: uniqueId(),
-      title: "ข้อมูลบริษัท",
-      icon: IconBuilding,
-      href: `/protected/company`,
-      hide: isSuperAdmin,
-    },
+    // {
+    //   id: uniqueId(),
+    //   title: "ข้อมูลบริษัท",
+    //   icon: IconBuilding,
+    //   href: `/protected/company`,
+    //   hide: isSuperAdmin,
+    // },
     {
       id: uniqueId(),
       title: "ลูกค้า",
@@ -79,14 +79,31 @@ export const useMenuItemsStore = () => {
       icon: IconPackage,
       href: `/protected/product`,
       hide: isSuperAdmin,
+      children: [
+        {
+          id: uniqueId(),
+          title: "รายการสินค้า",
+          href: `/protected/product`,
+        },
+        {
+          id: uniqueId(),
+          title: "หมวดหมู่สินค้า",
+          href: `/protected/product/category`,
+        },
+                {
+          id: uniqueId(),
+          title: "ข้อมูลหน่วยสินค้า",
+          href: `/protected/product/unit`,
+        },
+      ],
     },
-    {
-      id: uniqueId(),
-      title: "ข้อมูลหน่วยสินค้า",
-      icon: IconRulerMeasure,
-      href: `/protected/unit`,
-      hide: isSuperAdmin,
-    },
+    // {
+    //   id: uniqueId(),
+    //   title: "ข้อมูลหน่วยสินค้า",
+    //   icon: IconRulerMeasure,
+    //   href: `/protected/unit`,
+    //   hide: isSuperAdmin,
+    // },
     // {
     //   id: uniqueId(),
     //   title: "รายงาน",

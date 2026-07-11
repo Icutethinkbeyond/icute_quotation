@@ -5,7 +5,7 @@ import 'dayjs/locale/th';
 import { NotificationType } from "@prisma/client";
 
 // ========================================
-// SMTP CONFIG RESOLUTION (3 tiers)
+// SMTP CONFIG RESOLUTION (2 tiers)
 // ========================================
 
 interface SmtpConfig {
@@ -19,38 +19,11 @@ interface SmtpConfig {
 
 /**
  * Resolve SMTP config with priority:
- * 1. Store-level SMTP (emailHost, emailPort, etc.)
- * 2. System-level SMTP from SystemSetting table
- * 3. Environment variables (fallback)
+ * 1. System-level SMTP from SystemSetting table
+ * 2. Environment variables (fallback)
  */
-async function resolveSmtpConfig(storeId?: string | null): Promise<SmtpConfig> {
-  // Tier 1: Store-level SMTP
-  if (storeId) {
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-      select: {
-        emailHost: true,
-        emailPort: true,
-        emailSecure: true,
-        emailUser: true,
-        emailPassword: true,
-        emailFrom: true,
-      },
-    });
-
-    if (store?.emailHost && store?.emailUser && store?.emailPassword) {
-      return {
-        host: store.emailHost,
-        port: store.emailPort || 587,
-        secure: store.emailSecure,
-        user: store.emailUser,
-        password: store.emailPassword,
-        from: store.emailFrom || store.emailUser,
-      };
-    }
-  }
-
-  // Tier 2: System-level SMTP from SystemSetting
+async function resolveSmtpConfig(): Promise<SmtpConfig> {
+  // Tier 1: System-level SMTP from SystemSetting
   const systemKeys = ["EMAIL_HOST", "EMAIL_PORT", "EMAIL_SECURE", "EMAIL_USER", "EMAIL_PASSWORD", "EMAIL_FROM"];
   const systemSettings = await prisma.systemSetting.findMany({
     where: { key: { in: systemKeys } },
@@ -72,7 +45,7 @@ async function resolveSmtpConfig(storeId?: string | null): Promise<SmtpConfig> {
     };
   }
 
-  // Tier 3: Environment variables (fallback)
+  // Tier 2: Environment variables (fallback)
   return {
     host: process.env.EMAIL_HOST || "",
     port: Number(process.env.EMAIL_PORT) || 587,
@@ -88,17 +61,17 @@ async function resolveSmtpConfig(storeId?: string | null): Promise<SmtpConfig> {
 // ========================================
 
 async function logEmail(
-  storeId: string | null | undefined,
+  userId: string | null | undefined,
   to: string,
   subject: string,
   type: string,
   success: boolean,
   error?: string
 ) {
-  if (!storeId) return;
+  if (!userId) return;
   try {
     await prisma.emailLog.create({
-      data: { storeId, to, subject, type, success, error: error || null },
+      data: { userId, to, subject, type, success, error: error || null },
     });
   } catch (err) {
     console.error("Failed to log email:", err);
@@ -113,14 +86,14 @@ export async function sendMail(
   to: string,
   subject: string,
   html: string,
-  options?: { storeId?: string | null; type?: string; smtpConfig?: SmtpConfig }
+  options?: { userId?: string | null; type?: string; smtpConfig?: SmtpConfig }
 ): Promise<boolean> {
   try {
-    const smtp = options?.smtpConfig || await resolveSmtpConfig(options?.storeId);
+    const smtp = options?.smtpConfig || await resolveSmtpConfig();
 
     if (!smtp.host || !smtp.user || !smtp.password) {
       console.error("Email SMTP not configured");
-      await logEmail(options?.storeId, to, subject, options?.type || "general", false, "SMTP not configured");
+      await logEmail(options?.userId, to, subject, options?.type || "general", false, "SMTP not configured");
       return false;
     }
 
@@ -138,11 +111,11 @@ export async function sendMail(
       html,
     });
 
-    await logEmail(options?.storeId, to, subject, options?.type || "general", true);
+    await logEmail(options?.userId, to, subject, options?.type || "general", true);
     return true;
   } catch (error: any) {
     console.error("Error sending email:", error);
-    await logEmail(options?.storeId, to, subject, options?.type || "general", false, error?.message || "Unknown error");
+    await logEmail(options?.userId, to, subject, options?.type || "general", false, error?.message || "Unknown error");
     return false;
   }
 }
@@ -198,7 +171,7 @@ export function getHtmlTemplate(content: string, brandName: string = "iCute Book
 // AUTH EMAILS (System SMTP - no storeId)
 // ========================================
 
-export async function sendVerificationEmail(toEmail: string, token: string, storeId?: string) {
+export async function sendVerificationEmail(toEmail: string, token: string, userId?: string) {
   const verificationLink = `${BASE_URL}/api/auth/verify-email?token=${token}`;
 
   const content = `
@@ -212,10 +185,10 @@ export async function sendVerificationEmail(toEmail: string, token: string, stor
     <p style="font-size: 14px; color: #6b7280;">ลิงก์นี้จะมีอายุ 24 ชั่วโมง หากคุณไม่ได้ลงทะเบียน กรุณาเพิกเฉย</p>
   `;
 
-  return await sendMail(toEmail, "ยืนยันอีเมลสำหรับ iCute Account", getHtmlTemplate(content), { storeId, type: "verification" });
+  return await sendMail(toEmail, "ยืนยันอีเมลสำหรับ iCute Account", getHtmlTemplate(content), { userId, type: "verification" });
 }
 
-export async function sendResetPasswordEmail(toEmail: string, token: string, storeId?: string) {
+export async function sendResetPasswordEmail(toEmail: string, token: string, userId?: string) {
   const resetLink = `${BASE_URL}/auth/reset-password?token=${token}`;
 
   const content = `
@@ -229,7 +202,7 @@ export async function sendResetPasswordEmail(toEmail: string, token: string, sto
     <p style="font-size: 14px; color: #6b7280;">ลิงก์นี้จะมีอายุ 1 ชั่วโมง หากคุณไม่ได้ร้องขอ กรุณาเพิกเฉย</p>
   `;
 
-  return await sendMail(toEmail, "รีเซ็ตรหัสผ่าน iCute Account", getHtmlTemplate(content), { storeId, type: "reset_password" });
+  return await sendMail(toEmail, "รีเซ็ตรหัสผ่าน iCute Account", getHtmlTemplate(content), { userId, type: "reset_password" });
 }
 
 
@@ -294,7 +267,6 @@ interface EmailData {
   discountAtBooking?: string;
   employeeName?: string;
   serviceName?: string;
-  storeId?: string;
   storeName?: string;
   storeTel?: string;
   storeAddress?: string;
@@ -349,114 +321,14 @@ function getEmailContent(
     ? dayjs(bookingDate).locale("th").format("DD MMMM YYYY")
     : bookingDate || '-';
 
-const getStatusContent = (notificationType: NotificationType, isStore: boolean) => {
+  const getStatusContent = (notificationType: NotificationType, isStore: boolean) => {
     switch (notificationType) {
-      case NotificationType.CUSTOMER_PENDING:
-        return {
-          title: isStore ? "มีการจองใหม่" : "รอยืนยันการจอง",
-          icon: "⏳",
-          badge: { bg: "#f59e0b", color: "white", text: "รอยืนยัน" },
-          content: isStore
-            ? `<p>การจองจากลูกค้า ${customerNameFull} กำลังรอการยืนยัน</p><p>กรุณาตรวจสอบและยืนยันการจอง</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} การจองของคุณกำลังรอการยืนยันจากร้าน</p><p>ร้านจะยืนยันการจองของคุณให้ทราบภายหลังนะครับ</p>`
-        };
-
-      case NotificationType.STORE_NEW_BOOKING:
-        return {
-          title: isStore ? "มีการเพิ่มการจองใหม่โดยพนักงาน" : "การจองใหม่",
-          icon: "🆕",
-          badge: { bg: "#3b82f6", color: "white", text: "ใหม่" },
-          content: isStore
-            ? `<p>มีการเพิ่มการจองใหม่โดยพนักงาน</p><p>กรุณาตรวจสอบรายละเอียด</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} การจองของคุณได้รับการยืนยันจากทางร้านแล้ว</p>`
-        };
-
-      case NotificationType.STORE_BOOKING_CONFIRMED:
-        return {
-          title: "ยืนยันการจองสำเร็จ",
-          icon: "✅",
-          badge: { bg: "#10b981", color: "white", text: "ยืนยันแล้ว" },
-          content: isStore
-            ? `<p>ยืนยันการจองของลูกค้า ${customerNameFull} แล้ว</p><p>รายละเอียดด้านล่าง</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} ขอบคุณที่จองบริการกับเรา</p><p>การจองของคุณได้รับการยืนยันแล้ว กรุณามาก่อนเวลานัดหมาย 10 นาที</p>`
-        };
-
-      case NotificationType.CUSTOMER_CANCELED:
-        return {
-          title: isStore ? "ลูกค้ายกเลิกการจอง" : "การจองถูกยกเลิกโดยลูกค้า",
-          icon: "❌",
-          badge: { bg: "#ef4444", color: "white", text: "ยกเลิกแล้ว" },
-          content: isStore
-            ? `<p>ลูกค้า ${customerNameFull} ยกเลิกการจองแล้ว</p><p>กรุณาตรวจสอบและอัปเดตสถานะ</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} การจองของคุณถูกยกเลิกแล้ว</p><p>หากต้องการจองใหม่ กรุณาติดต่อร้านได้เลยครับ</p>`
-        };
-
-      case NotificationType.STORE_CANCELED_BY_CUSTOMER:
-        return {
-          title: isStore ? "พนักงานยกเลิกการ���อง" : "การจองขอคุณได้รับการยกเลิกจากทางร้าน",
-          icon: "❌",
-          badge: { bg: "#ef4444", color: "white", text: "ยกเลิกแล้ว" },
-          content: isStore
-            ? `<p>พนักงานยกเลิกการจองของลูกค้า ${customerNameFull}</p><p>กรุณาตรวจสอบรายละเอียด</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} การจองของคุณถูกยกเลิกโดยร้านค้าแล้ว</p><p>หากต้องการจองใหม่ กรุณาติดต่อร้านได้เลยครับ</p>`
-        };
-
-      case NotificationType.STORE_AUTO_CANCELLED:
-        return {
-          title: "การจองถูกยกเลิกโดยระบบ",
-          icon: "❌",
-          badge: { bg: "#ef4444", color: "white", text: "ยกเลิกแล้ว" },
-          content: isStore
-            ? `<p>การจองของ ${customerNameFull} ถูกยกเลิกโดยระบบ</p><p>เนื่องจากไม่มีการตอบรับจากร้าน</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} การจองถูกยกเลิกโดยระบบ เนื่องจากไม่มีการตอบรับจากร้านค้า</p><p>หากต้องการจองใหม่ กรุณาติดต่อร้านได้เลยครับ</p>`
-        };
-
-      case NotificationType.STORE_BOOKING_RESCHEDULED:
-        return {
-          title: "เลื่อนนัดสำเร็จ",
-          icon: "📅",
-          badge: { bg: "#f59e0b", color: "white", text: "เลื่อนนัดแล้ว" },
-          content: isStore
-            ? `<p>เลื่อนนัดการจองของลูกค้า ${customerNameFull}</p><p>กรุณาตรวจสอบและยืนยัน</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} การจองของคุณถูกเลื่อนนัดเป็นวันและเวลาใหม่</p><p>กรุณามาก่อนเวลานัดหมาย 10 นาที แล้วพบกันได้เลยครับ</p>`
-        };
-
-      case NotificationType.STORE_BOOKING_COMPLETED:
-        return {
-          title: "เสร็จสิ้นบริการ",
-          icon: "🎉",
-          badge: { bg: "#10b981", color: "white", text: "เสร็จสิ้น" },
-          content: isStore
-            ? `<p>การจองของลูกค้า ${customerNameFull} เสร็จสิ้นแล้ว</p><p>ขอบคุณที่ใช้บริการ!</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} ขอบคุณที่ใช้บริการครับ!</p><p>หวังว่าจะพอใจในบริการของเรานะครับ ยินดีต้อนรับอีกครั้ง!</p>`
-        };
-
-      case NotificationType.STORE_BOOKING_NOSHOW:
-        return {
-          title: "ไม่มารับบริการ",
-          icon: "😞",
-          badge: { bg: "#6b7280", color: "white", text: "ไม่มา" },
-          content: isStore
-            ? `<p>ลูกค้า ${customerNameFull} ไม่มารับบริการ</p><p>กรุณาบันทึกสถานะ</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} การจองของคุณถูกบัน��ึกว่าไม่มารับบริการ</p><p>หากต้องการจองใหม่หรือมีข้อสงสัย กรุณาติดต่อร้านได้เลยครับ</p>`
-        };
-
-      case NotificationType.STORE_BOOKING_REMINDER:
-        return {
-          title: "แจ้งเตือนนัดหมาย",
-          icon: "🔔",
-          badge: { bg: "#8b5cf6", color: "white", text: "นัดหมาย" },
-          content: isStore
-            ? `<p>แจ้งเตือนนัดหมายสำหรับ ${customerNameFull}</p><p>กรุณาเตรียมพร้อมรับลูกค้า</p>`
-            : `<p>สวัสดีคุณ ${customerNameFull} นี่คือการแจ้งเตือนนัดหมายของคุณ</p><p>กรุณามาก่อนเวลานัดหมาย 10 นาที แล้วพบกันได้เลยครับ!</p>`
-        };
-
-      case NotificationType.STORE_NEW_REGISTRATION:
+      case NotificationType.USER_NEW_REGISTRATION:
         return {
           title: "ร้านค้าใหม่ลงทะเบียน",
           icon: "🏪",
           badge: { bg: "#06b6d4", color: "white", text: "ใหม่" },
-          content: `<p>ร้าน "${storeName}" ได้ลงทะเบียนเข้าใช้งานระบบ</p>`
+          content: `<p>ร้าน "${storeNameValue}" ได้ลงทะเบียนเข้าใช้งานระบบ</p>`
         };
 
       default:
@@ -519,13 +391,11 @@ const getStatusContent = (notificationType: NotificationType, isStore: boolean) 
 
 export async function sendBookingStatusEmail(
   data: any,
-  storeId: string,
+  userId: string,
   status: NotificationType,
   sendToCustomer: boolean = true,
   sendToStore: boolean = false
 ): Promise<{ customerEmailSent?: boolean; storeEmailSent?: boolean }> {
-
-  // console.log(data)
 
   const customerEmail = data.customerEmail || data.customer?.email;
   const storeEmail = data.storeEmail || data.store?.emailUser || data.store?.user?.email;
@@ -545,13 +415,11 @@ export async function sendBookingStatusEmail(
     );
     const subject = `${customerContent.icon} ${customerContent.title} - ${serviceName || 'การจอง'} ${storeName !== 'iCute Booking' ? `- ${storeName}` : ''}`;
 
-    console.log(customerEmail)
-
     results.customerEmailSent = await sendMail(
       customerEmail,
       subject,
       customerHtml,
-      { storeId, type: `booking_${status}` }
+      { userId, type: `booking_${status}` }
     );
   }
 
@@ -566,7 +434,7 @@ export async function sendBookingStatusEmail(
       storeEmail,
       `[Store] ${subject}`,
       storeHtml,
-      { storeId, type: `booking_${status}_store` }
+      { userId, type: `booking_${status}_store` }
     );
   }
 
@@ -583,64 +451,5 @@ export async function sendEmailByBookingId(
   sendToCustomer: boolean = true,
   sendToStore: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        store: { select: { id: true, storeName: true, tel: true, addressCustom: true, emailUser: true } },
-        service: { select: { name: true, price: true } },
-        employee: { select: { name: true, nickname: true } },
-        customer: { select: { email: true } },
-      },
-    });
-
-    if (!booking) {
-      return { success: false, error: "Booking not found" };
-    }
-
-    const customerEmail = booking.customerEmail || booking.customer?.email;
-    const storeEmail = booking.store?.emailUser;
-
-    if (!sendToStore && !customerEmail) {
-      return { success: false, error: "No customer email" };
-    }
-
-    if (sendToStore && !storeEmail) {
-      return { success: false, error: "No store email" };
-    }
-
-    const emailData = {
-      id: booking.id,
-      customerName: booking.customerName,
-      customerSurname: booking.customerSurname || undefined,
-      customerPhone: booking.customerPhone,
-      customerEmail: customerEmail || undefined,
-      bookingDate: booking.bookingDate,
-      bookingStartTime: booking.bookingStartTime,
-      bookingEndTime: booking.bookingEndTime,
-      note: booking.note || undefined,
-      priceAtBooking: booking.priceAtBooking,
-      discountAtBooking: booking.discountAtBooking,
-      serviceName: booking.service?.name,
-      employeeName: booking.employee?.nickname || booking.employee?.name,
-      storeName: booking.store?.storeName,
-      storeTel: booking.store?.tel,
-      storeAddress: booking.store?.addressCustom,
-      storeEmail: storeEmail,
-    };
-
-    const result = await sendBookingStatusEmail(
-      emailData, 
-      booking.storeId, 
-      statusOrType as NotificationType,
-      sendToCustomer,
-      sendToStore
-    );
-
-    const success = result.customerEmailSent || result.storeEmailSent;
-    return { success: !!success };
-  } catch (error: any) {
-    console.error("sendEmailByBookingId error:", error);
-    return { success: false, error: error.message };
-  }
+  return { success: false, error: "Booking model not found in current schema" };
 }

@@ -7,10 +7,10 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     try {
-        const contactorId = params.id;
+        const customerId = params.id;
 
-        const customer = await prisma.contactor.findUnique({
-            where: { contactorId }
+        const customer = await prisma.customer.findUnique({
+            where: { id: customerId }
         });
 
         if (!customer) {
@@ -32,23 +32,27 @@ export async function PATCH(
 ) {
     try {
         const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
-        const contactorId = params.id;
+        const customerId = params.id;
         const data = await req.json();
 
+        console.log(data)
+
         const {
-            contactorName,
-            contactorTel,
-            contactorEmail,
-            contactorAddress
+            name,
+            taxId,
+            phone,
+            email,
+            address
         } = data;
 
-        const updatedCustomer = await prisma.contactor.update({
-            where: { contactorId },
+        const updatedCustomer = await prisma.customer.update({
+            where: { id: customerId },
             data: {
-                contactorName,
-                contactorTel: contactorTel || null,
-                contactorEmail: contactorEmail || null,
-                contactorAddress: contactorAddress || null,
+                name,
+                taxId: taxId || null,
+                phone: phone || null,
+                email: email || null,
+                address: address || null,
                 userId,
             }
         });
@@ -62,57 +66,18 @@ export async function PATCH(
     }
 }
 
-export async function PUT(
-    req: NextRequest,
-    { params }: { params: { id: string } }
-) {
-    try {
-        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
-        const contactorId = params.id;
-
-        const restoredCustomer = await prisma.contactor.update({
-            where: { contactorId },
-            data: {
-                isDeleted: false,
-                deletedAt: null,
-                userId,
-            }
-        });
-
-        return NextResponse.json({ success: true, customer: restoredCustomer });
-    } catch (error) {
-        console.error("Error restoring customer:", error);
-        return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
-    }
-}
-
 export async function DELETE(
     req: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
-        const contactorId = params.id;
-        const { searchParams } = new URL(req.url);
-        const permanent = searchParams.get('permanent') === 'true';
+        const customerId = params.id;
 
-        if (permanent) {
-            await prisma.contactor.delete({
-                where: { contactorId }
-            });
-            return NextResponse.json({ success: true, message: 'Customer permanently deleted' });
-        } else {
-            await prisma.contactor.update({
-                where: { contactorId },
-                data: {
-                    isDeleted: true,
-                    deletedAt: new Date(),
-                }
-            });
-            return NextResponse.json({ success: true, message: 'Customer moved to trash' });
-        }
+        await prisma.customer.delete({
+            where: { id: customerId }
+        });
+
+        return NextResponse.json({ success: true, message: 'Customer deleted' });
     } catch (error) {
         console.error("Error deleting customer:", error);
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

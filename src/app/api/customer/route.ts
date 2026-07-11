@@ -7,21 +7,17 @@ export async function GET(req: NextRequest) {
         const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const { searchParams } = new URL(req.url);
         const search = searchParams.get('search') || '';
-        const showDeleted = searchParams.get('trash') === 'true';
 
-        const customers = await prisma.contactor.findMany({
+        const customers = await prisma.customer.findMany({
             where: {
-                isStandalone: true,
                 userId,
-                ...(showDeleted
-                    ? { isDeleted: true }
-                    : { NOT: { isDeleted: true } }
-                ),
                 ...(search ? {
                     OR: [
-                        { contactorName: { contains: search, mode: 'insensitive' } },
-                        { contactorEmail: { contains: search, mode: 'insensitive' } },
-                        { contactorTel: { contains: search, mode: 'insensitive' } },
+                        { name: { contains: search, mode: 'insensitive' } },
+                        { email: { contains: search, mode: 'insensitive' } },
+                        { phone: { contains: search, mode: 'insensitive' } },
+                        { taxId: { contains: search, mode: 'insensitive' } },
+                        { address: { contains: search, mode: 'insensitive' } },
                     ]
                 } : {})
             },
@@ -41,27 +37,36 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
-        const data = await req.json();
+        const { userId, companyId } = await getCurrentUserAndCompanyIdsByToken(req);
 
-        const {
-            contactorName,
-            contactorTel,
-            contactorEmail,
-            contactorAddress
-        } = data;
-
-        if (!contactorName) {
-            return NextResponse.json({ error: 'ชื่อผู้ติดต่อจำเป็นต้องกรอก' }, { status: 400 });
+        if (!companyId) {
+            return NextResponse.json({ error: 'ไม่พบข้อมูลบริษัท' }, { status: 400 });
         }
 
-        const customer = await prisma.contactor.create({
+        const data = await req.json();
+
+        // console.log(data)
+
+        const {
+            name,
+            taxId,
+            phone,
+            email,
+            address
+        } = data;
+
+        if (!name) {
+            return NextResponse.json({ error: 'ชื่อลูกค้าจำเป็นต้องกรอก' }, { status: 400 });
+        }
+
+        const customer = await prisma.customer.create({
             data: {
-                contactorName,
-                contactorTel: contactorTel || null,
-                contactorEmail: contactorEmail || null,
-                contactorAddress: contactorAddress || null,
-                isStandalone: true,
+                name,
+                taxId: taxId || null,
+                phone: phone || null,
+                email: email || null,
+                address: address || null,
+                companyId,
                 userId,
             }
         });

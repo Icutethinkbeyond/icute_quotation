@@ -1,20 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Box, Button, TextField, Grid2 } from "@mui/material";
-import { useRouter } from "next/navigation";
 import PageContainer from "@/components/shared/PageContainer";
 import DashboardCard from "@/components/shared/DashboardCard";
+import ProductForm from "@/components/forms/product/ProductForm";
+import { Items } from "@/interfaces/Product";
 
 const EditProductPage = ({ params }: { params: { id: string } }) => {
-    const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({
-        itemsName: "",
-        itemsDescription: "",
-        price: 0,
-        unit: "ชิ้น",
-    });
+    const [product, setProduct] = useState<Items | null>(null);
 
     useEffect(() => {
         fetchProduct();
@@ -24,47 +18,17 @@ const EditProductPage = ({ params }: { params: { id: string } }) => {
         try {
             setLoading(true);
             const response = await fetch(`/api/inventory/product/${params.id}`);
-            const product = await response.json();
-
-            setFormData({
-                itemsName: product.itemsName || "",
-                itemsDescription: product.itemsDescription || "",
-                price: product.aboutItems?.itemsPrice || 0,
-                unit: product.aboutItems?.unitName || "ชิ้น",
-            });
-        } catch (error) {
-            console.error("Error fetching product:", error);
-            router.push("/product");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: name === "price" ? Number(value) : value,
-        }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        try {
-            const response = await fetch(`/api/inventory/product/${params.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
-
             if (response.ok) {
-                router.push("/product");
+                const data: Items = await response.json();
+                setProduct(data);
             } else {
-                console.error("Failed to update product");
+                setProduct(null);
             }
         } catch (error) {
-            console.error("Error updating product:", error);
+            console.error("Error fetching product:", error);
+            setProduct(null);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -72,9 +36,21 @@ const EditProductPage = ({ params }: { params: { id: string } }) => {
         return (
             <PageContainer>
                 <DashboardCard title="แก้ไขสินค้า">
-                    <Box sx={{ p: 3, textAlign: "center" }}>
+                    <div style={{ padding: 24, textAlign: "center" }}>
                         กำลังโหลดข้อมูล...
-                    </Box>
+                    </div>
+                </DashboardCard>
+            </PageContainer>
+        );
+    }
+
+    if (!product) {
+        return (
+            <PageContainer>
+                <DashboardCard title="แก้ไขสินค้า">
+                    <div style={{ padding: 24, textAlign: "center" }}>
+                        ไม่พบข้อมูลสินค้า
+                    </div>
                 </DashboardCard>
             </PageContainer>
         );
@@ -83,68 +59,7 @@ const EditProductPage = ({ params }: { params: { id: string } }) => {
     return (
         <PageContainer>
             <DashboardCard title="แก้ไขสินค้า">
-                <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-                    <Grid2 container spacing={3}>
-                        <Grid2 size={12}>
-                            <TextField
-                                fullWidth
-                                required
-                                label="ชื่อสินค้า"
-                                name="itemsName"
-                                value={formData.itemsName}
-                                onChange={handleChange}
-                            />
-                        </Grid2>
-
-                        <Grid2 size={12}>
-                            <TextField
-                                fullWidth
-                                multiline
-                                rows={3}
-                                label="รายละเอียดสินค้า"
-                                name="itemsDescription"
-                                value={formData.itemsDescription}
-                                onChange={handleChange}
-                            />
-                        </Grid2>
-
-                        <Grid2 size={6}>
-                            <TextField
-                                fullWidth
-                                required
-                                type="number"
-                                label="ราคา (บาท)"
-                                name="price"
-                                value={formData.price}
-                                onChange={handleChange}
-                                slotProps={{
-                                    input: {
-                                        inputProps: { min: 0, step: 0.01 }
-                                    }
-                                }}
-                            />
-                        </Grid2>
-
-                        <Grid2 size={6}>
-                            <TextField
-                                fullWidth
-                                required
-                                label="หน่วย"
-                                name="unit"
-                                value={formData.unit}
-                                onChange={handleChange}
-                            />
-                        </Grid2>
-
-                        <Grid2 size={12}>
-                            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                                <Button type="submit" variant="contained" color="success">
-                                    บันทึกการแก้ไข
-                                </Button>
-                            </Box>
-                        </Grid2>
-                    </Grid2>
-                </Box>
+                <ProductForm isEdit initialData={product} />
             </DashboardCard>
         </PageContainer>
     );

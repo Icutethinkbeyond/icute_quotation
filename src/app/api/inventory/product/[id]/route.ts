@@ -40,20 +40,20 @@ export async function PATCH(
         const { userId } = await getCurrentUserAndCompanyIdsByToken(req);
         const data = await req.json();
 
-        if (data.unit) {
+        if (data.unitName) {
             const existingUnit = await prisma.unit.findUnique({
-                where: { unitName: data.unit }
+                where: { unitName: data.unitName }
             });
             if (!existingUnit) {
                 await prisma.unit.create({
-                    data: { 
-                        unitName: data.unit,
+                    data: {
+                        unitName: data.unitName,
                         usageCount: 1
                     }
                 });
             } else {
                 await prisma.unit.update({
-                    where: { unitName: data.unit },
+                    where: { unitName: data.unitName },
                     data: { usageCount: { increment: 1 } }
                 });
             }
@@ -63,12 +63,28 @@ export async function PATCH(
             where: { itemsId: params.id },
             data: {
                 itemsName: data.itemsName,
+                itemsSKU: data.itemsSKU,
                 itemsDescription: data.itemsDescription,
+                itemsImage: data.itemsImage || null,
+                categoryId: data.categoryId || null,
                 userId,
                 aboutItems: {
-                    update: {
-                        itemsPrice: data.price,
-                        unitName: data.unit,
+                    upsert: {
+                        create: {
+                            itemsPrice: Number(data.itemsPrice) || 0,
+                            itemsDiscountPrice: data.itemsDiscountPrice ? Number(data.itemsDiscountPrice) : null,
+                            itemsStock: Number(data.itemsStock) || 0,
+                            itemsBrand: data.itemsBrand || null,
+                            unitName: data.unitName || "ชิ้น",
+                            userId,
+                        },
+                        update: {
+                            itemsPrice: Number(data.itemsPrice) || 0,
+                            itemsDiscountPrice: data.itemsDiscountPrice ? Number(data.itemsDiscountPrice) : null,
+                            itemsStock: Number(data.itemsStock) || 0,
+                            itemsBrand: data.itemsBrand || null,
+                            unitName: data.unitName || "ชิ้น",
+                        }
                     }
                 }
             },

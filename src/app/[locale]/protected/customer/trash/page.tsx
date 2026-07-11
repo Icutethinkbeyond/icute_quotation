@@ -1,7 +1,6 @@
 "use client";
 
-import { Grid2, Box } from "@mui/material";
-import CustomerTrashTable from "@/components/forms/customer/CustomerTrashTable";
+import { Box, Typography } from "@mui/material";
 import { useEffect } from "react";
 import { useBreadcrumbContext } from "@/contexts/BreadcrumbContext";
 import PageContainer from "@/components/shared/PageContainer";
@@ -12,7 +11,7 @@ const CustomerTrashPage = () => {
     useEffect(() => {
         setBreadcrumbs([
             { name: "หน้าแรก", href: `/protected/dashboard` },
-            { name: "ลูกค้า", href: `/customer` },
+            { name: "ลูกค้า", href: `/protected/customer` },
             { name: "ถังขยะ" },
         ]);
         return () => {
@@ -23,11 +22,9 @@ const CustomerTrashPage = () => {
     return (
         <PageContainer title="ถังขยะ - ลูกค้า" description="จัดการลูกค้าที่ถูกลบ">
             <Box mt={3}>
-                <Grid2 container spacing={3}>
-                    <Grid2 size={12}>
-                        <CustomerTrashTable />
-                    </Grid2>
-                </Grid2>
+                <Typography>
+                    ข้อมูลลูกค้าไม่รองรับถังขยะ
+                </Typography>
             </Box>
         </PageContainer>
     );
